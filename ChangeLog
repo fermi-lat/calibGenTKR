@@ -1,5 +1,18 @@
 ------------------------------------------------------------
 User: lsrea  Fri Feb 27 09:42:48 PST 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx 
+Added Files:
+	options.xml win_options.xml 
+Removed Files:
+	options.txt win_options.txt 
+Log Message:
+convert to xml parameter file
+    *
+------------------------------------------------------------
+User: lsrea  Fri Feb 27 09:42:48 PST 2004
 calibGenTKR/cmt
 
 Modified Files:
