@@ -1,6 +1,6 @@
 package calibGenTKR
 
-version v0r0
+version v0r1
 
 # This package contains the tracker bad strips calibration code
 
