@@ -1,7 +1,11 @@
 #ifndef totCalib_Class
 #define totCalib_Class
 
+#ifdef OLD_RECON
+#include "xml/Dom.h"
+#else
 #include "xmlBase/Dom.h"
+#endif
 #include <xercesc/dom/DOMElement.hpp>
 #include <xercesc/dom/DOMNodeList.hpp>
 #include <xercesc/dom/DOMCharacterData.hpp>
@@ -12,9 +16,14 @@
 #include <xercesc/util/TransService.hpp>
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
+#ifdef OLD_RECON
+#include "xml/XmlParser.h"
+#include "xml/Dom.h"
+#else
 #include "xmlBase/XmlParser.h"
-
 #include "xmlBase/Dom.h"
+#endif
+
 #include <xercesc/dom/DOMElement.hpp>
 #include <xercesc/dom/DOMNodeList.hpp>
 #include "facilities/Util.h"
@@ -42,7 +51,7 @@
 
 using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 
-static const float sumThrPerEvent = 50.0 / 2.0E6;
+static const float sumThrPerEvent = 60.0 / 2.0E6;
 static const float occThrPerEvent = 10.0 / 1.6E6;
 static const float poissonThreshold = -5.0;
 
@@ -60,7 +69,9 @@ public:
     int setInputRootFiles( TChain* digi, TChain* recon );
 
     bool setOutputFiles( const char* outputDir );
-    void setDtd( const std::string &dtd ){ m_dtd = dtd; };
+    void setDtd( const std::string &dtd ){ m_dtd = dtd;
+    std::cout << "DTD file: " << m_dtd << std::endl;
+    };
 
     bool readTotConvFile(const char* dir, const char* runid);
     bool readTotConvXmlFile(const char* dir, const char* runid);
@@ -154,14 +165,13 @@ private:
         m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
     // bad strips analysis related stuff
-    static const int g_nWafer = 4;
+    static const int g_nWafer = 4, g_nBad=5;
     void fillOccupancy();
     void findBadStrips( int );
     void fillBadStrips();
 
     bool m_badStrips;
-    std::vector<int> m_deadStrips[g_nLayer][g_nView];
-    std::vector<int> m_partialDeadStrips[g_nLayer][g_nView];
+    std::vector<int> m_deadStrips[g_nLayer][g_nView][g_nBad];
     TH1F* m_nHits[g_nLayer][g_nView][g_nWafer];
     TH1F* m_aPos[g_nWafer];
     TH1F* m_occDist, *m_poissonDist;
