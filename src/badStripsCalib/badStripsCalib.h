@@ -587,6 +587,7 @@ inline void BadStripsCalib::MakeHistList() {
     
     TObject* obj = 0;
     
+    // yes, it's "=", not "=="... we're assigning the pointer to the next object to obj...
     while (obj=iter.Next()) {
         m_histList->Add(obj);
     }
@@ -601,6 +602,7 @@ inline void BadStripsCalib::HistClear() {
     
     TObject* obj = 0;
     
+    // yes, it's "=", not "=="... we're assigning the pointer to the next object to obj...
     while ( obj=(TObject*)iter.Next() ) {
         ((TH1*)obj)->Reset();        
     }

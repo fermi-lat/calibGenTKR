@@ -61,16 +61,29 @@
   
   @param detectorType
   Sets number of layers, towers, tower numbers. Allowed values are:
-  EM1, EM2, LAT_2Towers, LAT_Full.
+  EM1, EM2, LAT_2Towers, LAT_Full. Using nPlanes and towerNumbers, below, allows more flexibility.
+
+  @param nPlanes
+  Sets the number of planes in the configuration. Default is 8. When present in the options file,
+  this number overrides the detectorType.
+
+  @param towerNumbers
+  A vector of integers which specifies which towers are present in a setup. Default is "{0}",
+  meaning only tower 0 is present. For the 2-tower LAT we would need "{8,9}". When present in the options file,
+  this number overrides the detectorType.
+
   @param maxOccupancy
   Sets threshold for calling a strip hot. Default is 0.01 above ambient
+
   @param sourceFilePath
   The common part of the paths to the input digi.root files. Can be set to "",
   or omitted, if each input file is in a different place.
+
   @param sourceFileList
   Blank-delimited list of input files, including that part of the path not included
   in sourceFilePath. The example file is found at
   /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/.
+
   @param xmlPath
   the location of the output xml files. Default is the output directory of calibGenTKR
   @param histPath
