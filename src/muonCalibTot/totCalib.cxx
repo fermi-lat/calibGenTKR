@@ -33,7 +33,7 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
   m_tower_row=0;
   m_tower_col=0;
   m_tower_serial="TKrFMX";
-  m_version="1.5";
+  m_version="1.7";
   m_runid = 0;
   m_timeStamp="050124000000";
   m_startTime="Thu 01/20 2005, 22:52 GMT";
@@ -528,7 +528,7 @@ void totCalib::fitTot()
 	m_chargeStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
 
 	if( peak > 0.0 )
-	  m_chargeScale[iPlane][iView][iDiv] = 5.0 / peak;
+	  m_chargeScale[iPlane][iView][iDiv] = peak / 5.0;
 	
 	m_log << "Charge " << iPlane << ' ' << iView << ' ' << pos << ' '
 	       << area << ' ' << ave << ' ' << rms << ", " << *(par+0) << ' '
