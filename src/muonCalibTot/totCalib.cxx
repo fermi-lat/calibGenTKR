@@ -360,12 +360,14 @@ void totCalib::calibChargeScale( int nEvents )
 
 void totCalib::analyzeEvent(int nEvents) 
 {
-  int mEvent = nEvents * 0.1;
+  int mEvent = nEvents * 0.01;
   for(int iEvent = 0; iEvent != nEvents; ++iEvent) {
     
     if( iEvent >= mEvent ){
-      std::cout << "# of events: " << iEvent << " " << nEvents << std::endl;
-      mEvent += nEvents * 0.1;
+      std::cout << "# of events: " << iEvent << " " << nEvents 
+		<< ",  " << iEvent*101/nEvents << "%" << std::endl;
+      if( mEvent > nEvents*0.095 ) mEvent += nEvents * 0.1;
+      else mEvent += nEvents * 0.01;
     }
 
     m_reconTree->GetEntry(iEvent);
