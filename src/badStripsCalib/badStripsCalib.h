@@ -102,7 +102,12 @@ public :
     /// Pointer to a McEvent
     //McEvent     *mc;
     /// name of the output histogram ROOT file
-    char        *m_histFileName; 
+    char        *m_histFileName;
+    /// xml output path
+    char        *m_xmlPath;
+    /// hist output path
+    char        *m_histPath;
+
     /// output prefix
     std::string  m_prefix;
     /// Arrays that contain pointers to the TFile, TTree, and TChains
@@ -118,7 +123,9 @@ public :
         const char* digiFileName, 
         const char* reconFileName="", 
         const char* mcFileName="",
-        char*       prefix=""
+        char* prefix="test",
+        char* xmlPath="",
+        char* histPath=""
     );
        
 
@@ -127,7 +134,9 @@ public :
         TChain *digiChain, 
         TChain *recChain = 0, 
         TChain *mcChain = 0, 
-        char   *prefix=""
+        char* prefix = "",
+        char* xmlPath = "",
+        char* histPath = ""
     );
 
     ~BadStripsCalib();  
@@ -207,15 +216,18 @@ inline BadStripsCalib::BadStripsCalib()
 inline BadStripsCalib::BadStripsCalib(const char* digiFileName, 
                                    const char* reconFileName, 
                                    const char* mcFileName,
-                                   char* prefix
-                                   //char* histFileName
+                                   char* prefix,
+                                   char* xmlPath,
+                                   char* histPath
                                    )
 {
 	// Purpose and Method:  Standard constructor where the user provides the 
 	//  names of input ROOT files and optionally the name of the output ROOT
 	//  histogram file.
 
-    m_prefix =  prefix;
+    m_prefix   =  prefix;
+    m_xmlPath  = xmlPath;
+    m_histPath = histPath;
     printf(" opening files:\n\tdigi:\t%s\n\trecon:\t%s\n\tmc:\t%s\n",
 		digiFileName, reconFileName, mcFileName);
     
@@ -234,14 +246,18 @@ inline BadStripsCalib::BadStripsCalib(const char* digiFileName,
 inline BadStripsCalib::BadStripsCalib(TChain *digiChain, 
                                    TChain *recChain, 
                                    TChain *mcChain, 
-                                   char *prefix
+                                   char* prefix,
+                                   char* xmlPath,
+                                   char* histPath
                                    )
 {
     Clear();
     
-    m_prefix = prefix;
+    m_prefix   = prefix;
+    m_xmlPath  = xmlPath;
+    m_histPath = histPath;
     std::string histName;
-    histName = m_prefix+"_hist.root";
+    histName = m_histPath+m_prefix+"_hist.root";
     SetHistFileName(const_cast<char*>(histName.c_str()));
     HistDefine();
     MakeHistList();

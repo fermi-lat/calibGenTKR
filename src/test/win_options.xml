@@ -1,22 +1,25 @@
 <?xml version="1.0" ?>
 <!-- windows test version -->
 
-<!DOCTYPE ifile SYSTEM "$(XMLROOT)/xmldata/ifile.dtd" >
+<!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.1 2004/02/27 17:42:48 lsrea Exp $"
-       cvs_Revision="$Revision: 1.1 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.2 2004/02/29 18:37:29 lsrea Exp $"
+       cvs_Revision="$Revision: 1.2 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
     
     <item name="sourceFilePath" value= "c:/Glast/files/em/" > 
-          directory containing digi files </item>
+          common part of the path to the digi.root files (may be blank) </item>
     <!-- the original files are found at: 
            /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/
     -->
     <item name="sourceFileList"      
-        value= " ebf031006235353_digi.root " > 
-        blank-delimited list of input files 
-    </item>   
-    <item name="outputString"    value= "ebf031006235353" >  prefix for output files </item>   
+        value= " ebf031006235353_digi.root  " > 
+        blank-delimited list of input files, including any part of the path not specified above 
+    </item> 
+    <!-- default output path is $CALIBGENTKRROOT/output/ --> 
+    <item name="xmlPath"         value= "">  path to location of output xml files </item> 
+    <item name="histPath"        value= "">  path to location of output hist files </item>
+    <item name="outputPrefix"    value= "ebf031006235353" >  prefix for output files </item>   
     <item name="numEvents"       value= "500000" > max number of events to read </item>
   </section>
 </ifile>
