@@ -46,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.20 $";
+  std::string version = "$Revision: 1.21 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -338,7 +338,7 @@ bool totCalib::parseRcReport( const char* reportFile )
 #ifdef OLD_RECON
   using namespace xml;
 #else
-  using namespce xmlBase;
+  using namespace xmlBase;
 #endif
 
   XmlParser* parsercReport = new XmlParser(true);
