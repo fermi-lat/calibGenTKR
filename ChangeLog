@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Tue Jan 25 12:23:46 PST 2005
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+prepare for tag v1r2: convert to new format, start on upgrades for totCalib
+
+    *
+------------------------------------------------------------
+User: lsrea  Tue Jan 25 12:23:46 PST 2005
 calibGenTKR/doc
 
 Modified Files:
