@@ -39,7 +39,7 @@ calib-v1r0
 # DTD file for oyutput xml file
 #
 /nfs/slac/work/htajima/calibUtil/v1r3p1/xml/badStrips.dtd
-#/nfs/slac/work/htajima/calibGenTKR/v1r4/src/muonCalibTot/TkrCalibration.dtd
+/nfs/slac/work/htajima/calibUtil/v1r3p1/xml/tkrCalibration.dtd
 #
 # analysis type
 #
