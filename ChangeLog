@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Thu Mar 10 14:11:30 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalibChain_option.dat 
+Log Message:
+minor improvement on xml format
+
+    *
+------------------------------------------------------------
 User: htajima  Thu Mar 10 09:31:42 PST 2005
 calibGenTKR/src/muonCalibTot
 
