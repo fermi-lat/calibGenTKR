@@ -1,5 +1,16 @@
 ------------------------------------------------------------
 User: lsrea  Tue Jul 20 17:33:53 PDT 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx options.xml unix_options.xml 
+	win_options.xml 
+Log Message:
+allow for arbitrary number of towers and planes
+
+    *
+------------------------------------------------------------
+User: lsrea  Tue Jul 20 17:33:53 PDT 2004
 calibGenTKR/src/badStripsCalib
 
 Modified Files:
