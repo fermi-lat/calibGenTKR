@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Fri Jan 28 01:10:15 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+more sturcutured input. read xml file to get TOT conversion factors.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v1r2, operation: add
 Package: calibGenTKR
