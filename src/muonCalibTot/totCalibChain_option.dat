@@ -5,11 +5,38 @@
 #
 # digi root files separated by space
 #
-/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/digi.root
+#/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/digi.root 
+#/nfs/farm/g/glast/u12/EM2/rootData/398000362/grRoot/digitization-EM2-v1r0_398000362_digi_DIGI.root /nfs/farm/g/glast/u12/EM2/rootData/398000365/grRoot/digitization-EM2-v1r0_398000365_digi_DIGI.root
 #
 # recon root files separated by space
 #
-/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/recon.root
+#/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/recon.root 
+#/nfs/farm/g/glast/u12/EM2/rootData/398000362/calib-v1r0/grRoot/recon-EM2-v1r0_398000362_recon_RECON.root /nfs/farm/g/glast/u12/EM2/rootData/398000365/calib-v1r0/grRoot/recon-EM2-v1r0_398000365_recon_RECON.root
+#
+# top directory for root files
+#
+/nfs/farm/g/glast/u12/EM2/rootData/
+#
+# recon directory
+#
+calib-v1r0
+#
+# top directory for rcReport
+#
+/nfs/farm/g/glast/u12/EM2/rawData
+#
+# runid for cosmic data (last entry is ignored for now)
+#
+398000362 398000365 398000368 398000371 1
+#
+# top directory for TOT conversion files. (TE602)
+#
+/nfs/farm/g/glast/u02/rawData
+#/nfs/farm/g/glast/u12/EM2/rawData
+#
+# run id for TOT converstion files. Only one run is allowed.
+#
+398000364
 #
 # output text file
 #
@@ -22,14 +49,6 @@
 # output root file
 #
 ../output/tot.root
-#
-# directory name for TOT conversion files. (TE602)
-#
-/nfs/farm/g/glast/u12/EM2/rawData
-#
-# run id for TOT converstion files. Only one run is allowed.
-#
-398000364
 
 
 

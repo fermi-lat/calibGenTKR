@@ -2,93 +2,112 @@
 #include <iostream>
 #include <string>
 #include "totCalib.h"
-#include "TSystem.h"
 
 using std::string;
 using std::cout;
 using std::endl;
 
 void parseFileNames(std::vector<std::string>& fileNames, 
-                    const std::string& line) 
+		    const std::string& line) 
 {
-    std::string::size_type pos = 0;
-    for( ; ; ) {
+  std::string::size_type pos = 0;
+  for( ; ; ) {
 
-        string::size_type i = line.find(' ', pos);
-        if(i != string::npos) {
-            fileNames.push_back(line.substr(pos, i-pos));
-        }
-        else {
-
-            std::string lastFile = line.substr(pos);
-
-            //make sure it is a root file name
-            if(lastFile.find("root") != string::npos) {
-                fileNames.push_back(lastFile);
-                break;
-            }
-            else {
-                break;
-            }
-
-        }
-
-        pos = i + 1;
+    string::size_type i = line.find(' ', pos);
+    if(i != string::npos) {
+      fileNames.push_back(line.substr(pos, i-pos));
     }
+    else {
+
+      std::string lastFile = line.substr(pos);
+
+      //make sure it is a root file name
+      if(lastFile.find("root") != string::npos) {
+	fileNames.push_back(lastFile);
+	break;
+      }
+      else {
+	break;
+      }
+
+    }
+
+    pos = i + 1;
+  }
 }
 
 int main(int argn, char** argc) {
 
-    #ifdef WIN32
-//        gSystem->Load("libTree.dll");
-        gSystem->Load("digiRootData.dll");
-        gSystem->Load("reconRootData.dll");
-    #endif
+  std::ifstream inputFile;
 
-    std::ifstream inputFile;
-    if(argn > 1) {
-        inputFile.open(argc[1]);
-    }
-    else {
-        inputFile.open("../src/muonCalibTot/Win_option.txt");
-    }
+  if(argn > 1) {
+    inputFile.open(argc[1]);
+  }
+  else {
+    inputFile.open("../src/muonCalibTot/totCalibChain_option.dat");
+  }
 
-    // first line is a list of recon root files, separated by " " 
-    std::string line;
-    getline(inputFile, line);
+  std::string line;
 
-    std::vector<std::string> digiFileNames;
-    parseFileNames(digiFileNames, line);
-    TChain* digiChain = new TChain("Digi");
+  // top directory for input root files
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' ); // skip the line with #.
+  std::string rootDir = line;
 
-    std::vector<std::string>::const_iterator itr = digiFileNames.begin();
+  // directory name for recon root files
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string reconDir = line;
 
-    for(;itr != digiFileNames.end(); ++itr) {
-        std::cout << "digi file: " << *itr << endl;
-        digiChain->Add(itr->c_str());
-    }
+  // top directory for input root files
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string reportDir = line;
 
-    // second line is a list of recon root files, separated by " "
-    getline(inputFile, line);
+  // run ids for input root files
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::vector<std::string> runIds;
+  parseFileNames( runIds, line );
 
-    std::vector<std::string> reconFileNames;
+  // top directory for TOT conversion factors
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string totConvDir = line;
 
-    parseFileNames(reconFileNames, line);
+  // run Id for TOT conversion factors
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string totConvRunId = line;
 
-    TChain* reconChain = new TChain("Recon");
-    itr = reconFileNames.begin();
-    for(;itr != reconFileNames.end(); ++itr) {
-        std::cout << "recon file: " << *itr << endl;
-        reconChain->Add(itr->c_str());
-    }
-    std::string txtFileName;
-    inputFile >> txtFileName;
+  // log file name
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string logFileName = line;
 
-    std::string rootFileName;
-    inputFile >> rootFileName;
+  // output xml file name
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string xmlFileName = line;
 
-    totCalib calib;
+  // output root file name
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string rootFileName = line;
 
-    calib.genTot(digiChain, reconChain, txtFileName.c_str(), 
-        rootFileName.c_str());
+  totCalib calib;
+  if( !calib.setOutputFiles( logFileName.c_str(), xmlFileName.c_str(), 
+			     rootFileName.c_str() ) ) return 1;
+
+  if( !calib.readTotConvXmlFile( totConvDir.c_str(), totConvRunId.c_str() ) )
+    if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
+      return 1;
+
+  if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
+
+  int nEvents = calib.setInputRootFiles( rootDir.c_str(), reconDir.c_str(), 
+					 runIds );
+
+  calib.calibChargeScale( nEvents );
+
 }
