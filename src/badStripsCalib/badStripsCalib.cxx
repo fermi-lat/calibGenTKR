@@ -1,3 +1,7 @@
+/** @file badStripsCalib.cxx
+@brief Algorithm to calibrate bad strips
+*/
+
 #include "badStripsCalib.h"
 #include <string>
 #include <algorithm>
@@ -27,20 +31,6 @@ const float maxOccupancy = 0.01f;
 const bool  checkCount   = false;
 const int   minHistCount = 16;
 
-// Instrument-dependent constants
-
-// constants for flight instrument
-//const int numTowers       = 16;
-//const int numPlanes       = 36;
-
-// constants for EM
-const int numTowers       = 1;
-const int numPlanes       = 8;
-
-// constants for EM2
-//const int numTowers       = 1;
-//const int numPlanes       = 10;
-
 const int laddersPerPlane = 4;
 const int stripsPerChip   = 64;
 const int stripsPerBlock  = stripsPerChip/2;
@@ -50,10 +40,10 @@ const int stripsPerPlane  = stripsPerLadder*laddersPerPlane;
 const int numChips = chipsPerLadder*laddersPerPlane;
 const int numBlocks = numChips*2;
 
-const int numHists = numPlanes*numTowers;
-int numLadders[numPlanes]; // historical from balloon flight (not likely to ever need this!)
-
-TH1F *TKRPLN[numHists];
+//const int numHists = numPlanes*numTowers;
+int numLadders[36]; // historical from balloon flight (not likely to ever need this!)
+//TH1F *TKRPLN[numHists];
+//std::vector<TH1F*> TKRPLN;
 
 int i,j;
 
@@ -70,16 +60,20 @@ void BadStripsCalib::DigiHistDefine() {
     char buf[10];
     char buf1[40];
 
-    for(i=0;i<numPlanes;++i) {numLadders[i] = laddersPerPlane;}
+    for(i=0;i<m_nPlanes;++i) {numLadders[i] = laddersPerPlane;}
 
-    int nTowers = numTowers;
+    int nTowers = m_towerNums.size();
+    int nHists = nTowers*m_nPlanes;
+
+    m_tkrHists.assign(nHists,0);
 
     for (j = 0; j<nTowers; ++j) {
-        for (i = 0; i<numPlanes; ++i) {
+        int tower = m_towerNums[j];
+        for (i = 0; i<m_nPlanes; ++i) {
             sprintf(buf,"TKR%d-%d",j,i);
             sprintf(buf1,"Strips hit in tower %d,plane %d",j,i);
             int nStrips = numLadders[i]*stripsPerLadder;
-            TKRPLN[numPlanes*j +i] = new TH1F(buf, buf1, nStrips, -0.5, nStrips-0.5);
+            m_tkrHists[m_nPlanes*j +i] = new TH1F(buf, buf1, nStrips, -0.5, nStrips-0.5);
         }
     }
     return;       
@@ -97,6 +91,8 @@ void BadStripsCalib::DigiTkr() {
     TIter tkrDigiIter(tkrDigiCol);
     TkrDigi *t = 0;
 
+    int numTowers = m_towerNums.size();
+
     while (t = (TkrDigi*)tkrDigiIter.Next()) {
 
         int tower = (t->getTower()).id();
@@ -106,7 +102,7 @@ void BadStripsCalib::DigiTkr() {
         int iview = (int) view;
         bool isY = (view==1);
         int plane = 2*layer + (1-isY)*(1-layer%2) + isY*layer%2;
-        if (plane>=numPlanes) continue;
+        if (plane>=m_nPlanes) continue;
         if (debug) std::cout << "    tower,layer,view " << tower << " " 
             << layer << " " << iview <<std::endl;
 
@@ -115,7 +111,7 @@ void BadStripsCalib::DigiTkr() {
         for (iHit = 0; iHit < numStrips; ++iHit) {
             int strip = t->getHit(iHit);
             if (debug) std::cout << strip << " " ;
-            TKRPLN[plane]->Fill(strip);
+            m_tkrHists[plane]->Fill(strip);
         }
     }
     return;
@@ -231,6 +227,10 @@ void BadStripsCalib::Go(Int_t numEvents)
         << " Cpu " << timer1.CpuTime() << std::endl;
 }
 
+/** @todo
+  figure out better local average, for now we use simple average
+*/
+
 void BadStripsCalib::Finish()
 {
     std::cout << std::endl << evtCount << " events processed" << std::endl << std::endl;
@@ -268,13 +268,14 @@ void BadStripsCalib::Finish()
     }
 
     int ihist;
-    float average[numHists];
-    int   chipCount[numHists][2*numChips];
-    bool  towerCount[numTowers];
+    int numHists = m_tkrHists.size();
+    std::vector<float> average(numHists);
+    std::vector<bool>  towerCount(numHists);
+    std::vector< std::vector<int> > chipCount(numHists, vector<int>(2*numChips));
 
     histFile->cd();
 
-    int nTowers = numTowers;
+    int nTowers = m_towerNums.size();
     for (i=0;i<nTowers; ++i) { 
         //TKRCHIP[i]->Reset();
         towerCount[i] = false;
@@ -287,15 +288,16 @@ void BadStripsCalib::Finish()
 
         int isum = 0;
         double binsum = 0;
-        int plane = ihist%numPlanes;
-        int tower = ihist/numPlanes;
+        int plane = ihist%m_nPlanes;
+        int iTower = ihist/m_nPlanes;
+        int tower = m_towerNums[iTower];
         if (debugf)
             std::cout << "tower, plane " << tower << " " << plane << std::endl;
         int nbin = numLadders[plane]*stripsPerLadder;
         int bin = nbin;
 
         // get rough average
-        int entries = TKRPLN[ihist]->GetEntries();
+        int entries = m_tkrHists[ihist]->GetEntries();
         
         // refine the average a bit, by dropping the very low and very high bins
         if(entries>0) {
@@ -306,7 +308,7 @@ void BadStripsCalib::Finish()
                 std::cout << " entries, ave " << entries << " " << xave << std::endl;
 
             for (bin=1; bin<nbin+1; ++bin) {
-                float xbin = TKRPLN[ihist]->GetBinContent(bin);
+                float xbin = m_tkrHists[ihist]->GetBinContent(bin);
                 //sumhist->Fill(xbin/xave);
 
                 int block = (bin-1)/stripsPerBlock;
@@ -333,8 +335,8 @@ void BadStripsCalib::Finish()
 
     if (testAgainstFit) {
         for (ihist=0; ihist<numHists; ++ihist){
-            std::cout << "Fitting TKRPLN " << ihist << std::endl;
-            if (average[ihist]>0) TKRPLN[ihist]->Fit("pol8");    
+            std::cout << "Fitting m_tkrHists " << ihist << std::endl;
+            if (average[ihist]>0) m_tkrHists[ihist]->Fit("pol8");    
         }
     }
 
@@ -423,7 +425,8 @@ void BadStripsCalib::Finish()
         for (ihist=0; ihist<numHists; ++ihist){
             badCount = 0; testCount = false;
             bool newHist = true;
-            int tower = ihist/numPlanes;
+            int iTower = ihist/m_nPlanes;
+            int tower = m_towerNums[iTower];
             int towerCol = tower/4;
             int towerRow = tower - 4*towerCol;
 
@@ -440,7 +443,7 @@ void BadStripsCalib::Finish()
                 continue;
             }
 
-            int plane = ihist%numPlanes;
+            int plane = ihist%m_nPlanes;
             int nbin = numLadders[plane]*stripsPerLadder;
 
             int tray = (plane+1)/2;
@@ -465,13 +468,13 @@ void BadStripsCalib::Finish()
 
             int bin;
             TF1* fitfunc;
-            if(testAgainstFit) fitfunc = TKRPLN[ihist]->GetFunction("pol8");
+            if(testAgainstFit) fitfunc = m_tkrHists[ihist]->GetFunction("pol8");
 
             float xval0 = 0;
             if (itest==1 || (average[ihist]>minHistCount || average[ihist]==0) ) {
                 for (bin=1; bin<=nbin+1; ++bin) {
-                    float xbin = TKRPLN[ihist]->GetBinContent(bin);
-                    xval[0] = TKRPLN[ihist]->GetBinCenter(bin);
+                    float xbin = m_tkrHists[ihist]->GetBinContent(bin);
+                    xval[0] = m_tkrHists[ihist]->GetBinCenter(bin);
                     if(testAgainstFit) { 
                         yval = std::max(0.0, fitfunc->EvalPar(xval)); 
                     } else { 
@@ -527,11 +530,11 @@ void BadStripsCalib::Finish()
                         thisBin = bin;
                         if (bin==nbin+1) {
                             xbin = minHistCount+1;
-                            xval[0] = TKRPLN[ihist]->GetBinCenter(thisBin)+1;
+                            xval[0] = m_tkrHists[ihist]->GetBinCenter(thisBin)+1;
                             yval = minHistCount+1;          
                         } else {
-                            xbin = TKRPLN[ihist]->GetBinContent(bin);
-                            xval[0] = TKRPLN[ihist]->GetBinCenter(bin);
+                            xbin = m_tkrHists[ihist]->GetBinContent(bin);
+                            xval[0] = m_tkrHists[ihist]->GetBinCenter(bin);
                             if (testAgainstFit)  {
                                 yval = std::max(0.0, fitfunc->EvalPar(xval));
                             } else {
@@ -613,7 +616,7 @@ void BadStripsCalib::Finish()
         }
         t->cd(pad);
         gPad->SetLogy(1);
-        TKRPLN[ihist]->Draw("Hist");
+        m_tkrHists[ihist]->Draw("Hist");
     } 
 
 #endif

@@ -14,7 +14,8 @@
   perhaps 40. For a single tower, with cosmic trigger, this implies about 50K events. 
   The hit strips are accumulated in histograms, one for each plane.
 
-  The histograms are analyzed in one of several ways, only the first of which is official:
+  The histograms are analyzed in one of several ways, only the first of which 
+  has been thoroughly tested:
 
   <ul> 
   <li>Simple: the strips with zero hits are flagged as dead; those with occupancy greater than 
@@ -46,16 +47,19 @@
   @section input Input parameters
 
   The input parameters are supplied in an xml file.
-  The default file is options.xml in the /src/test directory, and accesses
-  a unix input file. An alternate file may be passed as an argument to 
-  the test program.
+  The default example file is options.xml in the /src/test directory, and accesses
+  a unix input file of EM1 data. An alternate file may be passed as an argument to 
+  the program.
   
+  @param detectorType
+  Sets number of layers, towers, tower numbers. Allowed values are:
+  EM1, EM2, LAT_2Towers, LAT_Full.
   @param sourceFilePath
   The common part of the paths to the input digi.root files. Can be set to "",
   or omitted, if each input file is in a different place.
   @param sourceFileList
   Blank-delimited list of input files, including that part of the path not included
-  in sourceFilePath. The test file is found at
+  in sourceFilePath. The example file is found at
   /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/.
   @param xmlPath
   the location of the output xml files. Default is the output directory of calibGenTKR

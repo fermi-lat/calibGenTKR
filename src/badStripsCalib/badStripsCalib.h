@@ -1,45 +1,10 @@
+/** @file badStripsCalib.h
+@brief header file for bad strips calibration
+*/
 /** @class BadStripsCalib
-* @brief   This class can manipulate a Monte Carlo, Digi, and a Recon Root file
-* at the same time.  It is meant as a full example of using ROOT to manipulate
-* GLAST ROOT data.  
+* @brief   This class constains the code to do the bad strips calibration.
 *
-* This class is intended to provide useful manipulation
-* of the Root Event loop. Users put their analysis code
-* into the Go function (in BadStripsCalib.cxx). They should not
-* need to look at BadStripsCalib.h (except to see the interface)
-* 
-* allows for:
-* init and re-init use of Root file(s)
-* clear all histograms
-* 'go n events' allowing to continue on in the file
-* or 'rewind'
-* 
-*  Example of use:
-*
-*  gROOT->LoadMacro("BadStripsCalib.cxx");     // 'compile' class
-*  BadStripsCalib m("myDigiFile.root", "myReconFile.root"); // create BadStripsCalib object
-*  m.Go(500);      // loop over 500 events. Go contains your analysis code
-*  ... look at histograms ...
-*  m.Go()          // look at remainder of file
-*  ... look at histograms ...
-*  m.HistClear();      // clear histograms
-*  m.Init("AnotherRootFile.root");
-*  m.Go(50);
-*  ... and so on ...
-*
-* After editing your Go function, you need to issue a gROOT->Reset() and
-* repeat the above sequence starting from the .L BadStripsCalib.cxx.
-*
-* If you only have a digi or only a recon root file... setup BadStripsCalib like this:
-* if you only have a recon root file:
-* BadStripsCalib *m = new BadStripsCalib("", "myReconFile.root")
-* if you only have a digi root file:
-* BadStripsCalib *m = new BadStripsCalib("myDigiFile.root", "")
-*
-* Version 0.1 17-Mar-1999 Richard Creation
-* Version 1.0 Spring, 2000 Revised for use with GLAST 1999 TestBeam
-* Version 1.5 25-Mar-2001  Revised for use with GLAST 2001 Balloon
-* Version 2.0 14-Aug-2001 Final version for GLAST 2001 Balloon
+* It is derived from the example RootTreeAnalysis
 */
 
 
@@ -66,8 +31,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #else  // for interactive use
-#include "iostream.h"
 #include "iostream.h"
 #include "string.h"
 class DigiEvent;
@@ -75,11 +40,50 @@ class ReconEvent;
 class McEvent;
 #endif
 
+#include "xml/IFile.h"
+
+namespace {
+    string stripBlanks(string &str) {
+        // strips off leading and trailing blanks
+        string temp = str;
+        if (temp.size()==0) return temp;
+        string::size_type pos;
+        pos = temp.find_first_not_of(" ", 0);
+        temp = temp.substr(pos);
+        pos = temp.find_last_not_of(" ", string::npos);
+        temp = temp.substr(0,pos+1);
+        return temp;
+    }
+
+    int splitString(string &input, string &LH, string &RH, char* delim) {
+        // splits off leftmost token from delim-delimited string
+        string::size_type pos;
+        pos = input.find(delim);
+        if (pos!=string::npos) {
+            LH = input.substr(0,pos);
+            RH = input.substr(pos);
+        } else {
+            LH = input;
+            RH = "";
+        }
+        LH = stripBlanks(LH);
+        RH = stripBlanks(RH);
+        return pos;
+    }
+}
+
+
 class BadStripsCalib {
 public :
+    /// specific to this application
+    /// number of planes per tower for this detector
+    int m_nPlanes;
+    /// list of tower numbers (also gives number of towers)
+    std::vector<int> m_towerNums;
+    /// vector of histograms
+    std::vector<TH1F*> m_tkrHists;
+
     /// Histogram file
-    TH1F        phaArr_A[500];
-    TH1F        phaArr_B[500];
     TFile       *histFile;
     /// Input digitization file
     TFile       *digiFile;   
@@ -119,7 +123,8 @@ public :
     
 	/// Standard ctor, where user provides the names of the input root files
 	/// and optionally the name of the output ROOT histogram file
-    BadStripsCalib( 
+    BadStripsCalib(
+        xml::IFile& myFile,
         const char* digiFileName, 
         const char* reconFileName="", 
         const char* mcFileName="",
@@ -131,6 +136,7 @@ public :
 
 	/// Special ctor which accepts TChains for input files
     BadStripsCalib( 
+        xml::IFile& myFile,
         TChain *digiChain, 
         TChain *recChain = 0, 
         TChain *mcChain = 0, 
@@ -181,6 +187,8 @@ private:
     /// reset all member variables
     void Clear(); 
 
+    /// read in relevant params and set up
+    void GetOptions(xml::IFile& myFile);
     /// Setup the Monte Calro output histograms
     void McHistDefine();
 	/// Setup the Digitization output histograms
@@ -208,31 +216,36 @@ private:
 };
 
 
-inline BadStripsCalib::BadStripsCalib() 
+inline BadStripsCalib::BadStripsCalib()
 {
     Clear();
 }
 
-inline BadStripsCalib::BadStripsCalib(const char* digiFileName, 
+inline BadStripsCalib::BadStripsCalib(
+                                   xml::IFile& myFile,
+                                   const char* digiFileName, 
                                    const char* reconFileName, 
                                    const char* mcFileName,
                                    char* prefix,
                                    char* xmlPath,
                                    char* histPath
-                                   )
+    )
+    :m_prefix(prefix), m_xmlPath(xmlPath), m_histPath(histPath)
+
 {
 	// Purpose and Method:  Standard constructor where the user provides the 
 	//  names of input ROOT files and optionally the name of the output ROOT
 	//  histogram file.
 
-    m_prefix   =  prefix;
-    m_xmlPath  = xmlPath;
-    m_histPath = histPath;
+    Clear();
+
+    //m_prefix   =  prefix;
+    //m_xmlPath  = xmlPath;
+    //m_histPath = histPath;
     printf(" opening files:\n\tdigi:\t%s\n\trecon:\t%s\n\tmc:\t%s\n",
 		digiFileName, reconFileName, mcFileName);
-    
-    Clear();
-    
+    GetOptions(myFile);
+      
     std::string histName;
     histName =  m_prefix+"_hist.root";
     std::cout << "Histogram file will be: " << histName << std::endl;
@@ -243,19 +256,23 @@ inline BadStripsCalib::BadStripsCalib(const char* digiFileName,
     Init(digiFileName, reconFileName, mcFileName);
 }
 
-inline BadStripsCalib::BadStripsCalib(TChain *digiChain, 
-                                   TChain *recChain, 
-                                   TChain *mcChain, 
-                                   char* prefix,
-                                   char* xmlPath,
-                                   char* histPath
-                                   )
+inline BadStripsCalib::BadStripsCalib(
+                                      xml::IFile& myFile,
+                                      TChain *digiChain, 
+                                      TChain *recChain, 
+                                      TChain *mcChain, 
+                                      char* prefix,
+                                      char* xmlPath,
+                                      char* histPath
+    )
+    :m_prefix(prefix), m_xmlPath(xmlPath), m_histPath(histPath)
 {
     Clear();
     
-    m_prefix   = prefix;
-    m_xmlPath  = xmlPath;
-    m_histPath = histPath;
+    //m_prefix   = prefix;
+    //m_xmlPath  = xmlPath;
+    //m_histPath = histPath;
+    GetOptions(myFile);
     std::string histName;
     histName = m_histPath+m_prefix+"_hist.root";
     SetHistFileName(const_cast<char*>(histName.c_str()));
@@ -289,10 +306,34 @@ inline BadStripsCalib::BadStripsCalib(TChain *digiChain,
     }
     */
 
-    m_StartEvent = 0;
-    
+    m_StartEvent = 0;   
 }
 
+inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
+{
+    if (myFile.contains("parameters","detectorType")) {
+        std::string temp = myFile.getString("parameters", "detectorType");
+        temp = stripBlanks(temp);
+        if(temp=="EM1") {
+            m_nPlanes = 8;
+            m_towerNums.push_back(0);
+        } else if(temp=="EM2") {
+            m_nPlanes = 10;
+            m_towerNums.push_back(0);
+        }else if(temp=="LAT_2Towers") {
+            m_nPlanes = 36;
+            m_towerNums.push_back(8);
+            m_towerNums.push_back(9);
+        }else if(temp=="LAT_Full") {
+            int tower;
+            for (tower=0; tower<16; ++tower) {
+                m_towerNums.push_back(tower);
+            }
+        } else {
+            std::cout << "no valid detector found" << std::endl;
+        }
+    }
+}
 
 inline BadStripsCalib::~BadStripsCalib() {
     histFile->Close();
@@ -331,8 +372,6 @@ inline BadStripsCalib::~BadStripsCalib() {
 
 	Clear();
 }
-
-
 
 inline void BadStripsCalib::Init(const char* digiFileName, const char* reconFileName, const char* mcFileName)
 {
