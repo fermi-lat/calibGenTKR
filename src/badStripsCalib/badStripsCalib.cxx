@@ -1,4 +1,4 @@
-#include "BadStripsCalib.h"
+#include "badStripsCalib.h"
 #include <string>
 #include <algorithm>
 
