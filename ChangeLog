@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: jrb  Fri Apr  1 00:26:09 PST 2005
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+Add EOH line so that MRvcmt rtag will put tag, date and user in for us
+
+    *
+------------------------------------------------------------
 User: jrb  Thu Mar 31 15:13:51 PST 2005
 calibGenTKR/src/xml2root
 
