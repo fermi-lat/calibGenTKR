@@ -119,7 +119,6 @@ public :
         const char* reconFileName="", 
         const char* mcFileName="",
         char*       prefix=""
-        //char *histFileName="Histograms.root"
     );
        
 
@@ -129,7 +128,6 @@ public :
         TChain *recChain = 0, 
         TChain *mcChain = 0, 
         char   *prefix=""
-        //char *histFileName="Histograms.root"
     );
 
     ~BadStripsCalib();  
@@ -274,6 +272,8 @@ inline BadStripsCalib::BadStripsCalib(TChain *digiChain,
         chainArr->Add(m_recChain);
     }
     */
+
+    m_StartEvent = 0;
     
 }
 

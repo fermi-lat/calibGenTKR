@@ -15,37 +15,31 @@
 @brief Driver for bad strips calibration
 */
 
-/* attempt to do a bit of processing on the options file
-// doesn't work, don't know why
-std::string getString(std::string& inString) {
-    std::string temp = inString;
-    int npos;
-    npos = temp.find("X");
-    if(npos>-1) temp = temp.substr(0, npos-1);
-    npos = temp.find_first_not_of(" ");
-    if(npos>-1) {
-        temp = temp.substr(npos);
+std::string stripBlanks(std::string &str) {
+    std::string temp = str;
+    if (temp.size()==0) return temp;
+    std::string::size_type pos;
+    pos = temp.find_first_not_of(" ", 0);
+    temp = temp.substr(pos);
+    pos = temp.find_last_not_of(" ", string::npos);
+    temp = temp.substr(0,pos+1);
+    return temp;
+}
+
+int splitString(std::string &input, std::string &LH, std::string &RH, char* delim) {
+    std::string::size_type pos;
+    pos = input.find(delim);
+    if (pos!=string::npos) {
+        LH = input.substr(0,pos);
+        RH = input.substr(pos);
     } else {
-        temp = "";
-        return temp;
+        LH = input;
+        RH = "";
     }
-
-    npos = temp.find_last_not_of(" ");
-    if(npos>-1) temp = temp.substr(0,npos+1);
-    return temp;
+    LH = stripBlanks(LH);
+    RH = stripBlanks(RH);
+    return pos;
 }
-
-std::string nextString(std::ifstream& file) {
-    std::string temp("");
-
-    while (temp=="") {
-        std::getline(file, temp);
-        std::cout << "*" << temp << "*" << std::endl;
-        temp = getString(temp);
-    }
-    return temp;
-}
-*/
 
 int main(int argn, char** argc) {
     
@@ -54,54 +48,71 @@ int main(int argn, char** argc) {
 #endif
 
     bool attended = false;
-
-    // current example is from glast_03/EM2003/rootFiles/em_v1r030302p5/digi/ 
-    std::string sourceDirectory("c:/Glast/files/em/");
-    std::string sourceFile("ebf031006235353_digi.root");
-    std::string outputString   ("ebf031006235353");
+    std::string temp;
+ 
+    std::string sourceFilePath;
+    std::string sourceFile;
+    std::string outputString;
     std::string path = ::getenv("CALIBGENTKRROOT");
     unsigned int numEvents = 5000000;
-
+ 
     std::string xmlFile(path+"/src/test/options.xml");
 
     if(argn > 1) {
         xmlFile = argc[1];
-        std::cout << "Reading in user-specified options file: " <<  xmlFile << std::endl;
+        std::cout << "Reading in user-specified options file: " <<  xmlFile 
+            << std::endl << std::endl;
     }
     
     xml::IFile myFile(xmlFile.c_str());
 
-    if (myFile.contains("parameters","sourceDirectory")) {
-        sourceDirectory = myFile.getString("parameters", "sourceDirectory");
+    if (myFile.contains("parameters","sourceFilePath")) {
+        temp = myFile.getString("parameters", "sourceFilePath");
+        sourceFilePath = stripBlanks(temp);
     }
-    if (myFile.contains("parameters","sourceFile")) {
-        sourceFile = myFile.getString("parameters", "sourceFile");
+
+    std::cout << "Sourcefile path: " << sourceFilePath << std::endl;
+
+    std::string sourceFileString;
+    if (myFile.contains("parameters","sourceFileList")) {
+        temp = myFile.getString("parameters", "sourceFileList");
+        sourceFileString = stripBlanks(temp);
     }
+
+    int nFiles = 0;
+    std::cout << "Input files:" << std::endl;
+    TChain* digiChain = new TChain("Digi");    
+    std::string::size_type pos;
+    temp = sourceFileString;
+    while(temp!="") {
+        pos = splitString(temp, sourceFile, temp, " ");
+        if (sourceFile!="") nFiles++;
+        digiChain->Add((sourceFilePath+sourceFile).c_str());
+        std::cout << "   " << nFiles << ") " << sourceFile << std::endl;
+    }
+
     if (myFile.contains("parameters","outputString")) {
-        outputString    = myFile.getString("parameters", "outputString");
-    }
-    if (myFile.contains("parameters","numEvents")) {
-        numEvents       = myFile.getInt   ("parameters", "numEvents");
+        temp = myFile.getString("parameters", "outputString");
+        outputString = temp;
     }
 
-    std::cout << "Source Directory: " << sourceDirectory << std::endl;
-    std::cout << "Source File: " << sourceFile << std::endl;
     std::cout << "Output file prefix in directory /output: " << outputString << std::endl;
-    std::cout << "Maximum number of events to process: " << numEvents << std::endl;
 
-    std::string digiFileName = sourceDirectory+sourceFile;
-    // not needed for this calibration
-    std::string mcFileName = "";
-    std::string reconFileName = "";
+    if (myFile.contains("parameters","numEvents")) {
+        numEvents = myFile.getInt("parameters", "numEvents");
+    }
+
+    std::cout << "Maximum number of events to process: " << numEvents << std::endl;
 
     std::string outputPrefix(path+"/output/"+outputString);
 
-    BadStripsCalib r(digiFileName.c_str(), reconFileName.c_str(), mcFileName.c_str(), 
-        const_cast<char*>(outputPrefix.c_str()));
-    r.Go(numEvents);
-	r.Finish();
-    r.WriteHist();
-    
+    BadStripsCalib* r = 
+        new BadStripsCalib(digiChain, 0, 0, const_cast<char*>(outputPrefix.c_str()));  
+    r->Go(numEvents);
+    r->Finish();
+    r->WriteHist();
+    delete r;
+   
     if (attended) {
         char istop;
         std::cout << "Hit Enter key to exit: ";

@@ -149,16 +149,23 @@ void BadStripsCalib::Go(Int_t numEvents)
         digiTree->SetBranchStatus("m_runId", 1);
     }
 
-    std::cout << "Output of digiTree->Print() " << std::endl;
-    digiTree->Print();
+    if (m_digiChain) {
+        m_digiChain->SetBranchStatus("*",0);  // disable all branches
+        // activate desired branches
+        //m_digiChain->SetBranchStatus("m_cal*",1);  
+        m_digiChain->SetBranchStatus("m_tkr*",1);  
+        //m_digiChain->SetBranchStatus("m_acd*",1);
+        m_digiChain->SetBranchStatus("m_eventId", 1); 
+        m_digiChain->SetBranchStatus("m_runId", 1);
+    }
 
     // determine how many events to process
     Int_t nentries = GetEntries();
     std::cout << "\nNum Events in File is: " << nentries << std::endl;
     Int_t curI;
     Int_t nMax = TMath::Min(numEvents+m_StartEvent,nentries);
-    Int_t evtTot = TMath::Min(numEvents+m_StartEvent,nentries-m_StartEvent);
-    std::cout << evtTot << " events will be read, starting at event " 
+    Int_t nEventsToRead = TMath::Min(numEvents+m_StartEvent,nentries-m_StartEvent);
+    std::cout << nEventsToRead << " events will be read, starting at event " 
               << m_StartEvent << std::endl;
 
     if (m_StartEvent == nentries) {
@@ -178,11 +185,13 @@ void BadStripsCalib::Go(Int_t numEvents)
 
 
     // BEGINNING OF EVENT LOOP
+    int nTimeCheck;
+    if      (nEventsToRead<50000)  {nTimeCheck = 5000;}
+    else if (nEventsToRead<100000) {nTimeCheck = 10000;}
+    else if (nEventsToRead<200000) {nTimeCheck = 20000;}
+    else                           {nTimeCheck = 50000;}
     for (Int_t ievent=m_StartEvent; ievent<nMax; ievent++, curI=ievent) {
-        if ((ievent-m_StartEvent)%5000==0) {
-            //t1 = time(0);
-            //double tdiff = difftime(t1, t0);
-            //t0 = t1;
+        if ((ievent-m_StartEvent)%nTimeCheck==0) {
             std::cout << ievent-m_StartEvent << " events processed, " 
                 << " Real time " << timer.RealTime()
                 << " Cpu time " << timer.CpuTime() << std::endl;
@@ -402,10 +411,10 @@ void BadStripsCalib::Finish()
 
         listout << indent2.c_str() << "<inputSample startTime=\"" << time1.c_str()   
             << "\" stopTime=\"" << time2.c_str() 
-            << "\" triggers=\"physics\" mode=\"normal\" source=\"VDG\" >" 
+            << "\" triggers=\"physics\" mode=\"normal\" source=\"XXX\" >" 
             << std::endl;
 
-        listout << indent3.c_str() << "Output from BadStripsCalib, on run ebf031006235353"
+        listout << indent3.c_str() << "Output from BadStripsCalib"
             << std::endl;
         listout << indent2.c_str() << "</inputSample>" << std::endl;
         listout << indent1.c_str() << "</generic>" << std::endl;
