@@ -1,5 +1,16 @@
 ------------------------------------------------------------
 User: lsrea  Mon Mar  1 12:24:43 PST 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx options.xml win_options.xml 
+Log Message:
+make compatible with EngineeringModel xml
+fix up use of namespace for gcc3.2
+new parameters to control direction of output files
+    *
+------------------------------------------------------------
+User: lsrea  Mon Mar  1 12:24:43 PST 2004
 calibGenTKR/src
 
 Modified Files:
