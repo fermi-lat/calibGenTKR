@@ -30,7 +30,7 @@ int main(int argn, char** argc) {
             << std::endl << std::endl;
     }
     
-    xml::IFile myFile(xmlFile.c_str());
+    xmlBase::IFile myFile(xmlFile.c_str());
 
 
     // This code allows the same options file to be used for both windows and unix

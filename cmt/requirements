@@ -9,7 +9,7 @@ version v1r4
 use digiRootData *
 use reconRootData *
 #use RootPolicy v4r* 
-use xml *
+use xmlBase *
 use facilities *
 use ROOT v* IExternal
 
