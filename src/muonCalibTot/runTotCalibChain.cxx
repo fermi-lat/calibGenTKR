@@ -92,6 +92,10 @@ int main(int argn, char** argc) {
 
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
+  std::string xmlFileName = line;
+
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
   std::string rootFileName = line;
 
   do{ getline(inputFile, line);
@@ -104,9 +108,13 @@ int main(int argn, char** argc) {
 
   totCalib calib;
   if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
-    return 0;
+    return 1;
 
-  calib.genTot(digiChain, reconChain, txtFileName.c_str(), 
-	       rootFileName.c_str());
+  if( !calib.setOutputFiles( txtFileName.c_str(), xmlFileName.c_str(), 
+			     rootFileName.c_str() ) ) return 1;
+
+  int nEvents = calib.setInputRootFiles( digiChain, reconChain );
+
+  calib.calibChargeScale( nEvents );
 
 }
