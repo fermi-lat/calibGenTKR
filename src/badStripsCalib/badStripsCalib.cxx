@@ -71,8 +71,8 @@ void BadStripsCalib::DigiHistDefine() {
     for (j = 0; j<nTowers; ++j) {
         int tower = m_towerNums[j];
         for (i = 0; i<m_nPlanes; ++i) {
-            sprintf(buf,"TKR%d-%d",j,i);
-            sprintf(buf1,"Strips hit in tower %d,plane %d",j,i);
+            sprintf(buf,"TKR %d-%d",tower,i);
+            sprintf(buf1,"Strips hit in tower %d, plane %d",tower, i);
             int nStrips = numLadders[i]*stripsPerLadder;
             m_tkrHists[m_nPlanes*j +i] = new TH1F(buf, buf1, nStrips, -0.5, nStrips-0.5);
         }

@@ -3,13 +3,25 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/unix_options.xml,v 1.1 2004/07/17 15:28:00 lsrea Exp $"
-       cvs_Revision="$Revision: 1.1 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/unix_options.xml,v 1.2 2004/07/19 20:15:25 lsrea Exp $"
+       cvs_Revision="$Revision: 1.2 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
 
     <item name="detectorType" value="EM1"> 
     valid types are EM1, EM2, LAT_2Towers and LAT_Full</item>
+
+    <!-- another way to characterize the configuration: specify directly -->
     
+    <!-- here's what LAT_2Towers looks like-->
+    <!--
+    <item name="nPlanes"    value="36">
+    the number of planes in each tower, including dummies</item>
+      
+    <item name="towerNumbers"     value= "{8, 9}"  >
+    Numbers (0-15) of instrumented towers.
+    All others will be expected to produce no hits </item>
+    -->
+       
     <item name="maxOccupancy" value = "0.01"> occupancy above ambient to qualify as hot</item>
     
     <item name="sourceFilePath" value= "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/" > 

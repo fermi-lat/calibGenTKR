@@ -80,7 +80,7 @@ int main(int argn, char** argc) {
     cout << "Output histPath:    " << histPath << endl;
     cout << "Output file prefix: " << outputPrefix << endl;
 
-    if (myFile.contains("parameters","numEvents")) {
+    if (myFile.contains("parameters","nEvents")) {
         numEvents = myFile.getInt("parameters", "numEvents");
     }
 

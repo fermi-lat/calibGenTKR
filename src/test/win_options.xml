@@ -3,14 +3,26 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.4 2004/07/17 15:28:00 lsrea Exp $"
-       cvs_Revision="$Revision: 1.4 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.5 2004/07/19 20:15:25 lsrea Exp $"
+       cvs_Revision="$Revision: 1.5 $" >
 
   <section name="parameters"> input parameters for TKR bad strips calibration
     
     <item name="detectorType" value="EM1"> 
-    valid types are EM1, EM2, LAT_2Towers and LAT_Full </item>
-        
+    valid types are EM1, EM2, LAT_2Towers and LAT_Full (default = EM1) </item>
+    
+    <!-- another way to characterize the configuration: specify directly -->
+    
+    <!-- here's what LAT_2Towers looks like-->
+    <!--
+    <item name="nPlanes"    value="36">
+    the number of planes in each tower, including dummies</item>
+      
+    <item name="towerNumbers"     value= "{8, 9}"  >
+    Numbers (0-15) of instrumented towers.
+    All others will be expected to produce no hits </item>
+    -->
+       
     <item name="maxOccupancy" value = "0.01"> occupancy above ambient to qualify as hot</item>
 
     <item name="sourceFilePath" value= "c:/Glast/files/em/" > 
@@ -27,6 +39,7 @@
     <item name="histPath"        value= "">  path to location of output hist files </item>
     <item name="outputPrefix"    value= "ebf031006235353" >  prefix for output files </item>   
     <item name="numEvents"       value= "500000" > max number of events to read </item>
+    
   </section>
 </ifile>
 
