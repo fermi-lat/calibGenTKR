@@ -3,8 +3,8 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/unix_options.xml,v 1.2 2004/07/19 20:15:25 lsrea Exp $"
-       cvs_Revision="$Revision: 1.2 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/unix_options.xml,v 1.3 2004/07/21 00:33:53 lsrea Exp $"
+       cvs_Revision="$Revision: 1.3 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
 
     <item name="detectorType" value="EM1"> 
@@ -24,7 +24,7 @@
        
     <item name="maxOccupancy" value = "0.01"> occupancy above ambient to qualify as hot</item>
     
-    <item name="sourceFilePath" value= "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/" > 
+    <item name="sourceFilePath" value= "/nfs/farm/g/glast/u08/EM2003/rootFiles/em_v1r030302p5/digi/" > 
           common part of the path to the digi.root files (may be blank) </item>
     <item name="sourceFileList"      
         value= " ebf031006235353_digi.root  " > 

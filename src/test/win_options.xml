@@ -3,8 +3,8 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.5 2004/07/19 20:15:25 lsrea Exp $"
-       cvs_Revision="$Revision: 1.5 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/win_options.xml,v 1.6 2004/07/21 00:33:53 lsrea Exp $"
+       cvs_Revision="$Revision: 1.6 $" >
 
   <section name="parameters"> input parameters for TKR bad strips calibration
     
@@ -28,7 +28,7 @@
     <item name="sourceFilePath" value= "c:/Glast/files/em/" > 
           common part of the path to the digi.root files (may be blank) </item>
     <!-- the original files are found at: 
-           /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/
+           /nfs/farm/g/glast/u08/EM2003/rootFiles/em_v1r030302p5/digi/
     -->
     <item name="sourceFileList"      
         value= " ebf031006235353_digi.root  " > 
