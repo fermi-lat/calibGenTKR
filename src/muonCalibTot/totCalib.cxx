@@ -626,14 +626,17 @@ void totCalib::fitTot()
 
 	if( peak > 0.0 ){
 	  float chargeScale = 5.0 / peak;
-	  m_chargeScale[iPlane][iView][iDiv] = chargeScale;
-	  if( fabs(chargeScale-1) > 0.5 )
+	  if( fabs(chargeScale-1) > 0.3 ){
 	    std::cout << "WARNIN, Abnormal charge scale: " << chargeScale 
-		      << ", (L,V)=(" << iPlane << ", " << iView << ")" 
-		      << std::endl;
+		      << ", (L,V,FE)=(" << iPlane << ", " << iView << ", " 
+		      << iDiv << ")" << std::endl;
 	    m_log << "WARNIN, Abnormal charge scale: " << chargeScale 
-		      << ", (L,V)=(" << iPlane << ", " << iView << ")" 
-		      << std::endl;
+		  << ", (L,V,FE)=(" << iPlane << ", " << iView << ", " 
+		  << iDiv << ")" << std::endl;
+	    if( chargeScale > 1.3 ) chargeScale = 1.3;
+	    if( chargeScale < 0.7 ) chargeScale = 0.7;
+	  }
+	  m_chargeScale[iPlane][iView][iDiv] = chargeScale;
 	}
 	
 	m_log << "Charge " << iPlane << ' ' << iView << ' ' << pos << ' '
@@ -757,6 +760,12 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
     int len = conList->getLength();   
+    if( len != g_nPlane*g_nView ){
+      std::cout << "ERROR: # of layers in xml is invalid, " << len << std::endl;
+      m_log << "ERROR: # of layers in xml is invalid, " << len << std::endl;
+      return false;
+    }
+
     for(int i=0; i<len; i++){//each layers loop
       DOMNode* childNode = conList->item(i);
       int tray = xml::Dom::getIntAttribute(childNode, "tray");
@@ -772,12 +781,22 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       if( which == "bot" ) layer -= 1;
       if( layer >= g_nPlane || layer < 0 ){
 	std::cout << "Invalid layer id: " << layer << std::endl;
+	m_log << "Invalid layer id: " << layer << std::endl;
 	continue;
       }
 	
+      int numStrip = 0;
       while( getParam( elder, layer, view ) ){
 	younger = xml::Dom::getSiblingElement( elder );
 	elder = younger;
+	numStrip++;
+      }
+      if( numStrip != g_nStrip ){
+	std::cout << "ERROR: # of strips in xml is invalid, " 
+		  << numStrip << std::endl;
+	m_log << "ERROR: # of strips in xml is invalid, " 
+	      << numStrip << std::endl;
+	return false;
       }
     }
   }
@@ -796,7 +815,10 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
     return false;
   }
   if( stripId < 0 || stripId >= g_nStrip ){
-    std::cout << "Invalid strip id: " << stripId << std::endl;
+    std::cout << "ERROR: (L,V)=(" << layer << ", " << view 
+	      << "), Invalid strip id: " << stripId << std::endl;
+    m_log << "ERROR: (L,V)=(" << layer << ", " << view 
+	  << "), Invalid strip id: " << stripId << std::endl;
     return true;
   }
 
@@ -804,19 +826,28 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
     quad = xml::Dom::getDoubleAttribute(totElement,"quad");
   }
   catch(xml::DomException ex){
-    cout << "no attribute for quad" << endl;
+    cout << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
+	 << view << ", "  << stripId << ")" << endl;
+    m_log << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
+	  << view << ", "  << stripId << ")" << endl;
   }
   try{
     gain = xml::Dom::getDoubleAttribute(totElement,"slope");
   }
   catch(xml::DomException ex){
-    cout << "no attribute for gain" << endl;
+    cout << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
+	 << view << ", "  << stripId << ")" << endl;
+    m_log << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
+	  << view << ", "  << stripId << ")" << endl;
   }
   try{
     offset = xml::Dom::getDoubleAttribute(totElement,"intercept");
   }
   catch(xml::DomException ex){
-    cout << "no attribute for offset" << endl;
+    cout << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
+	 << view << ", "  << stripId << ")" << endl;
+    m_log << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
+	  << view << ", "  << stripId << ")" << endl;
   }
   /*  cout <<"stripId" << stripId
        <<",offset" << offset
