@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Sat Jan 29 02:04:21 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+get time stamp and runid from tot xml, and startTime and stopTime from rcReports. use common output directory for all output files.
+
+    *
+------------------------------------------------------------
 User: htajima  Fri Jan 28 23:39:01 PST 2005
 calibGenTKR/src/muonCalibTot
 
