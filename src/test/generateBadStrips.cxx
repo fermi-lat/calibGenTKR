@@ -1,4 +1,4 @@
-#include "BadStripsCalib.h"
+#include "badStripsCalib.h"
 #include "TSystem.h"
 #include <iostream>
 #include <fstream>

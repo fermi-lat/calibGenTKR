@@ -14,12 +14,12 @@ set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
 apply_pattern package_include
 
-include_dirs ${CALIBGENTKRROOT}/src/BadStripsCalib
+include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib
 
 apply_pattern package_headers
 
 macro_append calibGenTKR_headers "" \
-                 WIN32 " ../src/BadStripsCalib/BadStripsCalib.h "
+                 WIN32 " ../src/badStripsCalib/badStripsCalib.h "
 
 macro_append ROOT_libs " -lHist " \
              WIN32 " ${ROOT_PATH}/lib/libHist.lib "
@@ -28,5 +28,5 @@ macro_append ROOT_libs " -lHist " \
 # One could also pass in their own set of ROOT files as follows:
 
 application doBadStripsCalib test/generateBadStrips.cxx \
-            BadStripsCalib\BadStripsCalib.cxx \
+            BadStripsCalib\badStripsCalib.cxx \
             ${calibGenTKR_headers}
