@@ -455,6 +455,7 @@ void BadStripsCalib::Finish()
 
         for (ihist=0; ihist<numHists; ++ihist){
             badCount = 0; testCount = false;
+            int totalBadCount = 0;
             bool newHist = true;
             int iTower = ihist/m_nPlanes;
             int tower = m_towerNums[iTower];
@@ -605,12 +606,14 @@ void BadStripsCalib::Finish()
                                     listout << first << " ";
                                     if (debug) std::cout << first << " ";
                                     badCount++;
+                                    totalBadCount++;
                                     if (badCount>0 && badCount%10==0) listout << std::endl  << "                    "; 
                                 } else {
                                     int item;
                                     for (item=first; item<=last; ++item) {
                                         listout << item << " ";
                                         badCount++;
+                                        totalBadCount++;
                                         if (badCount>0 && badCount%10==0) listout << std::endl  << "                    ";
                                     }
                                 }
@@ -627,6 +630,7 @@ void BadStripsCalib::Finish()
                     }
                 }   
                 if (badCount ) listout << "\" />" << std::endl; 
+                if (totalBadCount==0) listout << ">" ;
                 if (testCount && !(average[ihist]==0&&itest==0)) listout << indent2.c_str() << "</uniplane>" << std::endl;
             }
             if (debugf) std::cout << "hist " << ihist << " done"<<std::endl;         
