@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include "totCalib.h"
+#include "facilities/Util.h"
  
 using std::string;
 using std::cout;
@@ -17,10 +18,24 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   m_reconEvent(0), m_digiFile(0), m_digiTree(0),
   m_digiEvent(0), m_totFile(0)
 {
+  
+  std::string m_dtd = "$(CALIBUTILROOT)/xml/";
+  int status = facilities::Util::expandEnvVar(&m_dtd);
+  if(status==-1)
+    {
+      std::cout<<m_dtd.c_str()<<" not found!"<<std::endl;
+    }
 
   std::cout << analysisType << std::endl;
-  if( analysisType == "badStrips" ) m_badStrips = true;
-  else m_badStrips = false;
+  if( analysisType == "badStrips" ) 
+    {
+      m_badStrips = true;
+      m_dtd += "badStrips.dtd";
+    }
+  else {
+    m_badStrips = false;
+    m_dtd += "tkrCalibration.dtd";
+  }
 
   // get version number from CVS string
   std::string tag = "$Name:  $";
@@ -30,7 +45,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.16 $";
+  std::string version = "$Revision: 1.17 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -568,8 +583,6 @@ void totCalib::fillTot()
   TObjArray* tracks = tkrRecon->getTrackCol();
   TkrTrack* tkrTrack = dynamic_cast<TkrTrack*>(tracks->First());
 
-  int nHit = tkrTrack->GetEntries();
-
   TIter trk1HitsItr(tkrTrack);
   TkrTrackHit* pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
@@ -578,21 +591,19 @@ void totCalib::fillTot()
     if(cluster) {
       //a cluster is attached to the hit: proceed
       
-      int planeId = cluster->getLayer();
+      int layer = cluster->getLayer();
       int view = cluster->getTkrId().getView();
 
-      int layer = g_nLayer - planeId - 1;
-    
       // require only a single strip
       if(cluster->getSize() != 1) continue;
 
       for(int iStrip = cluster->getFirstStrip(); 
 	  iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 	
-	int tot = findTot(planeId, view, iStrip);
+	int tot = cluster->getRawToT();
 	if( tot == 0 ) continue;
 	
-	std::cout<<"plane: "<<planeId<<" view: "<<view<<" digi tot: "<<tot<<" cluster tot: "<<cluster->getRawToT()<<std::endl;
+	//	std::cout<<"plane: "<<layer<<" view: "<<view<<" digi tot: "<<tot<<std::endl;
 	//	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
 	
 	float charge = calcCharge(layer, view, iStrip, tot);
@@ -1184,14 +1195,10 @@ void totCalib::fillOccupancy()
 #else
   TkrTrack* tkrTrack = dynamic_cast<TkrTrack*>(tracks->First());
 
-  int nHitPlane = tkrTrack->GetEntries();
-
   int nHits[g_nLayer][g_nView][g_nWafer+1];
   for( int layer=0; layer<g_nLayer; layer++)
     for( int view=0; view<g_nView; view++)
       for( int i=0; i<g_nWafer+1; i++) nHits[layer][view][i] = 0;
-
-  int nHit = tkrTrack->GetEntries();
 
   TIter trk1HitsItr(tkrTrack);
   TkrTrackHit* pTrk1Hit = 0;
@@ -1200,23 +1207,20 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) 
       {
-	int plane = cluster->getPlane();
+	int layer = cluster->getLayer();
 	int  view = cluster->getTkrId().getView();
-	
-	//	int layer = g_nLayer - planeId - 1;
-	//	int view = (viewId == TkrCluster::X) ? 0 : 1;
 	
 	for(int iStrip = cluster->getFirstStrip(); 
 	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-	  nHits[plane][view][iStrip/384]++;
-	  nHits[plane][view][g_nWafer]++;
+	  nHits[layer][view][iStrip/384]++;
+	  nHits[layer][view][g_nWafer]++;
 	}
     }
   }
 
   bool display = false;
   float dx=0.0, dy=0.0, pos, apos;
-  int view, aview;
+  int aview;
 
   trk1HitsItr.Reset();
   pTrk1Hit = 0;
@@ -1225,14 +1229,12 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 
-    int layer = cluster->getPlane();
+    int layer = cluster->getLayer();
     int view = cluster->getTkrId().getView();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
     float deltay = m_pos.Y()+m_dir.Y()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.Y();
 
-
-    //    int layer = g_nLayer - planeId - 1;
     if( view == 0 ){
       aview = 1;
       if( fabs( deltax - dx ) > 2.0  ){
@@ -1285,7 +1287,7 @@ void totCalib::fillOccupancy()
       const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
       if(!cluster) continue;
 
-      int layer = cluster->getPlane();
+      int layer = cluster->getLayer();
       int view = cluster->getTkrId().getView();
       
       //      int layer = g_nLayer - planeId - 1;

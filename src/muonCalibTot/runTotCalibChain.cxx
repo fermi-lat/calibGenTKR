@@ -90,9 +90,9 @@ int main(int argn, char** argc) {
   std::string outputDir = line;
 
   // dtd name for output xml
-  do{ getline(inputFile, line);
-  } while( line[0] == '#' );
-  std::string dtd = line;
+  //  do{ getline(inputFile, line);
+  //  } while( line[0] == '#' );
+  //  std::string dtd = line;
 
   // muon MIP calibration or bad strip
   do{ getline(inputFile, line);
@@ -107,7 +107,7 @@ int main(int argn, char** argc) {
     if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
       return 1;
 
-  calib.setDtd( dtd );
+  //  calib.setDtd( dtd );
 
   int nEvents = calib.setInputRootFiles( rootDir.c_str(), reconDir.c_str(), 
 					 runIds );
