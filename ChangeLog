@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Thu Mar  3 14:59:34 PST 2005
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+a bunch of Windows fixes (but not all!)
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r0, operation: add
 Package: calibGenTKR
