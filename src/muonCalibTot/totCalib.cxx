@@ -36,6 +36,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
     m_badStrips = false;
     m_dtd += "tkrCalibration.dtd";
   }
+  std::cout << "DTD file: " << m_dtd << std::endl;
 
   // get version number from CVS string
   std::string tag = "$Name:  $";
@@ -45,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.17 $";
+  std::string version = "$Revision: 1.18 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -90,30 +91,30 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
       if( iView != 0 ) vw = 'Y';
       if( !m_badStrips ){
 	char name[] = "var000";
-	sprintf(name,"var%2d%1d", layer, iView);
+	sprintf(name,"var%d%d", layer, iView);
 	m_totStrip[layer][iView] = new TGraphErrors(g_nDiv);
 	m_totStrip[layer][iView]->SetName(name);
 	
 	char temp[] = "varCorr000";
-	sprintf(temp,"varCorr%2d%1d", layer, iView);
+	sprintf(temp,"varCorr%d%d", layer, iView);
 	m_chargeStrip[layer][iView] = new TGraphErrors(g_nDiv);
 	m_chargeStrip[layer][iView]->SetName(temp);
       }
       if( m_badStrips ){
 	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer) {
 	  char name1[] = "occX17w3";
-	  sprintf(name1,"occ%c%2dw%1d", vw, layer, iWafer);
+	  sprintf(name1,"occ%c%dw%d", vw, layer, iWafer);
 	  m_nHits[layer][iView][iWafer] = new TH1F(name1, name1, 1536, 0, 1536);
 	}
       }
       else{
 	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 	  char name1[] = "totX17fe0004";
-	  sprintf(name1,"tot%c%2dfe%04d", vw, layer, iDiv);
+	  sprintf(name1,"tot%c%dfe%d", vw, layer, iDiv);
 	  m_totHist[layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
 
 	  char name2[] = "chargeX00fe0000";
-	  sprintf(name2,"charge%c%2dfe%04d", vw, layer, iDiv);
+	  sprintf(name2,"charge%c%dfe%d", vw, layer, iDiv);
 	  m_chargeHist[layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
 	}
       }
@@ -334,12 +335,18 @@ bool totCalib::readRcReports( const char* reportDir,
 
 bool totCalib::parseRcReport( const char* reportFile )
 {
-  xmlBase::XmlParser* parsercReport = new xmlBase::XmlParser(true);
+#ifdef OLD_RECON
+  using namespace xml;
+#else
+  using namespce xmlBase;
+#endif
+
+  XmlParser* parsercReport = new XmlParser(true);
   DOMDocument* docrcReport = 0;
   try{
     docrcReport = parsercReport -> parse(reportFile);
   }
-  catch (xmlBase::ParseException ex) {
+  catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
     delete parsercReport;
@@ -353,9 +360,9 @@ bool totCalib::parseRcReport( const char* reportFile )
     string timeStamp;
     DOMElement* rcElt = docrcReport -> getDocumentElement();
     try {
-      timeStamp = xmlBase::Dom::getAttribute(rcElt, "timestamp");
+      timeStamp = Dom::getAttribute(rcElt, "timestamp");
     }
-    catch (xmlBase::DomException ex) {
+    catch (DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
@@ -366,11 +373,11 @@ bool totCalib::parseRcReport( const char* reportFile )
 
     for( unsigned int i=0; i<keywords.size(); i++){
       DOMElement* childElt 
-	= xmlBase::Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
+	= Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
       try {
-	values.push_back( xmlBase::Dom::getTextContent(childElt) );
+	values.push_back( Dom::getTextContent(childElt) );
       }
-      catch (xmlBase::DomException ex) {
+      catch (DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
 	return false;
       }
@@ -450,7 +457,7 @@ void totCalib::analyzeEvent(int nEvents)
 		<< "%) in " << elapsedTime << " s, "
 		<< iEvent/elapsedTime << " events/s, "
 		<< rEvents << " events, "
-		<< rEvents*elapsedTime/iEvent
+		<< int(1.0*rEvents*elapsedTime/iEvent)
 		<< " s to go" << std::endl;
       if( mEvent > nEvents*0.095 ) mEvent += nEvents * 0.1;
       else mEvent += nEvents * 0.01;
@@ -648,8 +655,10 @@ void totCalib::fitTot()
 
   for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
+      char cvw = 'X';
+      if( iView != 0 ) cvw = 'Y';
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
-	std::cout << "Layer: " << layer << ", View: " << iView 
+	std::cout << "Layer: " << cvw << layer 
 		  << ", FE: " << iDiv << std::endl;
 	m_chargeScale[layer][iView][iDiv] = 1.0;
 
@@ -659,11 +668,11 @@ void totCalib::fitTot()
 	float rms = m_totHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  std::cout << "Layer: " << layer << ", View: " << iView 
+	  std::cout << "Layer: " << cvw << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
-	  m_log << "Layer: " << layer << ", View: " << iView 
+	  m_log << "Layer: " << cvw << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -704,7 +713,7 @@ void totCalib::fitTot()
 	rms = m_chargeHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  m_log << "Layer: " << layer << ", View: " << iView 
+	  m_log << "Layer: " << cvw << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -823,13 +832,19 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   m_log << "TOT xml file: " << filename << std::endl;
   
 
+#ifdef OLD_RECON
+  //typedef xml xmlBase;
+  using namespace xml;
+#else
+  using namespace xmlBase;
+#endif
 
-  xmlBase::XmlParser* parser = new xmlBase::XmlParser(true);
+  XmlParser* parser = new XmlParser(true);
   DOMDocument* doc = 0;
   try {
     doc = parser->parse(filename.c_str());
   }
-  catch (xmlBase::ParseException ex) {
+  catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
     delete parser;
@@ -840,25 +855,25 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 
     // look up generic attributes
     DOMElement* docElt = doc->getDocumentElement();
-    DOMElement* attElt = xmlBase::Dom::findFirstChildByName(docElt,"generic");
+    DOMElement* attElt = Dom::findFirstChildByName(docElt,"generic");
     //DOMElement* isElt = xml::Dom::findFirstChildByName(attElt,"inputSample");
     
     try {
-      m_tot_runid  = xmlBase::Dom::getAttribute(attElt, "runId");
+      m_tot_runid  = Dom::getAttribute(attElt, "runId");
       //m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
     }
-    catch (xmlBase::DomException ex) {
+    catch (DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
     // look up tower attributes
-    attElt = xmlBase::Dom::findFirstChildByName(docElt,"tower");
+    attElt = Dom::findFirstChildByName(docElt,"tower");
     try {
-      m_tower_col  = xmlBase::Dom::getIntAttribute(attElt, "col");
-      m_tower_row = xmlBase::Dom::getIntAttribute(attElt, "row");
-      m_tower_serial  = xmlBase::Dom::getAttribute(attElt, "hwserial");
+      m_tower_col  = Dom::getIntAttribute(attElt, "col");
+      m_tower_row = Dom::getIntAttribute(attElt, "row");
+      m_tower_serial  = Dom::getAttribute(attElt, "hwserial");
     }
-    catch (xmlBase::DomException ex) {
+    catch (DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
@@ -878,12 +893,12 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 
     for(int i=0; i<len; i++){//each layers loop
       DOMNode* childNode = conList->item(i);
-      int tray = xmlBase::Dom::getIntAttribute(childNode, "tray");
-      std::string which = xmlBase::Dom::getAttribute(childNode, "which");
+      int tray = Dom::getIntAttribute(childNode, "tray");
+      std::string which = Dom::getAttribute(childNode, "which");
       std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
      
       //get first child element
-      DOMElement* elder = xmlBase::Dom::getFirstChildElement(childNode);
+      DOMElement* elder = Dom::getFirstChildElement(childNode);
       DOMElement* younger;
 
       int view = (tray+1) % 2;
@@ -897,7 +912,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 	
       int numStrip = 0;
       while( getParam( elder, layer, view ) ){
-	younger = xmlBase::Dom::getSiblingElement( elder );
+	younger = Dom::getSiblingElement( elder );
 	elder = younger;
 	numStrip++;
       }
@@ -915,12 +930,19 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 }
 
 bool totCalib::getParam(const DOMElement* totElement, int layer, int view){  
+#ifdef OLD_RECON
+  //typdef xml xmlBase;
+  using namespace xml;
+#else
+  using namespace xmlBase;
+#endif
+
   int stripId;
   double quad,gain,offset;
   try{
-    stripId = xmlBase::Dom::getIntAttribute( totElement, "id" );
+    stripId = Dom::getIntAttribute( totElement, "id" );
   } //if there isn't next strip,go to next layer or view
-  catch(xmlBase::DomException ex){
+  catch(DomException ex){
     cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
     return false;
   }
@@ -933,27 +955,27 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
   }
 
   try{
-    quad = xmlBase::Dom::getDoubleAttribute(totElement,"quad");
+    quad = Dom::getDoubleAttribute(totElement,"quad");
   }
-  catch(xmlBase::DomException ex){
+  catch(DomException ex){
     cout << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
 	  << view << ", "  << stripId << ")" << endl;
   }
   try{
-    gain = xmlBase::Dom::getDoubleAttribute(totElement,"slope");
+    gain = Dom::getDoubleAttribute(totElement,"slope");
   }
-  catch(xmlBase::DomException ex){
+  catch(DomException ex){
     cout << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
 	  << view << ", "  << stripId << ")" << endl;
   }
   try{
-    offset = xmlBase::Dom::getDoubleAttribute(totElement,"intercept");
+    offset = Dom::getDoubleAttribute(totElement,"intercept");
   }
-  catch(xmlBase::DomException ex){
+  catch(DomException ex){
     cout << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
@@ -1058,9 +1080,9 @@ void totCalib::fillXml()//takuya
 	else which = "bot";
       }
       if( iView == 0 )
-	output << "   <!-- layer X" << layer << " -->" << std::endl;
+	output << "   <!-- **** layer X" << layer << " **** -->" << std::endl;
       else
-	output << "   <!-- layer Y" << layer << " -->" << std::endl;
+	output << "   <!-- **** layer Y" << layer << " **** -->" << std::endl;
       output << "   <uniplane tray=\"" << tray << "\" which=\""
 	     << which << "\">" << endl;
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
@@ -1322,7 +1344,6 @@ void totCalib::findBadStrips( int nEvents )
   
   for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int view = 0; view != g_nView; ++view) {
-      int numDead = 0, numPartial = 0;
       char vw = 'X';
       if( view != 0 ) vw = 'Y';
       m_log << "Layer: " << vw << layer << std::endl;
@@ -1343,25 +1364,23 @@ void totCalib::findBadStrips( int nEvents )
 	
 	if( deadFlag || sum < sumThreshold ){
 	  m_log << strip << ": " << sum << ", ";
+	  int nBad = 0;
 	  for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
 	    m_log << " " << occ[iWafer];
 	  }
 	  if( sum == 0 ){
-	    m_deadStrips[layer][view].push_back(strip); //for xml output
-	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
-	    numDead++;	
-	    m_log << " **" << std::endl;
+	    //categorize as disconnected
+	    m_deadStrips[layer][view][1].push_back(strip); 
+	    m_log << " *1*" << std::endl;
 	    continue;
 	  }
-	  else if( sum < sumThreshold ){
-	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
-	    numPartial++;
-	    m_log << " *" << std::endl;
-	    continue;
-	  }
+	  // intermittently disconnected
+	  else if( sum < sumThreshold ) nBad = 3;
+
 	  sum = occ[0];
 	  m_log << ", ";
 	  bool flagBreak = false;
+	  int occBreak = 0;
 	  for(int iWafer = 1; iWafer != g_nWafer; ++iWafer){
 	    int value = occ[iWafer];
 	    sum += value;
@@ -1374,24 +1393,30 @@ void totCalib::findBadStrips( int nEvents )
 	      m_poissonDist->Fill( p_poisson );
 	      if( p_poisson < poissonThreshold ){ 
 		flagBreak = true;
-		break;
+		occBreak += occ[iWafer];
 	      }
 	    }
 	  }
-	  if( flagBreak ){
-	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
-	    numPartial++;
-	    m_log << " *" << std::endl;
+	  if( flagBreak )
+	    if( occBreak == 0 ) nBad = 2; // partial disconnected
+	    else nBad = 4; // intermittent partial disconnected
+	  if( nBad > 0 ){
+	    m_deadStrips[layer][view][nBad].push_back(strip);
+	    m_log << " *" << nBad << "*" << std::endl;
 	    continue;
 	  }
 	  else m_log << std::endl;
 	}
       }
       
-      m_log << vw << layer << ", # of dead channel: " << numDead 
-	    << ", # of partial dead channel: " << numPartial << std::endl;
-      std::cout << vw << layer << ", # of dead channel: " << numDead 
-		<< ", # of partial dead channel: " << numPartial << std::endl;
+      m_log << vw << layer << ", # of bad channels:";
+      std::cout << vw << layer << ", # of bad channel:";
+      for( int iBad=0; iBad<g_nBad; iBad++){
+	m_log << " " << m_deadStrips[layer][view][iBad].size();
+	std::cout << " " << m_deadStrips[layer][view][iBad].size();
+      }
+      m_log << std::endl;
+      std::cout << std::endl;
     }
   }
 
@@ -1400,103 +1425,105 @@ void totCalib::findBadStrips( int nEvents )
 void totCalib::fillBadStrips()
 {
 
-  std::string suffix = "AllDeadStrips";
-  for( int badness=0; badness!=2; badness++ ){
-    std::string filename = m_outputDir;
-    char fname[] = "/TkrFMX_AllDeadStrips_050131-161012.xml";
-    if( badness == 1 ) suffix = "DeadStrips";
+  std::string filename = m_outputDir;
+  char fname[] = "/TkrFMX_DeadStrips_050131-161012.xml";
     
-    sprintf( fname, "/%s_%s_%s-%s.xml", m_tower_serial.c_str(), 
-	     suffix.c_str(), m_dateStamp.c_str(), m_timeStamp.c_str() );
+  sprintf( fname, "/%s_DeadStrips_%s-%s.xml", m_tower_serial.c_str(), 
+	   m_dateStamp.c_str(), m_timeStamp.c_str() );
 
-    filename += fname;
+  filename += fname;
 
-    std::ofstream output( filename.c_str() );
-    if( output ){
-      std::cout << "Open output xml file: " << filename << std::endl;
-      m_log << "Output xml file: " << filename << std::endl;
-    }
-    else{
-      std::cout << filename << " cannot be opened." << std::endl;
-      return;
-    }
-    std::ifstream dtd( m_dtd.c_str() );
-    if( dtd ){
-      std::cout << "Open dtd file: " << m_dtd << std::endl;
-      m_log << "dtd file: " << m_dtd << std::endl;
-    }
-    else{
-      std::cout << m_dtd << " cannot be opened." << std::endl;
-      return;
-    }
+  std::ofstream output( filename.c_str() );
+  if( output ){
+    std::cout << "Open output xml file: " << filename << std::endl;
+    m_log << "Output xml file: " << filename << std::endl;
+  }
+  else{
+    std::cout << filename << " cannot be opened." << std::endl;
+    return;
+  }
+  std::ifstream dtd( m_dtd.c_str() );
+  if( dtd ){
+    std::cout << "Open dtd file: " << m_dtd << std::endl;
+    m_log << "dtd file: " << m_dtd << std::endl;
+  }
+  else{
+    std::cout << m_dtd << " cannot be opened." << std::endl;
+    return;
+  }
 
-    output << "<?xml version=\"1.0\" ?>" << std::endl
-	   << "<!DOCTYPE badStrips [" << std::endl;
+  output << "<?xml version=\"1.0\" ?>" << std::endl
+	 << "<!DOCTYPE badStrips [" << std::endl;
     
-    std::string line;
-    while( dtd ){
-      getline(dtd, line);
-      output << line << std::endl;
-    }
+  std::string line;
+  while( dtd ){
+    getline(dtd, line);
+    output << line << std::endl;
+  }
     
-    output << "]>" << std::endl;
+  output << "]>" << std::endl;
     
     
-    if( badness == 0 )
-      output << "<badStrips badType=\"dead\">" << std::endl
-	     << "<!-- includes partial dead strips; "
-	     << " intermitent and/or wrire bond broken " 
-	     << "between SSD wafers -->" << std::endl;
-    else
-      output << "<badStrips badType=\"dead\"><!-- dead strips -->" << std::endl ;
+  output << "<badStrips badType=\"dead\">" << std::endl
+	 << "<!-- includes partial dead strips; "
+	 << " intermitent and/or wrire bond broken " 
+	 << "between SSD wafers -->" << std::endl;
 
-    output << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
-	   << " creatorVersion =\"" << m_version
-	   << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_last_run 
-	   << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
-	   << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
-	   << m_startTime << "\" stopTime=\"" << m_stopTime 
-	   << "\" triggers=\"TKR\">" << std::endl
-	   << " Cosmic ray muon data for occupancy analysis " << std::endl
-	   << "    </inputSample>" << std::endl
-	   << "  </generic>" << std::endl
-	   << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
-	   << "\" hwserial=\"" << m_tower_serial << "\">" << std::endl;
-    
-    
-    for(int layer = 0; layer != g_nLayer; ++layer) {
-      for(int view = 0; view != g_nView; ++view) {
-	int tray;
-	string which;
-	if(view==0){
-	  tray = 2 * ( layer/2 ) + 1;
-	  if(layer%2==0) which = "bot";
-	  else which = "top";
-	}
-	else{
-	  tray = 2 * ( (layer+1)/2 );
-	  if(layer%2==0) which = "top";
-	  else which = "bot";
-	}
-	if( view == 0 ){
-	  output << "    <!-- layer X" << layer << " -->";
-	}
-	else{
-	  output << "    <!-- layer Y" << layer << " -->";
-	}
+  output << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
+	 << " creatorVersion =\"" << m_version
+	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_last_run 
+	 << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
+	 << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
+	 << m_startTime << "\" stopTime=\"" << m_stopTime 
+	 << "\" triggers=\"TKR\">" << std::endl
+	 << " Cosmic ray muon data for occupancy analysis " << std::endl
+	 << "    </inputSample>" << std::endl
+	 << "  </generic>" << std::endl
+	 << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
+	 << "\" hwserial=\"" << m_tower_serial << "\"" 
+	 << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+	 << " nOnbdData=\"false\"" << ">" << std::endl;
 
-	std::vector<int>* deadStrips;
-	if( badness == 0 ) deadStrips = &m_partialDeadStrips[layer][view];
-	else deadStrips = &m_deadStrips[layer][view];
-	int itr = deadStrips->size();
-	output << " <!-- # of dead strips: " << itr << " -->" << std::endl 
+  //dead, disconnected, partial disconnected, intermittently disconnected, 
+  //intermittently partial disconnexcted
+  int howBad[g_nBad] = {2,4,12,20,28}; 
+  std::string cBad[g_nBad] = {"dead","disconnected","partially disconnected",
+			      "intermittently disconnected",
+			      "intermittently partially connected"};
+
+  for(int layer = 0; layer != g_nLayer; ++layer) {
+    for(int view = 0; view != g_nView; ++view) {
+      int tray;
+      string which;
+      if(view==0){
+	tray = 2 * ( layer/2 ) + 1;
+	if(layer%2==0) which = "bot";
+	else which = "top";
+      }
+      else{
+	tray = 2 * ( (layer+1)/2 );
+	if(layer%2==0) which = "top";
+	else which = "bot";
+      }
+      if( view == 0 ){
+	output << "    <!-- layer X" << layer << " -->" << std::endl;
+      }
+      else{
+	output << "    <!-- layer Y" << layer << " -->" << std::endl;
+      }
+      
+      for( int iBad=0; iBad!=g_nBad; iBad++ ){
+	int itr = m_deadStrips[layer][view][iBad].size();
+	output << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
+	       << " -->" << std::endl 
 	       << "    <uniplane tray=\"" << tray << "\" which=\""
-	       << which << "\"";
+	       << which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+	       << " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
 	
 	if(itr){
 	  output << ">" << std::endl << "      <stripList strips=\"";
 	  for(int i=0;i!=itr;i++)
-	    output << " " << deadStrips->at(i);
+	    output << " " << m_deadStrips[layer][view][iBad][i];
 	  output << "\"/>" << std::endl 
 		 << "    </uniplane>" << std::endl;
 	}
@@ -1504,10 +1531,10 @@ void totCalib::fillBadStrips()
 	
       }
     }
-    output << "  </tower>" << std::endl << "</badStrips>";
-    output.close();
-    dtd.close();
   }
+  output << "  </tower>" << std::endl << "</badStrips>";
+  output.close();
+  dtd.close();
 }
 
 //-----------------------------------------------------------------------
