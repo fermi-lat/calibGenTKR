@@ -1,4 +1,33 @@
-/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040115200042_digi.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040115025118_digi.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040116164625_digi.root 
-/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040115200042_recon.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040115025118_recon.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040116164625_recon.root 
+#
+# ****************************************
+# job option file for muon TOT calibration
+# ****************************************
+#
+# digi root files separated by space
+#
+/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/digi.root
+#
+# recon root files separated by space
+#
+/nfs/farm/g/glast/u01/Data/slacTkrTowerA/em_v3r0407p3/398000278/AllEvents/recon.root
+#
+# output text file
+#
 ../output/tot.txt
+#
+# output root file
+#
 ../output/tot.root
+#
+# directory name for TOT conversion files. (TE602)
+#
+/nfs/farm/g/glast/u12/EM2/rawData
+#
+# run id for TOT converstion files. Only one run is allowed.
+#
+398000364
+
+
+
+
+

@@ -49,7 +49,8 @@ int main(int argn, char** argc) {
 
   // first line is a list of recon root files, separated by " " 
   std::string line;
-  getline(inputFile, line);
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' ); // skip the line with #.
 
   std::vector<std::string> digiFileNames;
 
@@ -67,7 +68,8 @@ int main(int argn, char** argc) {
   }
 
   // second line is a list of recon root files, separated by " "
-  getline(inputFile, line);
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' ); // skip the line with #.
 
   std::vector<std::string> reconFileNames;
 
@@ -84,13 +86,25 @@ int main(int argn, char** argc) {
 
   }
 
-  std::string txtFileName;
-  inputFile >> txtFileName;
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string txtFileName = line;
 
-  std::string rootFileName;
-  inputFile >> rootFileName;
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string rootFileName = line;
+
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string totConvDir = line;
+
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string totConvRunId = line;
 
   totCalib calib;
+  if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
+    return 0;
 
   calib.genTot(digiChain, reconChain, txtFileName.c_str(), 
 	       rootFileName.c_str());
