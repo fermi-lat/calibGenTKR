@@ -89,8 +89,7 @@ class totCalib {
 
   bool getParam(const DOMElement* totElement,int layer,int view);
 
-  float calcCharge(int planeId, TkrCluster::view viewId, int iStrip, 
-		   int tot) const;
+  float calcCharge(int layer, int view, int iStrip, int tot) const;
 
   static const int g_nLayer = 18;
   // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer

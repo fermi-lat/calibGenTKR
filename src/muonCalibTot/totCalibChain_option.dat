@@ -5,7 +5,7 @@
 #
 # top directory for root files
 #
-/nfs/farm/g/glast/u12/EM2/rootData/
+/nfs/farm/g/glast/u12/EM2/rootData
 #
 # recon directory
 #
@@ -33,7 +33,7 @@ calib-v1r0
 #
 # output Directory
 #
-/nfs/farm/g/glast/u02/TKR/TE603/
+/nfs/farm/g/glast/u02/TKR/TE603
 
 
 
