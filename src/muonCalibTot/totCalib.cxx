@@ -11,15 +11,20 @@ using std::endl;
 XERCES_CPP_NAMESPACE_USE
 
 
-totCalib::totCalib(): m_reconFile(0), m_reconTree(0), 
-    m_reconEvent(0), m_digiFile(0), m_digiTree(0),
-    m_digiEvent(0), m_totFile(0)
+totCalib::totCalib( const std::string analysisType = "MIP calibration" ): 
+  m_reconFile(0), m_reconTree(0), 
+  m_reconEvent(0), m_digiFile(0), m_digiTree(0),
+  m_digiEvent(0), m_totFile(0)
 {
+
+  std::cout << analysisType << std::endl;
+  if( analysisType == "badStrips" ) m_badStrips = true;
+  else m_badStrips = false;
 
   m_tower_row=0;
   m_tower_col=0;
   m_tower_serial="TKrFMX";
-  m_version="1.9";
+  m_version="1.13";
   m_first_run = 999999999;
   m_last_run = 0;
   m_tot_runid = "0";
@@ -27,44 +32,54 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
   m_stopTime="01/20 2005, 22:52 GMT";
 
   // get time 
-  time_t rawtime;
+  time_t rawtime=0;
   time( &rawtime );
   // format time into a null-terminated string
   char nts[] = "050124-000000";
-  size_t ntsmax;
+  size_t ntsmax=10;
   strftime( nts, ntsmax, "%y%m%d", gmtime( &rawtime ) );
   m_dateStamp = nts;
   strftime( nts, ntsmax, "%H%M%S", gmtime( &rawtime ) );
   m_timeStamp = nts;
 
-  for(int layer = 0; layer != g_nPlane; ++layer) {
+  if( m_badStrips ){
+    m_occDist = new TH1F("occDist", "occDist", 200, 0, 200);
+    m_aPos[0] = new TH1F("apos0", "apos0", 100, -50, 50);
+    m_aPos[1] = new TH1F("apos1", "apos1", 100, -50, 50);
+    m_aPos[2] = new TH1F("apos2", "apos2", 100, -50, 50);
+    m_aPos[3] = new TH1F("apos3", "apos3", 100, -50, 50);
+  }
+
+  for(int layer = 0; layer != g_nLayer; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
-      char name[] = "var00";
-      sprintf(name,"var%1d%1d", layer, iView);
-      m_totStrip[layer][iView] = new TGraphErrors(g_nDiv);
-      m_totStrip[layer][iView]->SetName(name);
-
-      char temp[] = "varCorr00";
-      sprintf(temp,"varCorr%1dp%1dv", layer, iView);
-      m_chargeStrip[layer][iView] = new TGraphErrors(g_nDiv);
-      m_chargeStrip[layer][iView]->SetName(temp);
-
-      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-
-	char name1[] = "tot0p0v0000fe";
-	sprintf(name1,"tot%1dp%1dv%04dfe", layer, iView, iDiv);
-
-	m_totHist[layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
-
-	char name2[] = "charge0p0v0000fe";
-	sprintf(name2,"charge%1dp%1dv%04dfe", layer, iView, iDiv);
-
-	m_chargeHist[layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
-
-
+      if( !m_badStrips ){
+	char name[] = "var000";
+	sprintf(name,"var%2d%1d", layer, iView);
+	m_totStrip[layer][iView] = new TGraphErrors(g_nDiv);
+	m_totStrip[layer][iView]->SetName(name);
+	
+	char temp[] = "varCorr000";
+	sprintf(temp,"varCorr%2dl%1dv", layer, iView);
+	m_chargeStrip[layer][iView] = new TGraphErrors(g_nDiv);
+	m_chargeStrip[layer][iView]->SetName(temp);
       }
+      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
+	if( m_badStrips ){
+	  char name1[] = "occ00p0v0w";
+	  sprintf(name1,"occ%2dl%1dv%1dw", layer, iView, iDiv);
+	  m_nHits[layer][iView][iDiv] = new TH1F(name1, name1, 1536, 0, 1536);
+	}
+	else{
+	  char name1[] = "tot00p0v0000fe";
+	  sprintf(name1,"tot%2dl%1dv%04dfe", layer, iView, iDiv);
+	  m_totHist[layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
 
+	  char name2[] = "charge00p0v0000fe";
+	  sprintf(name2,"charge%2dl%1dv%04dfe", layer, iView, iDiv);
+	  m_chargeHist[layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
+	}
+      }
     }
   }
 }
@@ -74,18 +89,32 @@ totCalib::~totCalib()
   if(m_totFile == 0) return;
 
   m_totFile->cd();
-  
-  for(int layer = 0; layer != g_nPlane; ++layer) {
+
+  if( m_badStrips ){
+    m_occDist->Write(0, TObject::kOverwrite);
+    m_aPos[0]->Write(0, TObject::kOverwrite);
+    m_aPos[1]->Write(0, TObject::kOverwrite);
+    m_aPos[2]->Write(0, TObject::kOverwrite);
+    m_aPos[3]->Write(0, TObject::kOverwrite);
+  }
+
+  for(int layer = 0; layer != g_nLayer; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
 
-      m_totStrip[layer][iView]->Write(0, TObject::kOverwrite);
-      m_chargeStrip[layer][iView]->Write(0, TObject::kOverwrite);
+      if( !m_badStrips ){
+	m_totStrip[layer][iView]->Write(0, TObject::kOverwrite);
+	m_chargeStrip[layer][iView]->Write(0, TObject::kOverwrite);
+      }
 
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 
-	m_totHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
-	m_chargeHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
+	if( m_badStrips )
+	  m_nHits[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
+	else{
+	  m_totHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
+	  m_chargeHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
+	}
 
       }
     }
@@ -94,16 +123,18 @@ totCalib::~totCalib()
   m_totFile->Close();
 }
 
-
 bool totCalib::setOutputFiles( const char* outputDir )
 {
   m_outputDir = outputDir;
+  std::string testId = "TE603";
+  if( m_badStrips ) testId = "TE403";
 
   std::string filename;
-  char fname[] = "/TE603_050121-0000.root";
+  char fname[] = "/TE603_050121-000000.root";
 
   filename = m_outputDir;
-  sprintf( fname, "/TE603_%s-%s.log", m_dateStamp.c_str(), m_timeStamp.c_str() );
+  sprintf( fname, "/%s_%s-%s.log", testId.c_str(), 
+	   m_dateStamp.c_str(), m_timeStamp.c_str() );
   filename += fname;
   m_log.open( filename.c_str() );
   if( m_log )
@@ -114,7 +145,8 @@ bool totCalib::setOutputFiles( const char* outputDir )
   }
 
   filename = m_outputDir;
-  sprintf( fname, "/TE603_%s-%s.root", m_dateStamp.c_str(), m_timeStamp.c_str() );
+  sprintf( fname, "/%s_%s-%s.root", testId.c_str(), 
+	   m_dateStamp.c_str(), m_timeStamp.c_str() );
   filename += fname;
   m_totFile = new TFile( filename.c_str(), "RECREATE" );
   if( m_totFile ){
@@ -354,21 +386,39 @@ void totCalib::calibChargeScale( int nEvents )
 
   analyzeEvent(nEvents);
 
-  fitTot();
-  fillXml();//takuya
+  if( m_badStrips ){
+    findBadStrips();
+  }
+  else{
+    fitTot();
+    fillXml();//takuya
+  }
 }
 
 void totCalib::analyzeEvent(int nEvents) 
 {
   int mEvent = nEvents * 0.01;
-  for(int iEvent = 0; iEvent != nEvents; ++iEvent) {
-    
+  if( mEvent < 100 ) mEvent = 100;
+  time_t startTime, currentTime;
+  time( &startTime );
+
+  for(int iEvent = 0; iEvent != nEvents; ++iEvent) {    
     if( iEvent >= mEvent ){
-      std::cout << "# of events: " << iEvent << " " << nEvents 
-		<< ",  " << iEvent*101/nEvents << "%" << std::endl;
+      time( &currentTime );
+      int elapsedTime = currentTime - startTime;
+      if( elapsedTime <= 0 ) elapsedTime = 1;
+      int rEvents = nEvents - iEvent;
+      std::cout << "# of events: " << iEvent << " (" << iEvent*101/nEvents 
+		<< "%) in " << elapsedTime << " s, "
+		<< iEvent/elapsedTime << " events/s, "
+		<< rEvents << " events, "
+		<< rEvents*elapsedTime/iEvent
+		<< " s to go" << std::endl;
       if( mEvent > nEvents*0.095 ) mEvent += nEvents * 0.1;
       else mEvent += nEvents * 0.01;
     }
+    if( m_reconEvent ) m_reconEvent->Clear();
+    if( m_digiEvent ) m_digiEvent->Clear();
 
     m_reconTree->GetEntry(iEvent);
     m_digiTree->GetEntry(iEvent);
@@ -378,11 +428,22 @@ void totCalib::analyzeEvent(int nEvents)
 
     if(! passCut()) continue;
 
-    getTot();
-
-    fillTot();
+    if( m_badStrips ) fillOccupancy();
+    else{
+      getTot();
+      fillTot();
+    }
   }
   std::cout << "Data scan finished." << std::endl;
+  time( &currentTime );
+  std::cout << "total # of events: " << nEvents 
+		<< " in " << (currentTime-startTime) << " s, "
+		<< nEvents/(currentTime-startTime) << " events/s"
+		<< std::endl;
+  m_log << "total # of events: " << nEvents 
+	<< " in " << (currentTime-startTime) << " s, "
+	<< nEvents/(currentTime-startTime) << " events/s"
+	<< std::endl;
 
 }
 
@@ -396,21 +457,12 @@ void totCalib::getTot()
     assert(tkrDigi != 0);
 
     int iLayer = tkrDigi->getBilayer();
-    int iPlane = g_nLayer - 1 - iLayer;
-    //std::cout << iLayer << ", " << iPlane <<  std::endl;
 
-    GlastAxis::axis view = tkrDigi->getView();
-    if(view == GlastAxis::X) {
-      m_totX[iPlane][0] = tkrDigi->getToT(0);
-      m_totX[iPlane][1] = tkrDigi->getToT(1);
-    }
-    else if(view == GlastAxis::Y) {
-      m_totY[iPlane][0] = tkrDigi->getToT(0);
-      m_totY[iPlane][1] = tkrDigi->getToT(1);
-    }
-    else {
-      cout << "Unknown view: " << int(view) << endl;
-    }
+    GlastAxis::axis viewId = tkrDigi->getView();
+    int view = (viewId == GlastAxis::X) ? 0 : 1;
+    m_tot[iLayer][view][0] = tkrDigi->getToT(0);
+    m_tot[iLayer][view][1] = tkrDigi->getToT(1);
+    m_lastRC0Strip[iLayer][view] = tkrDigi->getLastController0Strip();
   } 
 }
  
@@ -429,44 +481,13 @@ void totCalib::retrieveCluster()
   }
 }
 
-int totCalib::findTot(int planeId, TkrCluster::view viewId, int stripId)
+int totCalib::findTot(int layerId, TkrCluster::view viewId, int stripId)
 {
-  if(planeId != 2) {
-    if(stripId < g_nStrip/2) {
-      if(viewId == TkrCluster::X) {
-	return m_totX[planeId][0];
-      }
-      else {
-	return m_totY[planeId][0];
-      }
-    }
-    else {
-      if(viewId == TkrCluster::X) {
-	return m_totX[planeId][1];
-      }
-      else {
-	return m_totY[planeId][1];
-      }
-    }
-  }
-  else {
-    if(stripId < g_nStrip/g_nFecd * 4) {
-      if(viewId == TkrCluster::X) {
-	return m_totX[planeId][0];
-      }
-      else {
-	return m_totY[planeId][0];
-      }
-    }
-    else {
-      if(viewId == TkrCluster::X) {
-	return m_totX[planeId][1];
-      }
-      else {
-	return m_totY[planeId][1];
-      }
-    }
-  }
+  int view = (viewId == TkrCluster::X) ? 0 : 1;
+  if(stripId <= m_lastRC0Strip[layerId][view] )
+    return m_tot[layerId][view][0];
+  else
+    return m_tot[layerId][view][1];
 }
 
 void totCalib::fillTot() 
@@ -504,7 +525,7 @@ void totCalib::fillTot()
     for(int iStrip = cluster->getFirstStrip(); 
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 
-      int tot = findTot(planeId, viewId, iStrip);
+      int tot = findTot(layer, viewId, iStrip);
       if( tot == 0 ) continue;
 
       float charge = calcCharge(layer, view, iStrip, tot);
@@ -545,7 +566,7 @@ void totCalib::fitTot()
   ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
   std::cout << "Start fit." << std::endl;
 
-  for(int layer = 0; layer != g_nPlane; ++layer) {
+  for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
 	std::cout << "Layer: " << layer << ", View: " << iView 
@@ -664,7 +685,7 @@ bool totCalib::readTotConvFile(const char* dir, const char* runid)
 {
   string filename;
   char fname[] = "/398000364/TkrTotGainNt_LayerY17_398000364.tnt";
-  for(int layer = 0; layer != g_nPlane; ++layer) {
+  for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       filename = dir;
       if( iView == 0 )
@@ -769,7 +790,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
     int len = conList->getLength();   
-    if( len != g_nPlane*g_nView ){
+    if( len != g_nLayer*g_nView ){
       std::cout << "ERROR: # of layers in xml is invalid, " << len << std::endl;
       m_log << "ERROR: # of layers in xml is invalid, " << len << std::endl;
       return false;
@@ -788,7 +809,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       int view = (tray+1) % 2;
       int layer = tray;
       if( which == "bot" ) layer -= 1;
-      if( layer >= g_nPlane || layer < 0 ){
+      if( layer >= g_nLayer || layer < 0 ){
 	std::cout << "Invalid layer id: " << layer << std::endl;
 	m_log << "Invalid layer id: " << layer << std::endl;
 	continue;
@@ -1003,7 +1024,9 @@ void totCalib::fillXml()//takuya
 	 << "  <tower row='" << m_tower_row << "' col='" << m_tower_col 
 	 << "' hwserial='" << m_tower_serial << "'>" << endl;
 
-  for(int layer = 0; layer != g_nPlane; ++layer) {
+  output.precision(3);
+
+  for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       int tray;
       string which;
@@ -1032,6 +1055,178 @@ void totCalib::fillXml()//takuya
   }
   output     << "  </tower>" << endl;  
   output     << " </chargeScale>" << endl;
+}
+
+
+void totCalib::fillOccupancy() 
+{
+  retrieveCluster();
+
+  TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
+
+  TObjArray* tracks = tkrRecon->getTrackCol();
+  TkrKalFitTrack* tkrTrack = dynamic_cast<TkrKalFitTrack*>(tracks->At(0));
+
+  int nHitPlane = tkrTrack->getNumHits();
+
+  int nHits[g_nLayer][g_nView][5];
+  for( int layer=0; layer<g_nLayer; layer++)
+    for( int view=0; view<g_nView; view++)
+      for( int i=0; i<5; i++) nHits[layer][view][i] = 0;
+
+  for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
+    const TkrHitPlane* plane = tkrTrack->getHitPlane(iPlane);
+    std::map<int, TkrCluster*>::const_iterator itr = m_cluster.find(plane->getIdHit());
+    assert(itr != m_cluster.end());
+    TkrCluster* cluster = itr->second;
+    int planeId = cluster->getPlane();
+    TkrCluster::view viewId = cluster->getView();
+
+    int layer = g_nLayer - planeId - 1;
+    int view = (viewId == TkrCluster::X) ? 0 : 1;
+
+    for(int iStrip = cluster->getFirstStrip(); 
+	iStrip != int(cluster->getLastStrip()+1); ++iStrip){
+      nHits[layer][view][iStrip/384]++;
+      nHits[layer][view][4]++;
+    }
+  }
+
+  bool display = false;
+  float dx=0.0, dy=0.0, pos, apos;
+  int view, aview;
+
+  for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
+
+    const TkrHitPlane* plane = tkrTrack->getHitPlane(iPlane);
+    std::map<int, TkrCluster*>::const_iterator itr = m_cluster.find(plane->getIdHit());
+    assert(itr != m_cluster.end());
+    TkrCluster* cluster = itr->second;
+    int planeId = cluster->getPlane();
+    TkrCluster::view viewId = cluster->getView();
+    TVector3 position = cluster->getPosition();
+    float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
+    float deltay = m_pos.Y()+m_dir.Y()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.Y();
+
+    int layer = g_nLayer - planeId - 1;
+    if( viewId == TkrCluster::X ){
+      view = 0;
+      aview = 1;
+      if( fabs( deltax - dx ) > 2.0  ){
+	//std::cout << layer << " " << view << ", " << deltax << " " << dx
+	//  << " ***********************" << std::endl;
+	break;
+      }
+      deltax -= dx;
+      dx += deltax;
+      pos = deltax;
+      apos = deltay;
+    }
+    else{
+      view = 1;
+      aview = 0;
+      if( fabs( deltay - dy ) > 2.0  ){
+	//std::cout << layer << " " << view << ", " << deltay << " " << dy
+	//  << " ***********************" << std::endl;
+	break;
+      }
+      deltay -= dy;
+      dy += deltay;
+      pos = deltay;
+      apos = deltax;
+    }
+
+    //std::cout << layer << " " << view << ", " << pos << " " << apos
+    //      << std::endl;
+
+    for(int iStrip = cluster->getFirstStrip(); 
+	iStrip != int(cluster->getLastStrip()+1); ++iStrip)
+      if( nHits[layer][aview][4] > 0 ){
+	for( int iw=0; iw<4; iw++ )
+	  if( nHits[layer][aview][iw] > 0 ){
+	    m_nHits[layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
+	    if( layer==4 && view==1 && iw==1 )
+	      if( abs(iStrip-570)<30 || abs(iStrip-680)<70 ){
+		std::cout << layer << " " << view << "; " << apos-89.5*(iw-1.5) << std::endl;
+		display = true;  
+	      }
+	  }
+      }
+      else
+	for( int iw=0; iw<4; iw++ )
+	  if( fabs( apos-89.5*(iw-1.5) ) < 42 ){
+	    m_nHits[layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
+	  }
+  }
+  if( display ){
+    for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
+      const TkrHitPlane* plane = tkrTrack->getHitPlane(iPlane);
+      std::map<int, TkrCluster*>::const_iterator itr = m_cluster.find(plane->getIdHit());
+      assert(itr != m_cluster.end());
+      TkrCluster* cluster = itr->second;
+      int planeId = cluster->getPlane();
+      TkrCluster::view viewId = cluster->getView();
+      
+      int layer = g_nLayer - planeId - 1;
+      int view = (viewId == TkrCluster::X) ? 0 : 1;
+
+      std::cout << layer << " " << view;
+      for(int iStrip = cluster->getFirstStrip(); 
+	  iStrip != int(cluster->getLastStrip()+1); ++iStrip)
+	std::cout << " " << iStrip;
+      std::cout << std::endl;
+    }
+  }
+}
+
+
+void totCalib::findBadStrips()
+{  
+  // define Gaussian convolved Laudau function.
+  std::cout << "Start fit." << std::endl;
+
+  for(int layer = 0; layer != g_nLayer; ++layer) {
+    for(int view = 0; view != g_nView; ++view) {
+      m_log << "Layer: " << layer << ", View: " << view << std::endl;
+      std::cout << "Layer: " << layer << ", View: " << view << std::endl;
+      int deadChannel[g_nStrip][5];
+      for(int iDiv = 0; iDiv != 4; ++iDiv){
+	TH1F *occHist = m_nHits[layer][view][iDiv];
+	for( int strip=0; strip<g_nStrip; strip++){
+	  int occupancy = occHist->GetBinContent( strip + 1 );
+	  m_occDist->Fill( occupancy+0.1 );
+	  if( iDiv == 0 ) deadChannel[strip][4] = 0;
+	  if( occupancy < 4 ){
+	    deadChannel[strip][4]++;
+	    deadChannel[strip][iDiv] = 1;
+	  }
+	  else deadChannel[strip][iDiv] = 0;
+	}
+      }
+      int numDead = 0, numPartial = 0;
+      for( int strip=0; strip<g_nStrip; strip++)
+	if( deadChannel[strip][4] > 0 ){
+	  if( deadChannel[strip][4] == 4 ) numDead++;
+	  else numPartial++;
+	  std::cout << strip << ", ";
+	  m_log << strip << ", ";
+	  for(int iDiv = 0; iDiv != 4; ++iDiv)
+	    if( deadChannel[strip][iDiv]  > 0 ){
+	      std::cout << " " << iDiv;
+	      m_log << " " << iDiv;
+	    }
+	  std::cout << std::endl;
+	  m_log << std::endl;
+	}
+
+      m_log << layer << " " << view << ", # of dead channel: " << numDead 
+		<< ", # of partial dead channel: " << numPartial << std::endl;
+      std::cout << layer << " " << view << ", # of dead channel: " << numDead 
+		<< ", # of partial dead channel: " << numPartial << std::endl;
+    }
+  }
 }
 
 

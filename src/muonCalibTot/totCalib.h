@@ -45,7 +45,7 @@ using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 class totCalib {
  public:
 
-  totCalib();
+  totCalib( const std::string );
   ~totCalib();
 
   int setInputRootFiles( const char* digi, const char* recon );
@@ -91,6 +91,9 @@ class totCalib {
 
   float calcCharge(int layer, int view, int iStrip, int tot) const;
 
+  void fillOccupancy();
+  void findBadStrips();
+
   static const int g_nLayer = 18;
   // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
   static const int g_nPlane = 18;
@@ -106,6 +109,10 @@ class totCalib {
 
   TH1F* m_totHist[g_nPlane][g_nView][g_nDiv];
   TH1F* m_chargeHist[g_nPlane][g_nView][g_nDiv];
+
+  TH1F* m_nHits[g_nPlane][g_nView][4];
+  TH1F* m_aPos[4];
+  TH1F* m_occDist;
 
   float m_chargeScale[g_nPlane][g_nView][g_nDiv];
 
@@ -124,8 +131,8 @@ class totCalib {
   // reconstructed event vertex and direction
   TVector3 m_pos, m_dir;
 
-  int m_totX[g_nPlane][2];
-  int m_totY[g_nPlane][2];
+  int m_tot[g_nPlane][g_nView][2];
+  int m_lastRC0Strip[g_nPlane][g_nView];
 
   // Index of cluster hit in the TkrSiClusters
   std::map<int, TkrCluster*> m_cluster;
@@ -144,6 +151,8 @@ class totCalib {
   std::string m_tower_serial, m_version, m_tot_runid, 
     m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
+  // bad strips analysis flag
+  bool m_badStrips;
 };
 
 Double_t langaufun(Double_t *x, Double_t *par);//takuya0122

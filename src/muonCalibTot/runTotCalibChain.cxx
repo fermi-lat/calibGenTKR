@@ -39,9 +39,13 @@ void parseFileNames(std::vector<std::string>& fileNames,
 int main(int argn, char** argc) {
 
   std::ifstream inputFile;
+  int maxEvents = -1;
 
   if(argn > 1) {
-    inputFile.open(argc[1]);
+    maxEvents = atoi( argc[1] );
+  }
+  if(argn > 2) {
+    inputFile.open(argc[2]);
   }
   else {
     inputFile.open("../src/muonCalibTot/totCalibChain_option.dat");
@@ -85,7 +89,13 @@ int main(int argn, char** argc) {
   } while( line[0] == '#' );
   std::string outputDir = line;
 
-  totCalib calib;
+  // muon MIP calibration or bad strip
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string analysisType = line;
+
+  totCalib calib( analysisType );
+
   if( !calib.setOutputFiles( outputDir.c_str() ) ) return 1;
 
   if( !calib.readTotConvXmlFile( totConvDir.c_str(), totConvRunId.c_str() ) )
@@ -94,6 +104,7 @@ int main(int argn, char** argc) {
 
   int nEvents = calib.setInputRootFiles( rootDir.c_str(), reconDir.c_str(), 
 					 runIds );
+  if( maxEvents > 0 ) nEvents = maxEvents;
 
   if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
 
