@@ -42,8 +42,6 @@ const int numBlocks = numChips*2;
 
 //const int numHists = numPlanes*numTowers;
 int numLadders[36]; // historical from balloon flight (not likely to ever need this!)
-//TH1F *TKRPLN[numHists];
-//std::vector<TH1F*> TKRPLN;
 
 int i,j;
 
@@ -111,7 +109,7 @@ void BadStripsCalib::DigiTkr() {
         for (iHit = 0; iHit < numStrips; ++iHit) {
             int strip = t->getHit(iHit);
             if (debug) std::cout << strip << " " ;
-            m_tkrHists[plane]->Fill(strip);
+            m_tkrHists[m_histId[tower]*m_nPlanes + plane]->Fill(strip);
         }
     }
     return;
