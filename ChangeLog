@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: heather  Sat Jun 19 11:09:09 PDT 2004
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+use new RootPolicy
+    *
+------------------------------------------------------------
 User: xchen  Fri Jun 18 15:34:02 PDT 2004
 calibGenTKR/doc
 
