@@ -1,4 +1,4 @@
- c:/Glast/files/em/        
+ /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/        
  ebf031006235353_digi.root 
  ebf031006235353  
  500000

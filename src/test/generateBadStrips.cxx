@@ -14,6 +14,8 @@
 @brief Driver for bad strips calibration
 */
 
+/* attempt to do a bit of processing on the options file
+// doesn't work, don't know why
 std::string getString(std::string& inString) {
     std::string temp = inString;
     int npos;
@@ -42,6 +44,7 @@ std::string nextString(std::ifstream& file) {
     }
     return temp;
 }
+*/
 
 int main(int argn, char** argc) {
     
@@ -50,9 +53,7 @@ int main(int argn, char** argc) {
 #endif
 
     bool attended = false;
-
-    // To do: these strings will need to come from an input parameter file
-    // current example is from glast_03/EM2003/rootFiles/em_v1r030302p5/digi 
+    // current example is from glast_03/EM2003/rootFiles/em_v1r030302p5/digi/ 
     std::string sourceDirectory("c:/Glast/files/em/");
     std::string sourceFile     ("ebf031006235353_digi.root");
     std::string outputString   ("ebf031006235353");
