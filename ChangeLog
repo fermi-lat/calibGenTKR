@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: lsrea  Sat Jul 17 08:28:00 PDT 2004
+calibGenTKR/src
+
+Modified Files:
+	mainpage.h 
+Log Message:
+set detectorType from options file
+updated documentation
+
+    *
+------------------------------------------------------------
 User: heather  Sat Jun 19 11:10:13 PDT 2004
 calibGenTKR/doc
 
