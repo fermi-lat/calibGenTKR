@@ -40,7 +40,7 @@ class ReconEvent;
 class McEvent;
 #endif
 
-#include "xml/IFile.h"
+#include "xmlBase/IFile.h"
 #include "facilities/Util.h"
 
 namespace {   
@@ -130,7 +130,7 @@ public :
 	/// Standard ctor, where user provides the names of the input root files
 	/// and optionally the name of the output ROOT histogram file
     BadStripsCalib(
-        xml::IFile& myFile,
+        xmlBase::IFile& myFile,
         const char* digiFileName, 
         const char* reconFileName="", 
         const char* mcFileName="",
@@ -142,7 +142,7 @@ public :
 
 	/// Special ctor which accepts TChains for input files
     BadStripsCalib( 
-        xml::IFile& myFile,
+        xmlBase::IFile& myFile,
         TChain *digiChain, 
         TChain *recChain = 0, 
         TChain *mcChain = 0, 
@@ -194,7 +194,7 @@ private:
     void Clear(); 
 
     /// read in relevant params and set up
-    void GetOptions(xml::IFile& myFile);
+    void GetOptions(xmlBase::IFile& myFile);
     /// Setup the Monte Calro output histograms
     void McHistDefine();
 	/// Setup the Digitization output histograms
@@ -228,7 +228,7 @@ inline BadStripsCalib::BadStripsCalib()
 }
 
 inline BadStripsCalib::BadStripsCalib(
-                                   xml::IFile& myFile,
+                                   xmlBase::IFile& myFile,
                                    const char* digiFileName, 
                                    const char* reconFileName, 
                                    const char* mcFileName,
@@ -263,7 +263,7 @@ inline BadStripsCalib::BadStripsCalib(
 }
 
 inline BadStripsCalib::BadStripsCalib(
-                                      xml::IFile& myFile,
+                                      xmlBase::IFile& myFile,
                                       TChain *digiChain, 
                                       TChain *recChain, 
                                       TChain *mcChain, 
@@ -313,7 +313,7 @@ inline BadStripsCalib::BadStripsCalib(
     m_StartEvent = 0;   
 }
 
-inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
+inline void BadStripsCalib::GetOptions(xmlBase::IFile& myFile)
 {
     int i;
     m_nPlanes = 0;

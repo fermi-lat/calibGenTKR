@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <ctime>
+#include <cassert>
 
 #include "totCalib.h"
  
@@ -29,7 +30,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.15 $";
+  std::string version = "$Revision: 1.16 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -66,6 +67,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
     m_aPos[3] = new TH1F("apos3", "apos3", 100, -50, 50);
   }
 
+  
   for(int layer = 0; layer != g_nLayer; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
@@ -317,12 +319,12 @@ bool totCalib::readRcReports( const char* reportDir,
 
 bool totCalib::parseRcReport( const char* reportFile )
 {
-  xml::XmlParser* parsercReport = new xml::XmlParser(true);
+  xmlBase::XmlParser* parsercReport = new xmlBase::XmlParser(true);
   DOMDocument* docrcReport = 0;
   try{
     docrcReport = parsercReport -> parse(reportFile);
   }
-  catch (xml::ParseException ex) {
+  catch (xmlBase::ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
     delete parsercReport;
@@ -336,9 +338,9 @@ bool totCalib::parseRcReport( const char* reportFile )
     string timeStamp;
     DOMElement* rcElt = docrcReport -> getDocumentElement();
     try {
-      timeStamp = xml::Dom::getAttribute(rcElt, "timestamp");
+      timeStamp = xmlBase::Dom::getAttribute(rcElt, "timestamp");
     }
-    catch (xml::DomException ex) {
+    catch (xmlBase::DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
@@ -349,11 +351,11 @@ bool totCalib::parseRcReport( const char* reportFile )
 
     for( unsigned int i=0; i<keywords.size(); i++){
       DOMElement* childElt 
-	= xml::Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
+	= xmlBase::Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
       try {
-	values.push_back( xml::Dom::getTextContent(childElt) );
+	values.push_back( xmlBase::Dom::getTextContent(childElt) );
       }
-      catch (xml::DomException ex) {
+      catch (xmlBase::DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
 	return false;
       }
@@ -572,7 +574,7 @@ void totCalib::fillTot()
   TkrTrackHit* pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
     
-    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) {
       //a cluster is attached to the hit: proceed
       
@@ -811,12 +813,12 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   
 
 
-  xml::XmlParser* parser = new xml::XmlParser(true);
+  xmlBase::XmlParser* parser = new xmlBase::XmlParser(true);
   DOMDocument* doc = 0;
   try {
     doc = parser->parse(filename.c_str());
   }
-  catch (xml::ParseException ex) {
+  catch (xmlBase::ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
     delete parser;
@@ -827,25 +829,25 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 
     // look up generic attributes
     DOMElement* docElt = doc->getDocumentElement();
-    DOMElement* attElt = xml::Dom::findFirstChildByName(docElt,"generic");
+    DOMElement* attElt = xmlBase::Dom::findFirstChildByName(docElt,"generic");
     //DOMElement* isElt = xml::Dom::findFirstChildByName(attElt,"inputSample");
     
     try {
-      m_tot_runid  = xml::Dom::getAttribute(attElt, "runId");
+      m_tot_runid  = xmlBase::Dom::getAttribute(attElt, "runId");
       //m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
     }
-    catch (xml::DomException ex) {
+    catch (xmlBase::DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
     // look up tower attributes
-    attElt = xml::Dom::findFirstChildByName(docElt,"tower");
+    attElt = xmlBase::Dom::findFirstChildByName(docElt,"tower");
     try {
-      m_tower_col  = xml::Dom::getIntAttribute(attElt, "col");
-      m_tower_row = xml::Dom::getIntAttribute(attElt, "row");
-      m_tower_serial  = xml::Dom::getAttribute(attElt, "hwserial");
+      m_tower_col  = xmlBase::Dom::getIntAttribute(attElt, "col");
+      m_tower_row = xmlBase::Dom::getIntAttribute(attElt, "row");
+      m_tower_serial  = xmlBase::Dom::getAttribute(attElt, "hwserial");
     }
-    catch (xml::DomException ex) {
+    catch (xmlBase::DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
@@ -865,12 +867,12 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 
     for(int i=0; i<len; i++){//each layers loop
       DOMNode* childNode = conList->item(i);
-      int tray = xml::Dom::getIntAttribute(childNode, "tray");
-      std::string which = xml::Dom::getAttribute(childNode, "which");
+      int tray = xmlBase::Dom::getIntAttribute(childNode, "tray");
+      std::string which = xmlBase::Dom::getAttribute(childNode, "which");
       std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
      
       //get first child element
-      DOMElement* elder = xml::Dom::getFirstChildElement(childNode);
+      DOMElement* elder = xmlBase::Dom::getFirstChildElement(childNode);
       DOMElement* younger;
 
       int view = (tray+1) % 2;
@@ -884,7 +886,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 	
       int numStrip = 0;
       while( getParam( elder, layer, view ) ){
-	younger = xml::Dom::getSiblingElement( elder );
+	younger = xmlBase::Dom::getSiblingElement( elder );
 	elder = younger;
 	numStrip++;
       }
@@ -905,9 +907,9 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
   int stripId;
   double quad,gain,offset;
   try{
-    stripId = xml::Dom::getIntAttribute( totElement, "id" );
+    stripId = xmlBase::Dom::getIntAttribute( totElement, "id" );
   } //if there isn't next strip,go to next layer or view
-  catch(xml::DomException ex){
+  catch(xmlBase::DomException ex){
     cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
     return false;
   }
@@ -920,27 +922,27 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
   }
 
   try{
-    quad = xml::Dom::getDoubleAttribute(totElement,"quad");
+    quad = xmlBase::Dom::getDoubleAttribute(totElement,"quad");
   }
-  catch(xml::DomException ex){
+  catch(xmlBase::DomException ex){
     cout << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
 	  << view << ", "  << stripId << ")" << endl;
   }
   try{
-    gain = xml::Dom::getDoubleAttribute(totElement,"slope");
+    gain = xmlBase::Dom::getDoubleAttribute(totElement,"slope");
   }
-  catch(xml::DomException ex){
+  catch(xmlBase::DomException ex){
     cout << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
 	  << view << ", "  << stripId << ")" << endl;
   }
   try{
-    offset = xml::Dom::getDoubleAttribute(totElement,"intercept");
+    offset = xmlBase::Dom::getDoubleAttribute(totElement,"intercept");
   }
-  catch(xml::DomException ex){
+  catch(xmlBase::DomException ex){
     cout << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
 	 << view << ", "  << stripId << ")" << endl;
     m_log << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
@@ -1195,10 +1197,10 @@ void totCalib::fillOccupancy()
   TkrTrackHit* pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
     
-    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) 
       {
-	int planeId = cluster->getPlane();
+	int plane = cluster->getPlane();
 	int  view = cluster->getTkrId().getView();
 	
 	//	int layer = g_nLayer - planeId - 1;
@@ -1206,8 +1208,8 @@ void totCalib::fillOccupancy()
 	
 	for(int iStrip = cluster->getFirstStrip(); 
 	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-	  nHits[layer][view][iStrip/384]++;
-	  nHits[layer][view][g_nWafer]++;
+	  nHits[plane][view][iStrip/384]++;
+	  nHits[plane][view][g_nWafer]++;
 	}
     }
   }
@@ -1220,14 +1222,15 @@ void totCalib::fillOccupancy()
   pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
     
-    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 
-    int planeId = cluster->getPlane();
+    int layer = cluster->getPlane();
     int view = cluster->getTkrId().getView();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
     float deltay = m_pos.Y()+m_dir.Y()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.Y();
+
 
     //    int layer = g_nLayer - planeId - 1;
     if( view == 0 ){
@@ -1279,10 +1282,10 @@ void totCalib::fillOccupancy()
     trk1HitsItr.Reset();
     pTrk1Hit = 0;
     while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {      
-      TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+      const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
       if(!cluster) continue;
 
-      int planeId = cluster->getPlane();
+      int layer = cluster->getPlane();
       int view = cluster->getTkrId().getView();
       
       //      int layer = g_nLayer - planeId - 1;
