@@ -22,14 +22,14 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   else m_badStrips = false;
 
   // get version number from CVS string
-  std::string tag = "$Name: v1r4 $";
+  std::string tag = "$Name:  $";
   int i = tag.find( " " );
   tag.assign( tag, i+1, tag.size() );
   i = tag.find( " " );
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.14 $";
+  std::string version = "$Revision: 1.15 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -591,7 +591,7 @@ void totCalib::fillTot()
 	if( tot == 0 ) continue;
 	
 	std::cout<<"plane: "<<planeId<<" view: "<<view<<" digi tot: "<<tot<<" cluster tot: "<<cluster->getRawToT()<<std::endl;
-	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
+	//	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
 	
 	float charge = calcCharge(layer, view, iStrip, tot);
 	
@@ -1069,6 +1069,7 @@ void totCalib::fillOccupancy()
   TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
 
   TObjArray* tracks = tkrRecon->getTrackCol();
+#ifdef OLD_RECON
   TkrKalFitTrack* tkrTrack = dynamic_cast<TkrKalFitTrack*>(tracks->At(0));
 
   int nHitPlane = tkrTrack->getNumHits();
@@ -1178,6 +1179,123 @@ void totCalib::fillOccupancy()
       std::cout << std::endl;
     }
   }
+#else
+  TkrTrack* tkrTrack = dynamic_cast<TkrTrack*>(tracks->First());
+
+  int nHitPlane = tkrTrack->GetEntries();
+
+  int nHits[g_nLayer][g_nView][g_nWafer+1];
+  for( int layer=0; layer<g_nLayer; layer++)
+    for( int view=0; view<g_nView; view++)
+      for( int i=0; i<g_nWafer+1; i++) nHits[layer][view][i] = 0;
+
+  int nHit = tkrTrack->GetEntries();
+
+  TIter trk1HitsItr(tkrTrack);
+  TkrTrackHit* pTrk1Hit = 0;
+  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
+    
+    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    if(cluster) 
+      {
+	int planeId = cluster->getPlane();
+	int  view = cluster->getTkrId().getView();
+	
+	//	int layer = g_nLayer - planeId - 1;
+	//	int view = (viewId == TkrCluster::X) ? 0 : 1;
+	
+	for(int iStrip = cluster->getFirstStrip(); 
+	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
+	  nHits[layer][view][iStrip/384]++;
+	  nHits[layer][view][g_nWafer]++;
+	}
+    }
+  }
+
+  bool display = false;
+  float dx=0.0, dy=0.0, pos, apos;
+  int view, aview;
+
+  trk1HitsItr.Reset();
+  pTrk1Hit = 0;
+  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
+    
+    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    if(!cluster) continue;
+
+    int planeId = cluster->getPlane();
+    int view = cluster->getTkrId().getView();
+    TVector3 position = cluster->getPosition();
+    float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
+    float deltay = m_pos.Y()+m_dir.Y()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.Y();
+
+    //    int layer = g_nLayer - planeId - 1;
+    if( view == 0 ){
+      aview = 1;
+      if( fabs( deltax - dx ) > 2.0  ){
+	//std::cout << layer << " " << view << ", " << deltax << " " << dx
+	//  << " ***********************" << std::endl;
+	break;
+      }
+      deltax -= dx;
+      dx += deltax;
+      pos = deltax;
+      apos = deltay;
+    }
+    else{
+      aview = 0;
+      if( fabs( deltay - dy ) > 2.0  ){
+	//std::cout << layer << " " << view << ", " << deltay << " " << dy
+	//  << " ***********************" << std::endl;
+	break;
+      }
+      deltay -= dy;
+      dy += deltay;
+      pos = deltay;
+      apos = deltax;
+    }
+
+    //std::cout << layer << " " << view << ", " << pos << " " << apos
+    //      << std::endl;
+
+    for(int iStrip = cluster->getFirstStrip(); 
+	iStrip != int(cluster->getLastStrip()+1); ++iStrip)
+      if( nHits[layer][aview][g_nWafer] > 0 ){
+	for( int iw=0; iw<g_nWafer; iw++ )
+	  if( nHits[layer][aview][iw] > 0 ){
+	    m_nHits[layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
+	  }
+      }
+      else
+	for( int iw=0; iw<g_nWafer; iw++ )
+	  if( fabs( apos-89.5*(iw-1.5) ) < 42 ){
+	    m_nHits[layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
+	  }
+  }
+
+  if( display ){
+    trk1HitsItr.Reset();
+    pTrk1Hit = 0;
+    while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {      
+      TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+      if(!cluster) continue;
+
+      int planeId = cluster->getPlane();
+      int view = cluster->getTkrId().getView();
+      
+      //      int layer = g_nLayer - planeId - 1;
+      //      int view = (viewId == TkrCluster::X) ? 0 : 1;
+
+      std::cout << layer << " " << view;
+      for(int iStrip = cluster->getFirstStrip(); 
+	  iStrip != int(cluster->getLastStrip()+1); ++iStrip)
+	std::cout << " " << iStrip;
+      std::cout << std::endl;
+    }
+  }
+#endif
 }
 
 
