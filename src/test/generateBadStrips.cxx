@@ -16,23 +16,23 @@ int main(int argn, char** argc) {
 #endif
 
     bool attended = false;
-    string temp;
+    std::string temp;
  
-    string sourceFilePath;
-    string sourceFile;
-    string path = ::getenv("CALIBGENTKRROOT");
+    std::string sourceFilePath;
+    std::string sourceFile;
+    std::string path = ::getenv("CALIBGENTKRROOT");
     unsigned int numEvents = 5000000;
 
-    string xmlPath(path+"/output/");
-    string histPath(path+"/output/");
-    string outputPrefix("test");
+    std::string xmlPath(path+"/output/");
+    std::string histPath(path+"/output/");
+    std::string outputPrefix("test");
  
-    string xmlFile(path+"/src/test/options.xml");
+    std::string xmlFile(path+"/src/test/options.xml");
 
     if(argn > 1) {
         xmlFile = argc[1];
-        cout << "Reading in user-specified options file: " <<  xmlFile 
-            << endl << endl;
+        std::cout << "Reading in user-specified options file: " <<  xmlFile 
+            << std::endl << std::endl;
     }
     
     xml::IFile myFile(xmlFile.c_str());
@@ -42,24 +42,24 @@ int main(int argn, char** argc) {
         sourceFilePath = stripBlanks(temp);
     }
 
-    cout << "Sourcefile path: " << sourceFilePath << endl;
+    std::cout << "Sourcefile path: " << sourceFilePath << std::endl;
 
-    string sourceFileString;
+    std::string sourceFileString;
     if (myFile.contains("parameters","sourceFileList")) {
         temp = myFile.getString("parameters", "sourceFileList");
         sourceFileString = stripBlanks(temp);
     }
 
     int nFiles = 0;
-    cout << "Input files:" << endl;
+    std::cout << "Input files:" << std::endl;
     TChain* digiChain = new TChain("Digi");    
-    string::size_type pos;
+    std::string::size_type pos;
     temp = sourceFileString;
     while(temp!="") {
         pos = splitString(temp, sourceFile, temp, " ");
         if (sourceFile!="") nFiles++;
         digiChain->Add((sourceFilePath+sourceFile).c_str());
-        cout << "   " << nFiles << ") " << sourceFile << endl;
+        std::cout << "   " << nFiles << ") " << sourceFile << std::endl;
     }
 
     if (myFile.contains("parameters","xmlPath")) {
@@ -76,15 +76,15 @@ int main(int argn, char** argc) {
         if (temp!="") outputPrefix = temp;
     }
 
-    cout << "Output xmlPath:     " << xmlPath << endl;
-    cout << "Output histPath:    " << histPath << endl;
-    cout << "Output file prefix: " << outputPrefix << endl;
+    std::cout << "Output xmlPath:     " << xmlPath << std::endl;
+    std::cout << "Output histPath:    " << histPath << std::endl;
+    std::cout << "Output file prefix: " << outputPrefix << std::endl;
 
     if (myFile.contains("parameters","nEvents")) {
         numEvents = myFile.getInt("parameters", "numEvents");
     }
 
-    cout << "Maximum number of events to process: " << numEvents << endl;
+    std::cout << "Maximum number of events to process: " << numEvents << std::endl;
 
     BadStripsCalib* r = new BadStripsCalib(
         myFile,
@@ -100,8 +100,8 @@ int main(int argn, char** argc) {
    
     if (attended) {
         char istop;
-        cout << "Hit Enter key to exit: ";
-        cin.get(istop);
+        std::cout << "Hit Enter key to exit: ";
+        std::cin.get(istop);
     }
     return 0;
 }

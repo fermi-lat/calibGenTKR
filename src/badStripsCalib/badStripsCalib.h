@@ -555,7 +555,7 @@ inline UInt_t BadStripsCalib::GetEntries() const {
 
     UInt_t nentries = 0;
     if (treeArr) {
-        nentries = ((TTree*)treeArr->At(0))->GetEntries();
+        nentries = (int)((TTree*)treeArr->At(0))->GetEntries();
         for (Int_t i = 1; i < treeArr->GetEntries(); i++) {
             nentries = TMath::Min(nentries, (UInt_t)((TTree*)treeArr->At(i))->GetEntries());
         }
@@ -563,7 +563,7 @@ inline UInt_t BadStripsCalib::GetEntries() const {
     }
     
     if (chainArr) {
-        nentries = ((TChain*)chainArr->At(0))->GetEntries();
+        nentries = (int)((TChain*)chainArr->At(0))->GetEntries();
         for (Int_t i = 1; i < chainArr->GetEntries(); i++) {
             nentries = TMath::Min(nentries, (UInt_t)((TChain*)chainArr->At(i))->GetEntries());
         }
