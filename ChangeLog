@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: lsrea  Wed Feb 25 08:56:16 PST 2004
+calibGenTKR/src/test/setup
+
+Removed Files:
+	rootalias.C rootlogoff.C rootlogon.C 
+Log Message:
+not required for compiled code
+    *
+------------------------------------------------------------
 User: lsrea  Mon Feb 23 13:38:57 PST 2004
 calibGenTKR
 
