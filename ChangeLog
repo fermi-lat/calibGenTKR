@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: lsrea  Mon Mar  1 12:24:43 PST 2004
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+make compatible with EngineeringModel xml
+fix up use of namespace for gcc3.2
+new parameters to control direction of output files
+    *
+------------------------------------------------------------
 User: lsrea  Sun Feb 29 11:21:49 PST 2004
 calibGenTKR/src/badStripsCalib
 
