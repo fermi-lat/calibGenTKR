@@ -1,5 +1,18 @@
 ------------------------------------------------------------
 User: lsrea  Sat Jul 17 08:28:00 PDT 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx options.xml win_options.xml 
+Added Files:
+	unix_options.xml 
+Log Message:
+set detectorType from options file
+updated documentation
+
+    *
+------------------------------------------------------------
+User: lsrea  Sat Jul 17 08:28:00 PDT 2004
 calibGenTKR/src/badStripsCalib
 
 Modified Files:
