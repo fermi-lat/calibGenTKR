@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Wed Feb 25 17:58:41 PST 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx 
+Log Message:
+first round of changes, mainly read in options from a file
+
+    *
+------------------------------------------------------------
+User: lsrea  Wed Feb 25 17:58:41 PST 2004
 calibGenTKR/src
 
 Modified Files:
