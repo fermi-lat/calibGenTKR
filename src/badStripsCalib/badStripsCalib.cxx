@@ -367,7 +367,6 @@ void BadStripsCalib::Finish()
         listout.open(outputFile.c_str(), ios::out);
 
         std::string buffer;
-        int nchar=199;
         std::ifstream infile;
 
         infile.open("C:/Glast/TKRCalib/calibGenTKR/v0r0/xml/badStrips.dtd", ios::in | ios::binary);

@@ -1,29 +1,54 @@
 #include "BadStripsCalib.h"
 #include "TSystem.h"
 #include <iostream>
+#include <fstream>
 #include <string>
 
 /* to do:
   figure out better local average, for now we use simple average
   pass string for output files
-  clean out debris
   input params from text file?
-  put ToT stuff on a switch; most likely needs to be moved to a different
-     calib process.
   */
 
 /** @file generateBadStrips
 @brief Driver for bad strips calibration
 */
+
+std::string getString(std::string& inString) {
+    std::string temp = inString;
+    int npos;
+    npos = temp.find("X");
+    if(npos>-1) temp = temp.substr(0, npos-1);
+    npos = temp.find_first_not_of(" ");
+    if(npos>-1) {
+        temp = temp.substr(npos);
+    } else {
+        temp = "";
+        return temp;
+    }
+
+    npos = temp.find_last_not_of(" ");
+    if(npos>-1) temp = temp.substr(0,npos+1);
+    return temp;
+}
+
+std::string nextString(std::ifstream& file) {
+    std::string temp("");
+
+    while (temp=="") {
+        std::getline(file, temp);
+        std::cout << "*" << temp << "*" << std::endl;
+        temp = getString(temp);
+    }
+    return temp;
+}
+
 int main(int argn, char** argc) {
     
 #ifdef WIN32
     gSystem->Load("libTree.dll");   
 #endif
 
-    unsigned int numEvents = 5000000;
-	enum Sample {EM, TEST};
-	Sample current = EM;
     bool attended = false;
 
     // To do: these strings will need to come from an input parameter file
@@ -31,31 +56,41 @@ int main(int argn, char** argc) {
     std::string sourceDirectory("c:/Glast/files/em/");
     std::string sourceFile     ("ebf031006235353_digi.root");
     std::string outputString   ("ebf031006235353");
-    outputString = "example";
-    std::string path;
-    if( current==TEST)    { path = ::getenv("BADSTRIPSCALIBROOT");}
-    else if (current==EM) { path = sourceDirectory; }
+    std::string path = ::getenv("CALIBGENTKRROOT");
+    unsigned int numEvents = 5000000;
 
-    std::string digiFileName(path);
 
-    if (current==TEST) {
-        digiFileName += "/src/test/digi.root";
-    }	
-    else if (current==EM) {
-		digiFileName += sourceFile; 
-	}
-    std::cout << "digi File: " << digiFileName << std::endl;
+    std::string digiFileName   (path+sourceFile);
+    std::string outputPrefix(path);
+    outputPrefix += "/output/"+outputString;
+
+    std::ifstream inputFile;
+    std::string tempString;
+    if(argn > 1) {
+        inputFile.open(argc[1], ios::in);
+    }
+    else {
+        inputFile.open((path + "/src/test/options.txt").c_str(), ios::in);
+    }
+
+    inputFile >> sourceDirectory;
+    std::cout << "Source Directory: " << sourceDirectory << std::endl;
+    inputFile >> sourceFile;
+    std::cout << "Source File: " << sourceFile << std::endl;
+
+    digiFileName = sourceDirectory+sourceFile;
+
+    inputFile >> outputString;
+    std::cout << "Output string: " << outputString << std::endl;
+
+    inputFile >> numEvents;
+    std::cout << "Maximum number of events to process: " << numEvents << std::endl;
 
     // not needed for this calibration
     std::string mcFileName = "";
     std::string reconFileName = "";
 
-    if (argn > 1) mcFileName = argc[1];
-    if (argn > 2) digiFileName = argc[2];
-    if (argn > 3) reconFileName = argc[3];
-
-    std::string outputPrefix(::getenv("CALIBGENTKRROOT"));
-    outputPrefix += "/output/"+outputString;
+    outputPrefix = path+"/output/"+outputString;
     char* c_prefix = const_cast<char*>(outputPrefix.c_str());
 
     BadStripsCalib r(digiFileName.c_str(), reconFileName.c_str(), mcFileName.c_str(), c_prefix);
