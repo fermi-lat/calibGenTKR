@@ -167,7 +167,7 @@ int totCalib::setInputRootFiles( TChain* digi, TChain* recon )
 
 void totCalib::calibChargeScale( int nEvents )
 {
-  nEvents = 50000;
+  //nEvents = 50000;
 
   analyzeEvent(nEvents);
 
@@ -317,6 +317,7 @@ void totCalib::fillTot()
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 
       int tot = findTot(planeId, viewId, iStrip);
+      if( tot == 0 ) continue;
 
       float charge = calcCharge(planeId, viewId, iStrip, tot);
 
@@ -359,23 +360,31 @@ void totCalib::fitTot()
 
   // define Gaussian convolved Laudau function.
   TF1 *ffit = new TF1( "langau", langaufun, 0, 30, 4 );
+  ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
   std::cout << "Start fit." << std::endl;
 
   for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
     for(int iView = 0; iView != g_nView; ++iView) {
-      cout << "Layer: " << iPlane << ", View: " << iView << ", FE:";
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
-	cout << " " << iDiv;
-	
-	if(m_totHist[iPlane][iView][iDiv]->GetEntries() == 0) continue;
+	std::cout << "Layer: " << iPlane << ", View: " << iView 
+		  << ", FE: " << iDiv << std::endl;
+	m_chargeScale[iPlane][iView][iDiv] = 1.0;
 
 	// fit uncorrected tot for each strip
+	float area = m_totHist[iPlane][iView][iDiv]->GetEntries();
 	float ave = m_totHist[iPlane][iView][iDiv]->GetMean();
 	float rms = m_totHist[iPlane][iView][iDiv]->GetRMS();
-	float area = m_totHist[iPlane][iView][iDiv]->GetEntries();
+	//std::cout << area << " " << ave << " " << rms << std::endl;
+	if( area<100 || ave==0.0 || rms==0.0 ){ 
+	  std::cout << "Layer: " << iPlane << ", View: " << iView 
+		    << ", FE: " << iDiv << ", Entries: " << area
+		    << ", Mean: " << ave << ", RMS: " << rms 
+		    << " skipped." << std::endl;
+	  continue;
+	}
+
 	ffit->SetRange( ave-2*rms, ave+3*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area, rms*0.4 );
-	ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
 	m_totHist[iPlane][iView][iDiv]->Fit( "langau", "RQ" );
 
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
@@ -399,12 +408,27 @@ void totCalib::fitTot()
 	       << errWidth << endl;
 
 	// fit charge for each strip
+	area = m_chargeHist[iPlane][iView][iDiv]->GetEntries();
 	ave = m_chargeHist[iPlane][iView][iDiv]->GetMean();
 	rms = m_chargeHist[iPlane][iView][iDiv]->GetRMS();
-	m_chargeHist[iPlane][iView][iDiv]->Fit("landau", "RQ", "", ave-2*rms, ave+3*rms);
+	//std::cout << area << " " << ave << " " << rms << std::endl;
+	if( area<100 || ave==0.0 || rms==0.0 ){ 
+	  std::cout << "Layer: " << iPlane << ", View: " << iView 
+		    << ", FE: " << iDiv << ", Entries: " << area
+		    << ", Mean: " << ave << ", RMS: " << rms 
+		    << " skipped." << std::endl;
+	  continue;
+	}
 
-	par = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParameters();
-	error = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParErrors();
+	ffit->SetRange( ave-2*rms, ave+3*rms );
+	ffit->SetParameters( rms*0.2, ave*0.75, area, rms*0.4 );
+	m_chargeHist[iPlane][iView][iDiv]->Fit( "langau", "RQ" );
+
+	//0:width(scale) 1:peak 2:total area 3:width(sigma)
+	par = ffit->GetParameters();
+	error = ffit->GetParErrors();
+	//par = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParameters();
+	//error = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParErrors();
 
         peak = float( *(par+1) );
 	errPeak = float( *(error+1) );
@@ -417,8 +441,6 @@ void totCalib::fitTot()
 
 	if( peak != 0.0 )
 	  m_chargeScale[iPlane][iView][iDiv] = 5.0 / peak;
-	else
-	  m_chargeScale[iPlane][iView][iDiv] = 1.0;
 	
 	output << "Charge " << iPlane << ' ' << iView << ' ' << pos
 	       << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
@@ -661,6 +683,7 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   Double_t step;
   Double_t sigma = par[3];
   Double_t width = par[0];
+  if( sigma==0.0 || width==0.0 ) return 0.0;
 
   // MP shift correction
   mpc = par[1] - mpshift * width;
