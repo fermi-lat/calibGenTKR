@@ -1,0 +1,15 @@
+*.bak
+*.ps
+setup.*
+cleanup.*
+*.mak*
+Makefile
+Visual
+Win32*
+i386*
+Linux*
+sun4x_*
+rh72_*
+VC7*
+Vc8*
+doxy-html

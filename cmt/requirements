@@ -1,0 +1,32 @@
+package calibGenTKR
+
+version v0r0
+
+# This package contains the tracker bad strips calibration code
+
+#use these to get the env vars defined
+# use mcRootData *
+use digiRootData *
+#use reconRootData *
+use RootPolicy v2r* 
+
+set BADSTRIPSCALIB ${CALIBGENTKRROOT}
+
+apply_pattern package_include
+
+include_dirs ${CALIBGENTKRROOT}/src/BadStripsCalib
+
+apply_pattern package_headers
+
+macro_append calibGenTKR_headers "" \
+                 WIN32 " ../src/BadStripsCalib/BadStripsCalib.h "
+
+macro_append ROOT_libs " -lHist " \
+             WIN32 " ${ROOT_PATH}/lib/libHist.lib "
+
+# Define a test program that will run BadStripsCalib in batch mode
+# One could also pass in their own set of ROOT files as follows:
+
+application doBadStripsCalib test/generateBadStrips.cxx \
+            BadStripsCalib\BadStripsCalib.cxx \
+            ${calibGenTKR_headers}
