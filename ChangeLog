@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Jan 28 23:39:01 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx 
+Log Message:
+charge scale was inversed.
+
+    *
+------------------------------------------------------------
 User: htajima  Fri Jan 28 01:10:15 PST 2005
 calibGenTKR/src/muonCalibTot
 
