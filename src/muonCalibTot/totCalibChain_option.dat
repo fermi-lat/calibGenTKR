@@ -18,8 +18,8 @@ calib-v1r0
 # runid for cosmic data (last entry is ignored for now)
 #
 #398000362 398000365 398000368 398000371 1
-#398000362 1
-398000571 398000572 398000573 398000574 1
+#398000571 398000572 398000573 398000574 1
+398000730 398000731 398000732 398000735 398000736 1
 #
 # top directory for TOT conversion files. (TE602)
 #
@@ -29,15 +29,15 @@ calib-v1r0
 # run id for TOT converstion files. Only one run is allowed.
 #
 #398000364
-398000542
+398000729
 #
 # output Directory
 #
 /nfs/farm/g/glast/u02/TKR/TE603
-
-
-
-
-
+#
+# analysis type
+#
+#badStrips
+MIP calibration
 
 
