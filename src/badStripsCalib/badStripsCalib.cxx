@@ -95,13 +95,13 @@ void BadStripsCalib::DigiTkr() {
     TIter tkrDigiIter(tkrDigiCol);
     TkrDigi *t = 0;
 
-    int numTowers = m_towerNums.size();
+    //int numTowers = m_towerNums.size();
 
     while (t = (TkrDigi*)tkrDigiIter.Next()) {
 
         int tower = (t->getTower()).id();
         if( tower>=16 || tower < 0) {
-            int truncTower = max(-1, min(16, tower));
+            int truncTower = std::max(-1, std::min(16, tower));
             outsideTowers->Fill(truncTower);
             continue;
         }
@@ -111,7 +111,7 @@ void BadStripsCalib::DigiTkr() {
         bool isY = (view==1);
         int plane = 2*layer + (1-isY)*(1-layer%2) + isY*layer%2;
         if (plane>=m_nPlanes || plane < 0) {
-            int truncPlane = max(-1, min(18, plane));
+            int truncPlane = std::max(-1, std::min(18, plane));
             outsidePlanes->Fill(truncPlane);
             continue;
         } 
@@ -314,7 +314,7 @@ void BadStripsCalib::Finish()
         int bin = nbin;
 
         // get rough average
-        int entries = m_tkrHists[ihist]->GetEntries();
+        int entries = (int) m_tkrHists[ihist]->GetEntries();
         
         // refine the average a bit, by dropping the very low and very high bins
         if(entries>0) {
@@ -363,7 +363,7 @@ void BadStripsCalib::Finish()
     int badCount;
     bool testCount;
 
-    const int ntest = 2;
+    //const int ntest = 2;
     float cutval[2] = {0, 0};
 
     // Dead strips 
@@ -487,7 +487,7 @@ void BadStripsCalib::Finish()
             TF1* fitfunc;
             if(testAgainstFit) fitfunc = m_tkrHists[ihist]->GetFunction("pol8");
 
-            float xval0 = 0;
+            //float xval0 = 0;
             if (itest==1 || (average[ihist]>minHistCount || average[ihist]==0) ) {
                 for (bin=1; bin<=nbin+1; ++bin) {
                     float xbin = m_tkrHists[ihist]->GetBinContent(bin);
@@ -539,7 +539,7 @@ void BadStripsCalib::Finish()
                     listout << " allBad=\"true\" />" << std::endl;                                
                 } else {        
                     int first = -1; int last;
-                    bool inStripList = false;
+                    //bool inStripList = false;
                     bool isGap   = false;
                     float xbin;
                     int thisBin;
