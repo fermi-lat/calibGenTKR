@@ -54,6 +54,7 @@ class totCalib {
   int setInputRootFiles( TChain* digi, TChain* recon );
 
   bool setOutputFiles( const char* outputDir );
+  void setDtd( const std::string &dtd ){ m_dtd = dtd; };
 
   bool readTotConvFile(const char* dir, const char* runid);
   bool readTotConvXmlFile(const char* dir, const char* runid);
@@ -91,9 +92,6 @@ class totCalib {
 
   float calcCharge(int layer, int view, int iStrip, int tot) const;
 
-  void fillOccupancy();
-  void findBadStrips();
-
   static const int g_nLayer = 18;
   // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
   static const int g_nPlane = 18;
@@ -104,17 +102,13 @@ class totCalib {
   // group of strips so that each group has enough statistics
   static const int g_nDiv = 24; //used to be 64;takuya
 
-  TGraphErrors* m_totStrip[g_nPlane][g_nView];
-  TGraphErrors* m_chargeStrip[g_nPlane][g_nView];
+  TGraphErrors* m_totStrip[g_nLayer][g_nView];
+  TGraphErrors* m_chargeStrip[g_nLayer][g_nView];
 
-  TH1F* m_totHist[g_nPlane][g_nView][g_nDiv];
-  TH1F* m_chargeHist[g_nPlane][g_nView][g_nDiv];
+  TH1F* m_totHist[g_nLayer][g_nView][g_nDiv];
+  TH1F* m_chargeHist[g_nLayer][g_nView][g_nDiv];
 
-  TH1F* m_nHits[g_nPlane][g_nView][4];
-  TH1F* m_aPos[4];
-  TH1F* m_occDist;
-
-  float m_chargeScale[g_nPlane][g_nView][g_nDiv];
+  float m_chargeScale[g_nLayer][g_nView][g_nDiv];
 
   TNtuple* m_tuple;
 
@@ -131,8 +125,8 @@ class totCalib {
   // reconstructed event vertex and direction
   TVector3 m_pos, m_dir;
 
-  int m_tot[g_nPlane][g_nView][2];
-  int m_lastRC0Strip[g_nPlane][g_nView];
+  int m_tot[g_nLayer][g_nView][2];
+  int m_lastRC0Strip[g_nLayer][g_nView];
 
   // Index of cluster hit in the TkrSiClusters
   std::map<int, TkrCluster*> m_cluster;
@@ -141,6 +135,8 @@ class totCalib {
   std::ofstream m_log;
   // output directory
   std::string m_outputDir;
+  // dtd file
+  std::string m_dtd;
 
   float m_totQuadra[g_nLayer][g_nView][g_nStrip];
   float m_totGain[g_nLayer][g_nView][g_nStrip];
@@ -148,11 +144,26 @@ class totCalib {
 
   //xml related parameters
   int m_tower_row, m_tower_col, m_first_run, m_last_run;
-  std::string m_tower_serial, m_version, m_tot_runid, 
+  std::string m_tower_serial, m_version, m_tag, m_tot_runid, 
     m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
-  // bad strips analysis flag
+  // bad strips analysis related stuff
+  static const int g_nWafer = 4;
+  static const float sumThrPerEvent = 50.0 / 2.0E6;
+  static const float occThrPerEvent = 10.0 / 1.6E6;
+  static const float poissonThreshold = -5.0;
+
+  void fillOccupancy();
+  void findBadStrips( int );
+  void fillBadStrips();
+  
   bool m_badStrips;
+  std::vector<int> m_deadStrips[g_nLayer][g_nView];
+  std::vector<int> m_partialDeadStrips[g_nLayer][g_nView];
+  TH1F* m_nHits[g_nLayer][g_nView][g_nWafer];
+  TH1F* m_aPos[g_nWafer];
+  TH1F* m_occDist, *m_poissonDist;
+
 };
 
 Double_t langaufun(Double_t *x, Double_t *par);//takuya0122
