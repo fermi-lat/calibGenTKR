@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Wed Mar  2 16:28:15 PST 2005
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+preparing for tag v2r0 : release compatible with new recon
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v1r5, operation: add
 Package: calibGenTKR
