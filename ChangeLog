@@ -1,4 +1,35 @@
 ------------------------------------------------------------
+TAG
+Tag name: v2r1, operation: add
+Package: calibGenTKR
+User: htajima  Thu Mar 10 14:14:25 2005
+Files:
+  calibGenTKR/.cvsignore  1.1.1.1
+  calibGenTKR/ChangeLog  1.1.1.122
+  calibGenTKR/cmt/requirements  1.20
+  calibGenTKR/cmt/.cvsigore  1.1
+  calibGenTKR/doc/release.notes  1.16
+  calibGenTKR/output/example_hotStrips.xml  1.1.1.1
+  calibGenTKR/output/example_deadStrips.xml  1.1.1.1
+  calibGenTKR/output/example_hist.root  1.1.1.1
+  calibGenTKR/pl/job.dat  1.1
+  calibGenTKR/pl/RunCalibGenTKR.pl  1.2
+  calibGenTKR/src/mainpage.h  1.10
+  calibGenTKR/src/badStripsCalib/badStripsCalib.cxx  1.18
+  calibGenTKR/src/badStripsCalib/badStrips.dtd  1.1
+  calibGenTKR/src/badStripsCalib/options.xml  1.2
+  calibGenTKR/src/badStripsCalib/generateBadStrips.cxx  1.2
+  calibGenTKR/src/badStripsCalib/badStripsCalib.h  1.17
+  calibGenTKR/src/muonCalibTot/TkrCalibration.dtd  1.1
+  calibGenTKR/src/muonCalibTot/totCalib.h  1.13
+  calibGenTKR/src/muonCalibTot/runTotCalibChain.cxx  1.11
+  calibGenTKR/src/muonCalibTot/totCalibChain_option.dat  1.13
+  calibGenTKR/src/muonCalibTot/totCalib.cxx  1.21
+  calibGenTKR/xml/ifile.dtd  1.1
+  calibGenTKR/xml/badStrips.dtd  1.1.1.1
+
+    *
+------------------------------------------------------------
 User: htajima  Thu Mar 10 14:11:30 PST 2005
 calibGenTKR/src/muonCalibTot
 
