@@ -5,6 +5,8 @@
 #include <string>
 #include "xml/IFile.h"
 
+using namespace std;
+
 /* to do:
   figure out better local average, for now we use simple average
   pass string for output files
@@ -15,10 +17,10 @@
 @brief Driver for bad strips calibration
 */
 
-std::string stripBlanks(std::string &str) {
-    std::string temp = str;
+string stripBlanks(string &str) {
+    string temp = str;
     if (temp.size()==0) return temp;
-    std::string::size_type pos;
+    string::size_type pos;
     pos = temp.find_first_not_of(" ", 0);
     temp = temp.substr(pos);
     pos = temp.find_last_not_of(" ", string::npos);
@@ -26,8 +28,8 @@ std::string stripBlanks(std::string &str) {
     return temp;
 }
 
-int splitString(std::string &input, std::string &LH, std::string &RH, char* delim) {
-    std::string::size_type pos;
+int splitString(string &input, string &LH, string &RH, char* delim) {
+    string::size_type pos;
     pos = input.find(delim);
     if (pos!=string::npos) {
         LH = input.substr(0,pos);
@@ -48,20 +50,23 @@ int main(int argn, char** argc) {
 #endif
 
     bool attended = false;
-    std::string temp;
+    string temp;
  
-    std::string sourceFilePath;
-    std::string sourceFile;
-    std::string outputString;
-    std::string path = ::getenv("CALIBGENTKRROOT");
+    string sourceFilePath;
+    string sourceFile;
+    string path = ::getenv("CALIBGENTKRROOT");
     unsigned int numEvents = 5000000;
+
+    string xmlPath(path+"/output/");
+    string histPath(path+"/output/");
+    string outputPrefix("test");
  
-    std::string xmlFile(path+"/src/test/options.xml");
+    string xmlFile(path+"/src/test/options.xml");
 
     if(argn > 1) {
         xmlFile = argc[1];
-        std::cout << "Reading in user-specified options file: " <<  xmlFile 
-            << std::endl << std::endl;
+        cout << "Reading in user-specified options file: " <<  xmlFile 
+            << endl << endl;
     }
     
     xml::IFile myFile(xmlFile.c_str());
@@ -71,43 +76,54 @@ int main(int argn, char** argc) {
         sourceFilePath = stripBlanks(temp);
     }
 
-    std::cout << "Sourcefile path: " << sourceFilePath << std::endl;
+    cout << "Sourcefile path: " << sourceFilePath << endl;
 
-    std::string sourceFileString;
+    string sourceFileString;
     if (myFile.contains("parameters","sourceFileList")) {
         temp = myFile.getString("parameters", "sourceFileList");
         sourceFileString = stripBlanks(temp);
     }
 
     int nFiles = 0;
-    std::cout << "Input files:" << std::endl;
+    cout << "Input files:" << endl;
     TChain* digiChain = new TChain("Digi");    
-    std::string::size_type pos;
+    string::size_type pos;
     temp = sourceFileString;
     while(temp!="") {
         pos = splitString(temp, sourceFile, temp, " ");
         if (sourceFile!="") nFiles++;
         digiChain->Add((sourceFilePath+sourceFile).c_str());
-        std::cout << "   " << nFiles << ") " << sourceFile << std::endl;
+        cout << "   " << nFiles << ") " << sourceFile << endl;
     }
 
-    if (myFile.contains("parameters","outputString")) {
-        temp = myFile.getString("parameters", "outputString");
-        outputString = temp;
+    if (myFile.contains("parameters","xmlPath")) {
+        temp = myFile.getString("parameters", "xmlPath");
+        if (temp!="") xmlPath = temp;
     }
 
-    std::cout << "Output file prefix in directory /output: " << outputString << std::endl;
+    if (myFile.contains("parameters","histPath")) {
+        temp = myFile.getString("parameters", "histPath");
+        if (temp!="") histPath = temp;
+    }
+    if (myFile.contains("parameters","outputPrefix")) {
+        temp = myFile.getString("parameters", "outputPrefix");
+        if (temp!="") outputPrefix = temp;
+    }
+
+    cout << "Output xmlPath:     " << xmlPath << endl;
+    cout << "Output histPath:    " << histPath << endl;
+    cout << "Output file prefix: " << outputPrefix << endl;
 
     if (myFile.contains("parameters","numEvents")) {
         numEvents = myFile.getInt("parameters", "numEvents");
     }
 
-    std::cout << "Maximum number of events to process: " << numEvents << std::endl;
-
-    std::string outputPrefix(path+"/output/"+outputString);
+    cout << "Maximum number of events to process: " << numEvents << endl;
 
     BadStripsCalib* r = 
-        new BadStripsCalib(digiChain, 0, 0, const_cast<char*>(outputPrefix.c_str()));  
+        new BadStripsCalib(digiChain, 0, 0, 
+        const_cast<char*>(outputPrefix.c_str()),
+        const_cast<char*>(xmlPath.c_str()), const_cast<char*>(histPath.c_str()));  
     r->Go(numEvents);
     r->Finish();
     r->WriteHist();
@@ -115,8 +131,8 @@ int main(int argn, char** argc) {
    
     if (attended) {
         char istop;
-        std::cout << "Hit Enter key to exit: ";
-        std::cin.get(istop);
+        cout << "Hit Enter key to exit: ";
+        cin.get(istop);
     }
     return 0;
 }

@@ -19,16 +19,22 @@
 
   The input parameters are supplied in an xml file.
   The default file is options.xml in the /src/test directory, and accesses
-  a unix input file. An alternate file may be passes as an argument to 
+  a unix input file. An alternate file may be passed as an argument to 
   the test program.
   
   @param sourceFilePath
-  Path to the input digi.root files
+  The common part of the paths to the input digi.root files. Can be set to "",
+  or omitted, if each input file is in a different place.
   @param sourceFileList
-  Blank-delimited list of input files. The test file is found at
+  Blank-delimited list of input files, including that part of the path not included
+  in sourceFilePath. The test file is found at
   /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/.
+  @param xmlPath
+  the location of the output xml files. Default is the output directory of calibGenTKR
+  @param histPath
+  the location of the output histogram file. Default is the output directory of calibGenTKR
   @param outputPrefix
-  Prefix for the output file. This string is prepended to the names:
+  Prefix for the output files. This string is prepended to the names:
   _deadStrips.xml, _hotStrips.xml, and _hist.root.
   @param numEvents
   Maximum number of events to be processed. The actual number is the 

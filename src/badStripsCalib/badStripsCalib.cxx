@@ -372,7 +372,7 @@ void BadStripsCalib::Finish()
         bool flagIt;
         
         std::string outputFile;
-        outputFile = m_prefix+"_"+outFile[itest];
+        outputFile = m_xmlPath+m_prefix+"_"+outFile[itest];
         std::cout << "Output file " << outputFile.c_str() << std::endl;
         listout.open(outputFile.c_str(), std::ios::out);
 
