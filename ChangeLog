@@ -1,5 +1,16 @@
 ------------------------------------------------------------
 User: lsrea  Sat Jul 17 08:28:00 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+set detectorType from options file
+updated documentation
+
+    *
+------------------------------------------------------------
+User: lsrea  Sat Jul 17 08:28:00 PDT 2004
 calibGenTKR/src
 
 Modified Files:
