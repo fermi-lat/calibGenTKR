@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Wed Aug  4 11:51:50 PDT 2004
+calibGenTKR/src
+
+Modified Files:
+	mainpage.h 
+Log Message:
+Prepare for tag v0r1p8; fix unix errors/warnings; add a bit more diagonstics to the histograms
+
+    *
+------------------------------------------------------------
+User: lsrea  Wed Aug  4 11:51:50 PDT 2004
 calibGenTKR/doc
 
 Modified Files:
