@@ -43,11 +43,11 @@ class McEvent;
 #include "xml/IFile.h"
 
 namespace {
-    string stripBlanks(string &str) {
+    std::string stripBlanks(std::string &str) {
         // strips off leading and trailing blanks
-        string temp = str;
+        std::string temp = str;
         if (temp.size()==0) return temp;
-        string::size_type pos;
+        std::string::size_type pos;
         pos = temp.find_first_not_of(" ", 0);
         temp = temp.substr(pos);
         pos = temp.find_last_not_of(" ", string::npos);
@@ -55,9 +55,9 @@ namespace {
         return temp;
     }
 
-    int splitString(string &input, string &LH, string &RH, char* delim) {
+    int splitString(string &input, std::string &LH, std::string &RH, char* delim) {
         // splits off leftmost token from delim-delimited string
-        string::size_type pos;
+        std::string::size_type pos;
         pos = input.find(delim);
         if (pos!=string::npos) {
             LH = input.substr(0,pos);
@@ -369,7 +369,7 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
     }
     std::cout << "number of planes: " << m_nPlanes << std::endl;
     std::cout << "Towers in config: " ;
-    for (i=0;i<m_towerNums.size(); ++i) {
+    for (i=0;i<(int)m_towerNums.size(); ++i) {
         std::cout << m_towerNums[i] << " " ;
     }
     std::cout << std::endl;
