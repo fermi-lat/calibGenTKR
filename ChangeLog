@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Sun Jan 23 15:09:50 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+allow comment lines in jobOption file. read new tnt files from each layer to read qudratic TOT conversion parameters.
+
+    *
+------------------------------------------------------------
 User: lsrea  Tue Oct 12 17:54:20 PDT 2004
 calibGenTKR/src/test
 
