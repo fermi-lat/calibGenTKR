@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Mon Jul 19 13:15:25 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+add maxOccupancy option and update docs
+
+    *
+------------------------------------------------------------
+User: lsrea  Mon Jul 19 13:15:25 PDT 2004
 calibGenTKR/src
 
 Modified Files:
