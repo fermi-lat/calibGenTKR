@@ -26,6 +26,7 @@ class totCalib {
 		     const char* outputTxt, const char* outputRoot);
   void genTot(TChain* digi, TChain* recon, 
 		     const char* outputTxt, const char* outputRoot);
+  bool readTotConvFile(const char* dir, const char* runid);
 
  private:
 
@@ -43,9 +44,9 @@ class totCalib {
 
   int findTot(int planeId, TkrCluster::view viewId, int stripId);
 
-  void readTotCorr(int layer, int view, const char* file);
+  bool readTotConv(int layer, int view, const char* file);
 
-  float correctTot(int planeId, TkrCluster::view viewId, int iStrip, 
+  float calcCharge(int planeId, TkrCluster::view viewId, int iStrip, 
 		   int tot) const;
 
   static const int g_nLayer = 4;
@@ -59,10 +60,10 @@ class totCalib {
   static const int g_nDiv = 64;
 
   TGraphErrors* m_totStrip[g_nPlane][g_nView];
-  TGraphErrors* m_totCorrStrip[g_nPlane][g_nView];
+  TGraphErrors* m_chargeStrip[g_nPlane][g_nView];
 
   TH1F* m_totHist[g_nPlane][g_nView][g_nDiv];
-  TH1F* m_totCorrHist[g_nPlane][g_nView][g_nDiv];
+  TH1F* m_chargeHist[g_nPlane][g_nView][g_nDiv];
 
   TNtuple* m_tuple;
 
@@ -88,6 +89,7 @@ class totCalib {
   //name of ascii output tot file
   std::string m_txtOutput;
 
+  float m_totQuadra[g_nLayer][g_nView][g_nStrip];
   float m_totGain[g_nLayer][g_nView][g_nStrip];
   float m_totOffset[g_nLayer][g_nView][g_nStrip];
 

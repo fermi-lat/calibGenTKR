@@ -21,35 +21,27 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
       m_totStrip[iPlane][iView]->SetName(name);
 
       char temp[] = "varCorr00";
-      sprintf(temp,"varCorr%1d%1d", iPlane, iView);
-      m_totCorrStrip[iPlane][iView] = new TGraphErrors(g_nDiv);
-      m_totCorrStrip[iPlane][iView]->SetName(temp);
+      sprintf(temp,"varCorr%1dp%1dv", iPlane, iView);
+      m_chargeStrip[iPlane][iView] = new TGraphErrors(g_nDiv);
+      m_chargeStrip[iPlane][iView]->SetName(temp);
 
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 
-	char name1[] = "tot000000";
-	sprintf(name1,"tot%1d%1d%04d", iPlane, iView, iDiv);
+	char name1[] = "tot0p0v0000fe";
+	sprintf(name1,"tot%1dp%1dv%04dfe", iPlane, iView, iDiv);
 
 	m_totHist[iPlane][iView][iDiv] = new TH1F(name1, name1, 250, 0, 500);
 
-	char name2[] = "totCorr000000";
-	sprintf(name2,"totCorr%1d%1d%04d", iPlane, iView, iDiv);
+	char name2[] = "charge0p0v0000fe";
+	sprintf(name2,"charge%1dp%1dv%04dfe", iPlane, iView, iDiv);
 
-	m_totCorrHist[iPlane][iView][iDiv] = new TH1F(name2, name2, 120, 0, 30);
+	m_chargeHist[iPlane][iView][iDiv] = new TH1F(name2, name2, 120, 0, 30);
 
 
       }
 
     }
   }
-
-  readTotCorr(1, 0, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_x1.txt");
-  readTotCorr(1, 1, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_y1.txt");
-  readTotCorr(2, 0, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_x2.txt");
-  readTotCorr(2, 1, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_y2.txt");
-  readTotCorr(3, 0, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_x3.txt");
-  readTotCorr(3, 1, "/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/tot//chargeInjection_y3.txt");
-
 }
 
 totCalib::~totCalib() 
@@ -63,12 +55,12 @@ totCalib::~totCalib()
     for(int iView = 0; iView != g_nView; ++iView) {
 
       m_totStrip[iPlane][iView]->Write(0, TObject::kOverwrite);
-      m_totCorrStrip[iPlane][iView]->Write(0, TObject::kOverwrite);
+      m_chargeStrip[iPlane][iView]->Write(0, TObject::kOverwrite);
 
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 
 	m_totHist[iPlane][iView][iDiv]->Write(0, TObject::kOverwrite);
-	m_totCorrHist[iPlane][iView][iDiv]->Write(0, TObject::kOverwrite);
+	m_chargeHist[iPlane][iView][iDiv]->Write(0, TObject::kOverwrite);
 
       }
     }
@@ -129,8 +121,6 @@ void totCalib::genTot(const char* digi, const char* recon,
     exit(1);
   }
 
-  //  nEvent = 10000;
-
   analyzeEvent(nEvent);
 
   fitTot();
@@ -175,6 +165,8 @@ void totCalib::analyzeEvent(int nEvent)
 {
   for(int iEvent = 0; iEvent != nEvent; ++iEvent) {
 
+    std::cout << iEvent << std::endl;
+
     m_reconTree->GetEntry(iEvent);
     m_digiTree->GetEntry(iEvent);
 
@@ -182,6 +174,8 @@ void totCalib::analyzeEvent(int nEvent)
     assert(m_digiEvent != 0);
 
     if(! passCut()) continue;
+
+    std::cout << iEvent << std::endl;
 
     getTot();
 
@@ -200,6 +194,7 @@ void totCalib::getTot()
 
     int iLayer = tkrDigi->getBilayer();
     int iPlane = g_nLayer - 1 - iLayer;
+    std::cout << iLayer << " " << iPlane <<  std::endl;
 
     GlastAxis::axis view = tkrDigi->getView();
     if(view == GlastAxis::X) {
@@ -303,14 +298,14 @@ void totCalib::fillTot()
     for(int iStrip = cluster->getFirstStrip(); 
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 
-      float tot = findTot(planeId, viewId, iStrip);
+      int tot = findTot(planeId, viewId, iStrip);
 
-      float totCorr = correctTot(planeId, viewId, iStrip, tot);
+      float charge = calcCharge(planeId, viewId, iStrip, tot);
 
       static int nStripPerGroup = g_nStrip / g_nDiv;
 
       m_totHist[planeId][viewId][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
-      m_totCorrHist[planeId][viewId][iStrip/nStripPerGroup]->Fill(totCorr*(-m_dir.z()));
+      m_chargeHist[planeId][viewId][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
     }
   }
 }
@@ -371,14 +366,14 @@ void totCalib::fitTot()
 	       << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
 	       << errWidth << endl;
 
-	// fit corrected tot for each strip
-	ave = m_totCorrHist[iPlane][iView][iDiv]->GetMean();
-	rms = m_totCorrHist[iPlane][iView][iDiv]->GetRMS();
-	m_totCorrHist[iPlane][iView][iDiv]->Fit("landau", "", "", ave-2*rms, ave+3*rms);
+	// fit charge for each strip
+	ave = m_chargeHist[iPlane][iView][iDiv]->GetMean();
+	rms = m_chargeHist[iPlane][iView][iDiv]->GetRMS();
+	m_chargeHist[iPlane][iView][iDiv]->Fit("landau", "", "", ave-2*rms, ave+3*rms);
 
-	par = (m_totCorrHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParameters();
+	par = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParameters();
 
-	error = (m_totCorrHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParErrors();
+	error = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParErrors();
 
 	pos = (iDiv);
 	errPos = 0.;
@@ -389,10 +384,10 @@ void totCalib::fitTot()
 	width = float( *(par+2) );
 	errWidth = float( *(error+2) );
 
-	m_totCorrStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
-	m_totCorrStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
+	m_chargeStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
+	m_chargeStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
 
-	output << "Corrected tot " << iPlane << ' ' << iView << ' ' << pos
+	output << "Charge " << iPlane << ' ' << iView << ' ' << pos
 	       << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
 	       << errWidth << endl;
 	
@@ -402,24 +397,57 @@ void totCalib::fitTot()
   }
 }
 
-void totCalib::readTotCorr(int layer, int view, const char* file)
+
+bool totCalib::readTotConvFile(const char* dir, const char* runid)
 {
-  ifstream corrFile(file);
-  for(int i = 0; i != 14; ++i) {
-    string temp;
-    getline(corrFile, temp);
+  string filename;
+  char fname[] = "/398000364/TkrTotGainNt_LayerY17_398000364.tnt";
+  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+    for(int iView = 0; iView != g_nView; ++iView) {
+      filename = dir;
+      if( iView == 0 )
+	sprintf(fname,"/%s/TkrTotGainNt_LayerX%d_%s.tnt", runid, iPlane, runid);
+      else
+	sprintf(fname,"/%s/TkrTotGainNt_LayerY%d_%s.tnt", runid, iPlane, runid);
+      filename += fname;
+      if( !readTotConv( iPlane, iView, filename.c_str() ) )
+	return false;
+    }
   }
-
-  int stripId;
-  float gain, offset;
-
-  while(corrFile >> stripId >> gain >> offset) {
-    m_totGain[layer][view][stripId] = gain;
-    m_totOffset[layer][view][stripId] = offset;
-  }
+  return true;
 }
 
-float totCalib::correctTot(int planeId, TkrCluster::view viewId, int iStrip, 
+bool totCalib::readTotConv(int layer, int view, const char* file)
+{
+  ifstream convFile(file);
+  if(  !convFile ){
+    std::cout << file << " cannot be opened." << std::endl;
+    return false;
+  }
+  else std::cout << "Reading " << file << std::endl;
+  for(int i = 0; i != 2; ++i) {
+    string temp;
+    getline(convFile, temp);
+  }
+
+  int stripId, feId;
+  float gain, offset, quadra, chisq;
+  bool display = false;
+
+  while(convFile >> stripId >> feId >> offset >> gain >> quadra >> chisq) {
+    if( display ){
+      std::cout << stripId << " " << offset << " " << quadra << std::endl;
+      display = false;
+    }
+    m_totOffset[layer][view][stripId] = offset;
+    m_totGain[layer][view][stripId] = gain;
+    m_totQuadra[layer][view][stripId] = quadra;
+  }
+
+  return true;
+}
+
+float totCalib::calcCharge(int planeId, TkrCluster::view viewId, int iStrip, 
 			   int tot) const
 {
   // convert TOT raw count to micro second
@@ -428,6 +456,18 @@ float totCalib::correctTot(int planeId, TkrCluster::view viewId, int iStrip,
   int layer = g_nLayer - planeId - 1;
   int view = (viewId == TkrCluster::X) ? 0 : 1;
 
-  // TOT correction
-  return (time  - m_totOffset[layer][view][iStrip]) / m_totGain[layer][view][iStrip];
+  // TOT to charge conversion
+  float p0 = m_totOffset[layer][view][iStrip];
+  float p1 = m_totGain[layer][view][iStrip];
+  float p2 = m_totQuadra[layer][view][iStrip];
+  float charge = 0.0;
+  if( p2 != 0.0){
+    float quad = p1*p1 - 4*p2*(p0-time);
+    if( quad > 0.0 )
+      charge = ( -p1 + sqrt( quad ) ) / (2*p2);
+  }
+  else if( p1 != 0.0 )
+    charge = ( time - p0 ) / p1;
+  
+  return charge;
 }
