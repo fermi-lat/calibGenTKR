@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Mon Jul 19 12:38:59 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx 
+Log Message:
+add histograms to count illegal hits
+
+    *
+------------------------------------------------------------
 User: lsrea  Sun Jul 18 21:59:06 PDT 2004
 calibGenTKR/src/badStripsCalib
 
