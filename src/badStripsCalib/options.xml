@@ -3,8 +3,8 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/options.xml,v 1.7 2004/10/13 00:54:20 lsrea Exp $"
-       cvs_Revision="$Revision: 1.7 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/badStripsCalib/options.xml,v 1.1 2005/02/14 05:40:34 lsrea Exp $"
+       cvs_Revision="$Revision: 1.1 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
 
     <!--
@@ -26,10 +26,10 @@
         
         Path to each file is [winPath|unixPath]+sourceFilePath+sourceFileList[n].
     -->
-    <item name = "winPath"  value = "//slaccfs/glast_" />
-    <item name = "unixPath" value = "/nfs/farm/g/glast/" />
+    <item name = "winPath"  value = "//slaccfs/glast_u12/" />
+    <item name = "unixPath" value = "/nfs/farm/g/glast/u12/" />
        
-    <item name="sourceFilePath" value= "u12/EM2/rootData/398000525/grRoot/"  > 
+    <item name="sourceFilePath" value= "EM2/rootData/398000525/grRoot/"  > 
           common part of the path to the digi.root files (may be blank) </item>
     <item name="sourceFileList"      
         value= " digitization-EM2-v1r0_398000525_digi_DIGI.root "  > 
