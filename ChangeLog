@@ -1,5 +1,16 @@
 ------------------------------------------------------------
 User: lsrea  Sun Feb 29 10:37:29 PST 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+Prepare for tag v0r1p2; parameters from xml file; TChain for input data
+
+
+    *
+------------------------------------------------------------
+User: lsrea  Sun Feb 29 10:37:29 PST 2004
 calibGenTKR/src
 
 Modified Files:
