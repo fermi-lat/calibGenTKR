@@ -55,7 +55,7 @@ namespace {
         return temp;
     }
 
-    int splitString(string &input, std::string &LH, std::string &RH, char* delim) {
+    int splitString(std::string &input, std::string &LH, std::string &RH, char* delim) {
         // splits off leftmost token from delim-delimited string
         std::string::size_type pos;
         pos = input.find(delim);
