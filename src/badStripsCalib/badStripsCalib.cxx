@@ -45,6 +45,9 @@ int numLadders[36]; // historical from balloon flight (not likely to ever need t
 
 int i,j;
 
+// Some special histograms
+TH1F *outsideTowers, *outsidePlanes;
+
 void BadStripsCalib::DigiHistDefine() {
     // Purpose and Method:  Digitization histogram definitions
 
@@ -74,6 +77,9 @@ void BadStripsCalib::DigiHistDefine() {
             m_tkrHists[m_nPlanes*j +i] = new TH1F(buf, buf1, nStrips, -0.5, nStrips-0.5);
         }
     }
+
+    outsideTowers = new TH1F("outsideTowers", "hits in Towers outside current config", 18, -1.5, 16.5);
+    outsidePlanes = new TH1F("outsidePlanes", "hits in planes outside current config", 20, -1.5, 18.5);
     return;       
 }
 
@@ -94,13 +100,21 @@ void BadStripsCalib::DigiTkr() {
     while (t = (TkrDigi*)tkrDigiIter.Next()) {
 
         int tower = (t->getTower()).id();
-        if( tower>=numTowers) continue;
+        if( tower>=16 || tower < 0) {
+            int truncTower = max(-1, min(16, tower));
+            outsideTowers->Fill(truncTower);
+            continue;
+        }
         int layer = t->getBilayer();
         GlastAxis::axis view = t->getView();
         int iview = (int) view;
         bool isY = (view==1);
         int plane = 2*layer + (1-isY)*(1-layer%2) + isY*layer%2;
-        if (plane>=m_nPlanes) continue;
+        if (plane>=m_nPlanes || plane < 0) {
+            int truncPlane = max(-1, min(18, plane));
+            outsidePlanes->Fill(truncPlane);
+            continue;
+        } 
         if (debug) std::cout << "    tower,layer,view " << tower << " " 
             << layer << " " << iview <<std::endl;
 
@@ -109,7 +123,12 @@ void BadStripsCalib::DigiTkr() {
         for (iHit = 0; iHit < numStrips; ++iHit) {
             int strip = t->getHit(iHit);
             if (debug) std::cout << strip << " " ;
-            m_tkrHists[m_histId[tower]*m_nPlanes + plane]->Fill(strip);
+            int histId = m_histId[tower];
+            if (histId>-1) {
+                m_tkrHists[m_histId[tower]*m_nPlanes + plane]->Fill(strip);
+            } else {
+                outsideTowers->Fill(tower);
+            }
         }
     }
     return;
