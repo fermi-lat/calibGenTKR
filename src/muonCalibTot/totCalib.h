@@ -60,6 +60,9 @@ class totCalib {
   bool readRcReports( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
 
+  bool parseRcReport( const char* reportFile );
+  void totCalib::getDate( const char* str, std::string& date );
+
   void calibChargeScale( int );
 
  private:
@@ -137,8 +140,9 @@ class totCalib {
   float m_totOffset[g_nLayer][g_nView][g_nStrip];
 
   //xml related parameters
-  int m_tower_row, m_tower_col, m_runid;
-  std::string m_tower_serial, m_version, m_timeStamp, m_startTime, m_stopTime;
+  int m_tower_row, m_tower_col, m_first_run, m_last_run;
+  std::string m_tower_serial, m_version, m_tot_runid, m_timeStamp, 
+    m_startTime, m_stopTime;
 
 };
 Double_t langaufun(Double_t *x, Double_t *par);//takuya0122

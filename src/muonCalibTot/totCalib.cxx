@@ -33,11 +33,13 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
   m_tower_row=0;
   m_tower_col=0;
   m_tower_serial="TKrFMX";
-  m_version="1.7";
-  m_runid = 0;
+  m_version="1.8";
+  m_first_run = 999999999;
+  m_last_run = 0;
+  m_tot_runid = "0";
   m_timeStamp="050124000000";
-  m_startTime="Thu 01/20 2005, 22:52 GMT";
-  m_stopTime="Thu 01/20 2005, 22:52 GMT";
+  m_startTime="01/20 2005, 22:52 GMT";
+  m_stopTime="01/20 2005, 22:52 GMT";
 
   for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
 
@@ -182,7 +184,8 @@ int totCalib::setInputRootFiles( const char* rootDir, const char* reconDir,
       run != runIds.end(); ++run) {
 
     int runid = atoi( (*run).c_str() );
-    if( runid > m_runid ) m_runid = runid;
+    if( runid < m_first_run ) m_first_run = runid;
+    if( runid > m_last_run ) m_last_run = runid;
 
     digiFile = rootDir;
     sprintf(fname,"/%d/grRoot/digitization-EM2-v1r0_%d_digi_DIGI.root",
@@ -245,11 +248,95 @@ bool totCalib::readRcReports( const char* reportDir,
     reportFile += "/rcReport.out";
     std::cout << "open rcReport file: " << reportFile << endl;
     m_log << "rcReport file: " << reportFile << endl;
-    //if( !parseRcReport( reportFile.c_str() ) ) return false;
+    if( !parseRcReport( reportFile.c_str() ) ) return false;
   }
   return true;
 }
 
+
+bool totCalib::parseRcReport( const char* reportFile )
+{
+  xml::XmlParser* parsercReport = new xml::XmlParser(true);
+  DOMDocument* docrcReport = 0;
+  try{
+    docrcReport = parsercReport -> parse(reportFile);
+  }
+  catch (xml::ParseException ex) {
+    std::cout << "caught exception with message " << std::endl;
+    std::cout << ex.getMsg() << std::endl;
+    delete parsercReport;
+    return false;
+  }
+
+  if (docrcReport != 0){//successful
+    std::cout <<  reportFile << " is successfully parsed" << std::endl;
+    
+    //look up attributes
+    string timeStamp;
+    DOMElement* rcElt = docrcReport -> getDocumentElement();
+    try {
+      timeStamp = xml::Dom::getAttribute(rcElt, "timestamp");
+    }
+    catch (xml::DomException ex) {
+      std::cout << "DomException:  " << ex.getMsg() << std::endl;
+    }
+
+    std::vector<std::string> keywords, values;
+    keywords.push_back("RunId");
+    keywords.push_back("StartTime");
+    keywords.push_back("EndTime");
+
+    for( int i=0; i<keywords.size(); i++){
+      DOMElement* childElt 
+	= xml::Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
+      try {
+	values.push_back( xml::Dom::getTextContent(childElt) );
+      }
+      catch (xml::DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	return false;
+      }
+    }
+    int runid = atoi( values[0].c_str() );
+    if( runid != m_first_run && runid != m_last_run ) return true;
+    if( runid == m_first_run ) getDate( values[1].c_str(), m_startTime );
+    if( runid == m_last_run ) getDate( values[2].c_str(), m_stopTime );
+    
+    return true;
+  }
+  return false;
+
+}
+
+
+void totCalib::getDate( const char* str, std::string& sdate )
+{
+  std::vector<std::string> strings;  
+  std::string strs, schar;
+
+  for(int i=0; str[i]; i++){
+    if( str[i] == '(' || str[i] == ' ' ) continue;
+    if( str[i] == ')' || str[i] == ',' ){
+      strings.push_back( strs );
+      strs.erase();
+    }
+    else{
+      schar = str[i];
+      strs.insert( strs.size(), schar );
+    }
+  }
+
+  sdate = strings[1]; // month
+  sdate += "/" + strings[2]; // day
+  sdate += " " + strings[0]; // year
+  sdate += ", " + strings[3]; // hour
+  if( strings[4].size() == 1 )
+    sdate += ":0" + strings[4]; // minutes
+  else
+    sdate += ":" + strings[4]; // minutes
+  std::cout << "date: " << sdate << std::endl;
+
+}
 
 void totCalib::calibChargeScale( int nEvents )
 {
@@ -601,7 +688,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 
   filename += fname;
   std::cout << "Open xml file: " << filename << std::endl;
-  m_log << "Open xml file: " << filename << std::endl;
+  m_log << "TOT xml file: " << filename << std::endl;
   
 
 
@@ -622,16 +709,15 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     // look up generic attributes
     DOMElement* docElt = doc->getDocumentElement();
     DOMElement* attElt = xml::Dom::findFirstChildByName(docElt,"generic");
-    //docElt = attElt;
-    //attElt = xml::Dom::findFirstChildByName(docElt,"inputSample");
+    //DOMElement* isElt = xml::Dom::findFirstChildByName(attElt,"inputSample");
     
-    //try {
-    //  m_startTime  = xml::Dom::getAttribute(attElt, "startTime");
-    //  m_stopTime = xml::Dom::getAttribute(attElt, "stopTime");
-    // }
-    //catch (xml::DomException ex) {
-    //  std::cout << "DomException:  " << ex.getMsg() << std::endl;
-    //}
+    try {
+      m_tot_runid  = xml::Dom::getAttribute(attElt, "runId");
+      m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
+    }
+    catch (xml::DomException ex) {
+      std::cout << "DomException:  " << ex.getMsg() << std::endl;
+    }
 
     // look up tower attributes
     attElt = xml::Dom::findFirstChildByName(docElt,"tower");
@@ -645,7 +731,9 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     }
 
     std::cout << "tower row: " << m_tower_row << ", col: " << m_tower_col 
-	      << ", serial: " << m_tower_serial << std::endl;
+	      << ", serial: " << m_tower_serial 
+	      << ", runid: " << m_tot_runid << ", timeStamp: " << m_timeStamp
+	      << std::endl;
 
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
@@ -674,7 +762,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   return true;
 }
 
-bool totCalib::getParam(const DOMElement* totElement,int layer,int view){  
+bool totCalib::getParam(const DOMElement* totElement, int layer, int view){  
   int stripId;
   double quad,gain,offset;
   try{
@@ -820,8 +908,8 @@ void totCalib::fillXml()//takuya
 
   output << "<chargeScale>" << endl
 	 << "   <generic calType='ChargeScale' creatorName='totCalib'"
-	 << " creatorVersion ='" << m_version 
-	 << "' fmtVersion='NA' instrument='TWR' runId='" << m_runid 
+	 << " creatorVersion ='" << m_version
+	 << "' fmtVersion='NA' instrument='TWR' runId='" << m_tot_runid 
 	 << "' timestamp='" << m_timeStamp << "'>" << std::endl
 	 << "    <inputSample mode='NA' source='CosmicMuon' startTime='" 
 	 << m_startTime << "' stopTime='" << m_stopTime 

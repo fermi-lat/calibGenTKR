@@ -80,20 +80,25 @@ int main(int argn, char** argc) {
   } while( line[0] == '#' );
   std::string totConvRunId = line;
 
+  // output directory name
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string outputDir = line + '/';
+
   // log file name
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string logFileName = line;
+  std::string logFileName = outputDir + line;
 
   // output xml file name
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string xmlFileName = line;
+  std::string xmlFileName = outputDir + line;
 
   // output root file name
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string rootFileName = line;
+  std::string rootFileName = outputDir + line;
 
   totCalib calib;
   if( !calib.setOutputFiles( logFileName.c_str(), xmlFileName.c_str(), 
@@ -103,10 +108,10 @@ int main(int argn, char** argc) {
     if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
       return 1;
 
-  if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
-
   int nEvents = calib.setInputRootFiles( rootDir.c_str(), reconDir.c_str(), 
 					 runIds );
+
+  if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
 
   calib.calibChargeScale( nEvents );
 
