@@ -59,7 +59,7 @@ namespace {
         // splits off leftmost token from delim-delimited string
         std::string::size_type pos;
         pos = input.find(delim);
-        if (pos!=string::npos) {
+        if (pos!=std::string::npos) {
             LH = input.substr(0,pos);
             RH = input.substr(pos);
         } else {
@@ -68,7 +68,7 @@ namespace {
         }
         LH = stripBlanks(LH);
         RH = stripBlanks(RH);
-        return pos;
+        return (int) pos;
     }
 }
 
