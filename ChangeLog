@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Feb  4 10:59:56 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalib.h totCalibChain_option.dat 
+Log Message:
+fix layer-plane mix-up.
+
+    *
+------------------------------------------------------------
 User: htajima  Thu Feb  3 19:19:59 PST 2005
 calibGenTKR/src/muonCalibTot
 
