@@ -111,13 +111,13 @@ public :
     //McEvent     *mc;
     /// name of the output histogram ROOT file
     char        *m_histFileName;
+    /// output prefix
+    std::string  m_prefix;
     /// xml output path
     char        *m_xmlPath;
     /// hist output path
     char        *m_histPath;
 
-    /// output prefix
-    std::string  m_prefix;
     /// Arrays that contain pointers to the TFile, TTree, and TChains
     TObjArray   *fileArr, *treeArr, *chainArr;
     
