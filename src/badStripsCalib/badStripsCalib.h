@@ -50,7 +50,7 @@ namespace {
         std::string::size_type pos;
         pos = temp.find_first_not_of(" ", 0);
         temp = temp.substr(pos);
-        pos = temp.find_last_not_of(" ", string::npos);
+        pos = temp.find_last_not_of(" ", std::string::npos);
         temp = temp.substr(0,pos+1);
         return temp;
     }
