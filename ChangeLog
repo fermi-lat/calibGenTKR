@@ -1,4 +1,38 @@
 ------------------------------------------------------------
+TAG
+Tag name: v2r2, operation: add
+Package: calibGenTKR
+User: jrb  Fri Apr  1 00:28:11 2005
+Files:
+  calibGenTKR/.cvsignore  1.2
+  calibGenTKR/ChangeLog  1.1.1.132
+  calibGenTKR/cmt/.cvsignore  1.1
+  calibGenTKR/cmt/requirements  1.22
+  calibGenTKR/doc/release.notes  1.18
+  calibGenTKR/output/example_hotStrips.xml  1.1.1.1
+  calibGenTKR/output/example_deadStrips.xml  1.1.1.1
+  calibGenTKR/output/example_hist.root  1.1.1.1
+  calibGenTKR/pl/job.dat  1.1
+  calibGenTKR/pl/RunCalibGenTKR.pl  1.2
+  calibGenTKR/src/mainpage.h  1.10
+  calibGenTKR/src/badStripsCalib/badStripsCalib.cxx  1.18
+  calibGenTKR/src/badStripsCalib/badStrips.dtd  1.1
+  calibGenTKR/src/badStripsCalib/options.xml  1.2
+  calibGenTKR/src/badStripsCalib/generateBadStrips.cxx  1.2
+  calibGenTKR/src/badStripsCalib/badStripsCalib.h  1.17
+  calibGenTKR/src/muonCalibTot/TkrCalibration.dtd  1.1
+  calibGenTKR/src/muonCalibTot/totCalib.h  1.13
+  calibGenTKR/src/muonCalibTot/runTotCalibChain.cxx  1.11
+  calibGenTKR/src/muonCalibTot/totCalibChain_option.dat  1.13
+  calibGenTKR/src/muonCalibTot/totCalib.cxx  1.22
+  calibGenTKR/src/xml2root/xmltoroot.cxx  1.1
+  calibGenTKR/src/xml2root/XmltorootHandler.cxx  1.1
+  calibGenTKR/src/xml2root/XmltorootHandler.h  1.1
+  calibGenTKR/xml/ifile.dtd  1.1
+  calibGenTKR/xml/badStrips.dtd  1.1.1.1
+
+    *
+------------------------------------------------------------
 User: jrb  Fri Apr  1 00:27:58 PST 2005
 calibGenTKR/doc
 
