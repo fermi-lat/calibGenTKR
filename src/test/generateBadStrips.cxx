@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "xml/IFile.h"
 
 /* to do:
   figure out better local average, for now we use simple average
@@ -53,45 +54,47 @@ int main(int argn, char** argc) {
 #endif
 
     bool attended = false;
+
     // current example is from glast_03/EM2003/rootFiles/em_v1r030302p5/digi/ 
     std::string sourceDirectory("c:/Glast/files/em/");
-    std::string sourceFile     ("ebf031006235353_digi.root");
+    std::string sourceFile("ebf031006235353_digi.root");
     std::string outputString   ("ebf031006235353");
     std::string path = ::getenv("CALIBGENTKRROOT");
     unsigned int numEvents = 5000000;
 
+    std::string xmlFile(path+"/src/test/options.xml");
 
-    std::string digiFileName   (path+sourceFile);
-    std::string outputPrefix(path);
-    outputPrefix += "/output/"+outputString;
-
-    std::ifstream inputFile;
-    std::string tempString;
     if(argn > 1) {
-        inputFile.open(argc[1], std::ios::in);
+        xmlFile = argc[1];
+        std::cout << "Reading in user-specified options file: " <<  xmlFile << std::endl;
     }
-    else {
-        inputFile.open((path + "/src/test/options.txt").c_str(),std::ios::in);
+    
+    xml::IFile myFile(xmlFile.c_str());
+
+    if (myFile.contains("parameters","sourceDirectory")) {
+        sourceDirectory = myFile.getString("parameters", "sourceDirectory");
+    }
+    if (myFile.contains("parameters","sourceFile")) {
+        sourceFile = myFile.getString("parameters", "sourceFile");
+    }
+    if (myFile.contains("parameters","outputString")) {
+        outputString    = myFile.getString("parameters", "outputString");
+    }
+    if (myFile.contains("parameters","numEvents")) {
+        numEvents       = myFile.getInt   ("parameters", "numEvents");
     }
 
-    inputFile >> sourceDirectory;
     std::cout << "Source Directory: " << sourceDirectory << std::endl;
-    inputFile >> sourceFile;
     std::cout << "Source File: " << sourceFile << std::endl;
-
-    digiFileName = sourceDirectory+sourceFile;
-
-    inputFile >> outputString;
-    std::cout << "Output string: " << outputString << std::endl;
-
-    inputFile >> numEvents;
+    std::cout << "Output file prefix in directory /output: " << outputString << std::endl;
     std::cout << "Maximum number of events to process: " << numEvents << std::endl;
 
+    std::string digiFileName = sourceDirectory+sourceFile;
     // not needed for this calibration
     std::string mcFileName = "";
     std::string reconFileName = "";
 
-    outputPrefix = path+"/output/"+outputString;
+    std::string outputPrefix(path+"/output/"+outputString);
     char* c_prefix = const_cast<char*>(outputPrefix.c_str());
 
     BadStripsCalib r(digiFileName.c_str(), reconFileName.c_str(), mcFileName.c_str(), c_prefix);
