@@ -80,6 +80,8 @@ public :
     int m_nPlanes;
     /// list of tower numbers (also gives number of towers)
     std::vector<int> m_towerNums;
+    /// hist Ids
+    int m_histId[16];
     /// vector of histograms
     std::vector<TH1F*> m_tkrHists;
 
@@ -331,6 +333,15 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
             }
         } else {
             std::cout << "no valid detector found" << std::endl;
+        }
+
+        int i;
+        for (i=0; i<16; ++i) {
+            m_histId[i] = -1;
+        }
+        // fill in histId sequence for existing towers
+        for (i=0;i<(int)m_towerNums.size(); ++i) {
+            m_histId[m_towerNums[i]] = i;
         }
     }
 }
