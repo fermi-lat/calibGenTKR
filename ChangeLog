@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: xchen  Thu Sep  2 10:29:09 PDT 2004
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+add tot calibrate code
+    *
+------------------------------------------------------------
 User: xchen  Thu Sep  2 10:27:58 PDT 2004
 calibGenTKR/src/muonCalibTot
 
