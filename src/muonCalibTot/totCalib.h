@@ -82,7 +82,7 @@ class totCalib {
 
   void fillXml();//takuya
 
-  int findTot(int planeId, TkrCluster::view viewId, int stripId);
+  int findTot(int planeId, int view, int stripId);
 
   bool readTotConv(int layer, int view, const char* file);
   bool readTotConv(const char* file);
