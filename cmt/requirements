@@ -27,7 +27,7 @@ include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
 #                         ../src/muonCalibToT/totCalib.h" 
 
 
-macro_append cppflags "-DOLD_RECON"
+#macro_append cppflags "-DOLD_RECON"
 macro_append ROOT_libs " $(ROOT_GUI_libs)"
 
 #macro_append ROOT_libs " -lHist -l Graf " \
