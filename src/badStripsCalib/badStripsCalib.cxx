@@ -97,7 +97,8 @@ void BadStripsCalib::DigiTkr() {
 
     //int numTowers = m_towerNums.size();
 
-    while (t = (TkrDigi*)tkrDigiIter.Next()) {
+        // yes, it's "=", not "=="... we're assigning the pointer to the next object to t...
+        while (t = (TkrDigi*)tkrDigiIter.Next()) {
 
         int tower = (t->getTower()).id();
         if( tower>=16 || tower < 0) {
