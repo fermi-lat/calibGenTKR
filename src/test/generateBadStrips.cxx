@@ -95,9 +95,9 @@ int main(int argn, char** argc) {
     std::string reconFileName = "";
 
     std::string outputPrefix(path+"/output/"+outputString);
-    char* c_prefix = const_cast<char*>(outputPrefix.c_str());
 
-    BadStripsCalib r(digiFileName.c_str(), reconFileName.c_str(), mcFileName.c_str(), c_prefix);
+    BadStripsCalib r(digiFileName.c_str(), reconFileName.c_str(), mcFileName.c_str(), 
+        const_cast<char*>(outputPrefix.c_str()));
     r.Go(numEvents);
 	r.Finish();
     r.WriteHist();
