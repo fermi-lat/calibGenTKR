@@ -24,7 +24,7 @@ bool testAgainstFit = false;  // code to handle the edges, where there are few c
 // used for average or local-average cuts
 const float nSig = 6.f;
 const float hotFactor = 10.f;
-const float maxOccupancy = 0.01f;
+//const float maxOccupancy = 0.01f; -> now a member, setable in options file
 
 // checkCount: if true, require an average of at least minHistCount counts before testing for dead
 // not completely thought out, but shouldn't make much difference in a flight tower
@@ -469,7 +469,7 @@ void BadStripsCalib::Finish()
             if (simpleCuts) {
                 cutval[0] = 0;
                 // call a strip hot if it fires more than maxOccupancy of the time (over the average)
-                cutval[1] = average[ihist] + evtCount*maxOccupancy; 
+                cutval[1] = average[ihist] + evtCount*m_maxOccupancy; 
             } else if (!testAgainstFit) {
                 cutval[0] = std::max((float)0.0,(float)(average[ihist] - nSig*sqrt(average[ihist])));
                 cutval[1] = std::max((float)(hotFactor*average[ihist]), 
