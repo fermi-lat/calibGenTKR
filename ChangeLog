@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Tue Oct 12 17:54:20 PDT 2004
+calibGenTKR/src/test
+
+Modified Files:
+	options.xml unix_options.xml win_options.xml 
+Log Message:
+Change u03 to u08 in test options files
+
+    *
+------------------------------------------------------------
 User: lsrea  Tue Oct 12 17:54:19 PDT 2004
 calibGenTKR/doc
 
