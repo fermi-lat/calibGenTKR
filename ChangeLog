@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Sun Jul 18 21:59:06 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+correct the code for multi-towers
+
+    *
+------------------------------------------------------------
 User: lsrea  Sat Jul 17 08:28:00 PDT 2004
 calibGenTKR/src/test
 
