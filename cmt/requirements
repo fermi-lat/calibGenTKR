@@ -7,7 +7,7 @@ version v0r1p8
 #use these to get the env vars defined
 # use mcRootData *
 use digiRootData *
-#use reconRootData *
+use reconRootData *
 use RootPolicy v4r* 
 use xml *
 
@@ -22,8 +22,8 @@ apply_pattern package_headers
 macro_append calibGenTKR_headers "" \
                  WIN32 " ../src/badStripsCalib/badStripsCalib.h "
 
-macro_append ROOT_libs " -lHist " \
-             WIN32 " ${ROOT_PATH}/lib/libHist.lib "
+macro_append ROOT_libs " -lHist -l Graf " \
+             WIN32 " ${ROOT_PATH}/lib/libHist.lib ${ROOT_PATH}/lib/libGaf.lib"
 
 # Define a test program that will run BadStripsCalib in batch mode
 # One could also pass in their own set of ROOT files as follows:
@@ -31,3 +31,5 @@ macro_append ROOT_libs " -lHist " \
 application doBadStripsCalib test/generateBadStrips.cxx \
             badStripsCalib\badStripsCalib.cxx \
             ${calibGenTKR_headers}
+
+application doMuonCalibTot  muonCalibTot/*.cxx

@@ -1,0 +1,4 @@
+/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040115200042_digi.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040115025118_digi.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/digi/ebf040116164625_digi.root 
+/nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040115200042_recon.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040115025118_recon.root /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p10/recon/tkrRecon_lowe/ebf040116164625_recon.root 
+../output/tot.txt
+../output/tot.root
