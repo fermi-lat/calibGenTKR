@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Thu Feb 26 12:04:36 PST 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx 
+Log Message:
+working on unix stuff
+
+    *
+------------------------------------------------------------
+User: lsrea  Thu Feb 26 12:04:36 PST 2004
 calibGenTKR/src/badStripsCalib
 
 Modified Files:
