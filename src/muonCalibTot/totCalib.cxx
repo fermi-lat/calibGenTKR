@@ -1,27 +1,13 @@
-#include "xml/Dom.h"
-#include <xercesc/dom/DOMElement.hpp>
-#include <xercesc/dom/DOMNodeList.hpp>
-#include <xercesc/dom/DOMCharacterData.hpp>
-#include <xercesc/dom/DOMNamedNodeMap.hpp>
-#include <xercesc/dom/DOMDocument.hpp>
-#include <xercesc/dom/DOMException.hpp>
-#include <xercesc/dom/DOMTreeWalker.hpp>
-#include <xercesc/util/TransService.hpp>
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
-#include "xml/XmlParser.h"
-#include "xml/Dom.h"
-#include "facilities/Util.h"
-#include <string>
+
 #include <cmath>
-#include <fstream>
-#include <iostream>
-#include "TF1.h"
+#include <ctime>
+
 #include "totCalib.h"
  
 using std::string;
 using std::cout;
 using std::endl;
+
 XERCES_CPP_NAMESPACE_USE
 
 
@@ -33,13 +19,23 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
   m_tower_row=0;
   m_tower_col=0;
   m_tower_serial="TKrFMX";
-  m_version="1.8";
+  m_version="1.9";
   m_first_run = 999999999;
   m_last_run = 0;
   m_tot_runid = "0";
-  m_timeStamp="050124000000";
   m_startTime="01/20 2005, 22:52 GMT";
   m_stopTime="01/20 2005, 22:52 GMT";
+
+  // get time 
+  time_t rawtime;
+  time( &rawtime );
+  // format time into a null-terminated string
+  char nts[] = "050124-000000";
+  size_t ntsmax;
+  strftime( nts, ntsmax, "%y%m%d", gmtime( &rawtime ) );
+  m_dateStamp = nts;
+  strftime( nts, ntsmax, "%H%M%S", gmtime( &rawtime ) );
+  m_timeStamp = nts;
 
   for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
 
@@ -99,21 +95,34 @@ totCalib::~totCalib()
 }
 
 
-bool totCalib::setOutputFiles( const char* outputLog, const char* outputXml, 
-		     const char* outputRoot )
+bool totCalib::setOutputFiles( const char* outputDir )
 {
-  m_log.open( outputLog );
+  m_outputDir = outputDir;
+
+  std::string filename;
+  char fname[] = "/TE603_050121-0000.root";
+
+  filename = m_outputDir;
+  sprintf( fname, "/TE603_%s-%s.log", m_dateStamp.c_str(), m_timeStamp.c_str() );
+  filename += fname;
+  m_log.open( filename.c_str() );
   if( m_log )
-    std::cout << "Open log file: " << outputLog << std::endl;
-  else
-    std::cout << outputLog << " cannot be opened." << std::endl;
-
-  m_xmlOutput = outputXml;//takuya
-
-  m_totFile = new TFile(outputRoot, "RECREATE");
-  if( m_totFile ) std::cout << "Open output root file: " << outputRoot << std::endl;
+    std::cout << "Open log file: " << filename << std::endl;
   else{
-    std::cout << outputRoot << " can not be opened." << std::endl;
+    std::cout << filename << " cannot be opened." << std::endl;
+    return false;
+  }
+
+  filename = m_outputDir;
+  sprintf( fname, "/TE603_%s-%s.root", m_dateStamp.c_str(), m_timeStamp.c_str() );
+  filename += fname;
+  m_totFile = new TFile( filename.c_str(), "RECREATE" );
+  if( m_totFile ){
+    std::cout << "Open output root file: " << filename << std::endl;
+    m_log << "Output root file: " << filename << std::endl;
+  }
+  else{
+    std::cout << filename << " can not be opened." << std::endl;
     return false;
   }
   return true;
@@ -334,6 +343,7 @@ void totCalib::getDate( const char* str, std::string& sdate )
     sdate += ":0" + strings[4]; // minutes
   else
     sdate += ":" + strings[4]; // minutes
+  sdate += " GMT";
   std::cout << "date: " << sdate << std::endl;
 
 }
@@ -556,7 +566,7 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 3, 0.0, rms );
 	ffit->SetRange( ave-2*rms, ave+3*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	m_totHist[iPlane][iView][iDiv]->Fit( "langau", "RBQ" );
+	//m_totHist[iPlane][iView][iDiv]->Fit( "langau", "RBQ" );
 
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	Double_t *par = ffit->GetParameters();
@@ -574,9 +584,9 @@ void totCalib::fitTot()
 	m_totStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
 	m_totStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
 
-	m_log << "Uncorrected tot " << iPlane << ' ' << iView << ' ' << pos
+	/*m_log << "Uncorrected tot " << iPlane << ' ' << iView << ' ' << pos
 	       << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
-	       << errWidth << endl;
+	       << errWidth << endl; */
 
 	// fit charge for each strip
 	area = m_chargeHist[iPlane][iView][iDiv]->GetEntries();
@@ -614,8 +624,17 @@ void totCalib::fitTot()
 	m_chargeStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
 	m_chargeStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
 
-	if( peak > 0.0 )
-	  m_chargeScale[iPlane][iView][iDiv] = peak / 5.0;
+	if( peak > 0.0 ){
+	  float chargeScale = 5.0 / peak;
+	  m_chargeScale[iPlane][iView][iDiv] = chargeScale;
+	  if( fabs(chargeScale-1) > 0.5 )
+	    std::cout << "WARNIN, Abnormal charge scale: " << chargeScale 
+		      << ", (L,V)=(" << iPlane << ", " << iView << ")" 
+		      << std::endl;
+	    m_log << "WARNIN, Abnormal charge scale: " << chargeScale 
+		      << ", (L,V)=(" << iPlane << ", " << iView << ")" 
+		      << std::endl;
+	}
 	
 	m_log << "Charge " << iPlane << ' ' << iView << ' ' << pos << ' '
 	       << area << ' ' << ave << ' ' << rms << ", " << *(par+0) << ' '
@@ -713,7 +732,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     
     try {
       m_tot_runid  = xml::Dom::getAttribute(attElt, "runId");
-      m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
+      //m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
     }
     catch (xml::DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -738,22 +757,26 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
     int len = conList->getLength();   
-    int layer,view;
-    string whichView;
     for(int i=0; i<len; i++){//each layers loop
       DOMNode* childNode = conList->item(i);
-      layer = xml::Dom::getIntAttribute(childNode, "tray");
-      whichView = xml::Dom::getAttribute(childNode, "which");
-      if(whichView=="top")view = 0;
-      else view = 1;
-      //std::cout<<i<<",tray="<<layer<<",view="<<view<<std::endl;
-      
+      int tray = xml::Dom::getIntAttribute(childNode, "tray");
+      std::string which = xml::Dom::getAttribute(childNode, "which");
+      std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
+     
       //get first child element
       DOMElement* elder = xml::Dom::getFirstChildElement(childNode);
       DOMElement* younger;
 
-      while(getParam(elder,layer,view)){
-	younger = xml::Dom::getSiblingElement(elder);
+      int view = (tray+1) % 2;
+      int layer = tray;
+      if( which == "bot" ) layer -= 1;
+      if( layer >= g_nPlane || layer < 0 ){
+	std::cout << "Invalid layer id: " << layer << std::endl;
+	continue;
+      }
+	
+      while( getParam( elder, layer, view ) ){
+	younger = xml::Dom::getSiblingElement( elder );
 	elder = younger;
       }
     }
@@ -766,12 +789,17 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
   int stripId;
   double quad,gain,offset;
   try{
-    stripId = xml::Dom::getIntAttribute(totElement,"id");//if there isn't next strip,go to next layer or view
-  }
+    stripId = xml::Dom::getIntAttribute( totElement, "id" );
+  } //if there isn't next strip,go to next layer or view
   catch(xml::DomException ex){
-    cout << "finished (layer,view)=("<<layer<<", "<<view<<")"<< endl;
+    cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
     return false;
   }
+  if( stripId < 0 || stripId >= g_nStrip ){
+    std::cout << "Invalid strip id: " << stripId << std::endl;
+    return true;
+  }
+
   try{
     quad = xml::Dom::getDoubleAttribute(totElement,"quad");
   }
@@ -822,7 +850,26 @@ float totCalib::calcCharge(int planeId, TkrCluster::view viewId, int iStrip,
 
 void totCalib::fillXml()//takuya
 {
-  std::ofstream output(m_xmlOutput.c_str());
+
+  std::string filename = m_outputDir;
+  char fname[] = "/TkrFMX_TkrChargeScale_050131-161012.xml";
+  
+  sprintf( fname, "%s_TkrChargeScale_%s-%s.xml", 
+	   m_tower_serial.c_str(), m_dateStamp.c_str(), m_timeStamp.c_str() );
+
+  filename += fname;
+
+  std::ofstream output( filename.c_str() );
+  if( output ){
+    std::cout << "Open output xml file: " << filename << std::endl;
+    m_log << "Output xml file: " << filename << std::endl;
+  }
+  else{
+    std::cout << filename << " cannot be opened." << std::endl;
+    return;
+  }
+
+
   output << "<?xml version='1.0' ?>" << std::endl
 	 << "<!DOCTYPE chargeScale [" << std::endl
 	 << "<!-- dtd for Tracker calibrations -->" << endl
@@ -910,7 +957,7 @@ void totCalib::fillXml()//takuya
 	 << "   <generic calType='ChargeScale' creatorName='totCalib'"
 	 << " creatorVersion ='" << m_version
 	 << "' fmtVersion='NA' instrument='TWR' runId='" << m_tot_runid 
-	 << "' timestamp='" << m_timeStamp << "'>" << std::endl
+	 << "' timestamp='" << m_dateStamp << m_timeStamp << "'>" << std::endl
 	 << "    <inputSample mode='NA' source='CosmicMuon' startTime='" 
 	 << m_startTime << "' stopTime='" << m_stopTime 
 	 << "' triggers='TKR'>" << std::endl
@@ -954,7 +1001,7 @@ void totCalib::fillXml()//takuya
 
 //-----------------------------------------------------------------------
 //
-//      Convoluted Landau and Gaussian Fitting Function
+//      Convoluted Landau and Gaussian Fitting Funcion
 //         (using ROOT's Landau and Gauss functions)
 //
 //  Based on a Fortran code by R.Fruehwirth (fruhwirth@hephy.oeaw.ac.at)

@@ -83,26 +83,10 @@ int main(int argn, char** argc) {
   // output directory name
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string outputDir = line + '/';
-
-  // log file name
-  do{ getline(inputFile, line);
-  } while( line[0] == '#' );
-  std::string logFileName = outputDir + line;
-
-  // output xml file name
-  do{ getline(inputFile, line);
-  } while( line[0] == '#' );
-  std::string xmlFileName = outputDir + line;
-
-  // output root file name
-  do{ getline(inputFile, line);
-  } while( line[0] == '#' );
-  std::string rootFileName = outputDir + line;
+  std::string outputDir = line;
 
   totCalib calib;
-  if( !calib.setOutputFiles( logFileName.c_str(), xmlFileName.c_str(), 
-			     rootFileName.c_str() ) ) return 1;
+  if( !calib.setOutputFiles( outputDir.c_str() ) ) return 1;
 
   if( !calib.readTotConvXmlFile( totConvDir.c_str(), totConvRunId.c_str() ) )
     if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
