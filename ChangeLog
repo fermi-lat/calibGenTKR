@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb 22 21:06:04 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+fix TOT assignment. get rid of reference to plainId as much as possible. option to find partially disconnected channels.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v1r4, operation: add
 Package: calibGenTKR
