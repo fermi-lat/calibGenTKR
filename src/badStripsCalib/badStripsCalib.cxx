@@ -12,6 +12,7 @@ UInt_t digiRunNum,  reconRunNum,  mcRunNum;
 static Int_t evtCount = 0;
 
 // some test flags
+bool overlayTowers   = false;
 bool debug      = false;
 bool debugf     = false;
 bool infof      = false;
@@ -71,7 +72,7 @@ void BadStripsCalib::DigiHistDefine() {
     for (j = 0; j<nTowers; ++j) {
         int tower = m_towerNums[j];
         for (i = 0; i<m_nPlanes; ++i) {
-            sprintf(buf,"TKR %d-%d",tower,i);
+            sprintf(buf,"TKR %02d-%02d",tower,i);
             sprintf(buf1,"Strips hit in tower %d, plane %d",tower, i);
             int nStrips = numLadders[i]*stripsPerLadder;
             m_tkrHists[m_nPlanes*j +i] = new TH1F(buf, buf1, nStrips, -0.5, nStrips-0.5);
@@ -79,7 +80,7 @@ void BadStripsCalib::DigiHistDefine() {
     }
 
     outsideTowers = new TH1F("outsideTowers", "hits in Towers outside current config", 18, -1.5, 16.5);
-    outsidePlanes = new TH1F("outsidePlanes", "hits in planes outside current config", 20, -1.5, 18.5);
+    outsidePlanes = new TH1F("outsidePlanes", "hits in planes outside current config", 38, -1.5, 36.5);
     return;       
 }
 
@@ -101,6 +102,7 @@ void BadStripsCalib::DigiTkr() {
         while (t = (TkrDigi*)tkrDigiIter.Next()) {
 
         int tower = (t->getTower()).id();
+        if (overlayTowers) tower = 0;
         if( tower>=16 || tower < 0) {
             int truncTower = std::max(-1, std::min(16, tower));
             outsideTowers->Fill(truncTower);
@@ -112,7 +114,7 @@ void BadStripsCalib::DigiTkr() {
         bool isY = (view==1);
         int plane = 2*layer + (1-isY)*(1-layer%2) + isY*layer%2;
         if (plane>=m_nPlanes || plane < 0) {
-            int truncPlane = std::max(-1, std::min(18, plane));
+            int truncPlane = std::max(-1, std::min(36, plane));
             outsidePlanes->Fill(truncPlane);
             continue;
         } 
@@ -173,6 +175,13 @@ void BadStripsCalib::Go(Int_t numEvents)
         m_digiChain->SetBranchStatus("m_runId", 1);
     }
 
+    if (reconTree) {
+        reconTree->SetBranchStatus("*",0);
+    }
+    if (m_recChain) {
+        m_recChain->SetBranchStatus("*",0);
+    }
+
     // determine how many events to process
     Int_t nentries = GetEntries();
     std::cout << "\nNum Events in File is: " << nentries << std::endl;
@@ -216,12 +225,13 @@ void BadStripsCalib::Go(Int_t numEvents)
         evtCount++;
 
         //if (mc) mc->Clear();
-        //if (rec) rec->Clear();
+        if (rec) rec->Clear();
 
         if (evt) evt->Clear();
 
         digiEventId = 0; reconEventId = 0; mcEventId = 0;
         digiRunNum = 0; reconRunNum = 0; mcRunNum = 0;
+
 
         nb = GetEvent(ievent);
         nbytes += nb;
@@ -232,11 +242,14 @@ void BadStripsCalib::Go(Int_t numEvents)
         if (evt) {
             digiEventId = evt->getEventId(); 
             digiRunNum = evt->getRunId();
-
             DigiTkr();
             //DigiCal();
             //DigiAcd();
         }    
+        if (rec) {
+            reconEventId = rec->getEventId();
+            reconRunNum  = rec->getRunId();
+        }
     }  // end analysis code in event loop
 
     m_StartEvent = curI;

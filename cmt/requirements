@@ -1,6 +1,6 @@
 package calibGenTKR
 
-version v1r1
+version v1r2
 
 # This package contains the tracker bad strips calibration code
 
@@ -10,26 +10,30 @@ use digiRootData *
 use reconRootData *
 use RootPolicy v4r* 
 use xml *
+use facilities *
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
 apply_pattern package_include
 
-include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib
+include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
+             ${CALIBGENTKRROOT}/src/muonCalibTot
 
-apply_pattern package_headers
+#apply_pattern package_headers
 
-macro_append calibGenTKR_headers "" \
-                 WIN32 " ../src/badStripsCalib/badStripsCalib.h "
+#macro_append calibGenTKR_headers "" \
+#                 WIN32 " ../src/badStripsCalib/badStripsCalib.h \
+#                         ../src/muonCalibToT/totCalib.h" 
 
 macro_append ROOT_libs " -lHist -l Graf " \
-             WIN32 " ${ROOT_PATH}/lib/libHist.lib ${ROOT_PATH}/lib/libGaf.lib"
+             WIN32 " ${ROOT_PATH}/lib/libHist.lib ${ROOT_PATH}/lib/libGraf.lib"
 
-# Define a test program that will run BadStripsCalib in batch mode
-# One could also pass in their own set of ROOT files as follows:
+macro badStripsFiles "" WIN32 "badStripsCalib/*.xml badStripsCalib/*.h" 
+ 
+macro muonCalibFiles "" WIN32 "muonCalibTot/*.xml muonCalibTot/*.h \
+                               muonCalibTot/*.txt"  
 
-application doBadStripsCalib test/generateBadStrips.cxx \
-            badStripsCalib\badStripsCalib.cxx \
-            ${calibGenTKR_headers}
+application doBadStripsCalib badStripsCalib/*.cxx $(badStripsFiles)
 
-application doMuonCalibTot  muonCalibTot/*.cxx
+application doMuonCalibTot   muonCalibTot/*.cxx   $(muonCalibFiles)
+
