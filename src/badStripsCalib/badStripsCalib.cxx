@@ -369,7 +369,10 @@ void BadStripsCalib::Finish()
         std::string buffer;
         std::ifstream infile;
 
-        infile.open("C:/Glast/TKRCalib/calibGenTKR/v0r0/xml/badStrips.dtd", std::ios::in | std::ios::binary);
+        std::string path = ::getenv("CALIBGENTKRROOT");
+	std::string dtdPath = path+"/xml/badStrips.dtd";
+
+        infile.open(dtdPath.c_str(), std::ios::in | std::ios::binary);
         if (!infile.is_open()) { std::cout << "dtd file not found!" << std::endl;
         return;
         }
