@@ -28,5 +28,5 @@ macro_append ROOT_libs " -lHist " \
 # One could also pass in their own set of ROOT files as follows:
 
 application doBadStripsCalib test/generateBadStrips.cxx \
-            BadStripsCalib\badStripsCalib.cxx \
+            badStripsCalib\badStripsCalib.cxx \
             ${calibGenTKR_headers}

@@ -141,7 +141,7 @@ void BadStripsCalib::Go(Int_t numEvents)
 
     if (digiTree) {
         digiTree->SetBranchStatus("*",0);  // disable all branches
-        // activate desired brances
+        // activate desired branches
         //digiTree->SetBranchStatus("m_cal*",1);  
         digiTree->SetBranchStatus("m_tkr*",1);  
         //digiTree->SetBranchStatus("m_acd*",1);
@@ -309,14 +309,14 @@ void BadStripsCalib::Finish()
             average[ihist] = binsum/isum;
         }
 
-        if (debugf) cout << binsum << " counts for "<<isum
+        if (debugf) std::cout << binsum << " counts for "<<isum
                          <<" bins, average = " << average[ihist] << std::endl;
         if (debugf) {
-            cout << "chipCount, hist" << ihist << ": ";
+            std::cout << "chipCount, hist" << ihist << ": ";
             for (i=0;i<numChips*2;++i) {
-                cout << chipCount[ihist][i] << " " ;
+                std::cout << chipCount[ihist][i] << " " ;
             }
-            cout << endl;
+            std::cout << std::endl;
         }
     }
     std::cout << std::endl << std::endl;
@@ -364,12 +364,12 @@ void BadStripsCalib::Finish()
         std::string outputFile;
         outputFile = m_prefix+"_"+outFile[itest];
         std::cout << "Output file " << outputFile.c_str() << std::endl;
-        listout.open(outputFile.c_str(), ios::out);
+        listout.open(outputFile.c_str(), std::ios::out);
 
         std::string buffer;
         std::ifstream infile;
 
-        infile.open("C:/Glast/TKRCalib/calibGenTKR/v0r0/xml/badStrips.dtd", ios::in | ios::binary);
+        infile.open("C:/Glast/TKRCalib/calibGenTKR/v0r0/xml/badStrips.dtd", std::ios::in | std::ios::binary);
         if (!infile.is_open()) { std::cout << "dtd file not found!" << std::endl;
         return;
         }
@@ -582,7 +582,7 @@ void BadStripsCalib::Finish()
                 if (badCount ) listout << "\" />" << std::endl; 
                 if (testCount && !(average[ihist]==0&&itest==0)) listout << indent2.c_str() << "</uniplane>" << std::endl;
             }
-            if (debugf) cout << "hist " << ihist << " done"<<std::endl;         
+            if (debugf) std::cout << "hist " << ihist << " done"<<std::endl;         
         }
         if (!firstTower) listout << indent1.c_str() << "</tower>" << std::endl;
         listout << "</badStrips>" << std::endl;

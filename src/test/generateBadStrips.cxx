@@ -68,10 +68,10 @@ int main(int argn, char** argc) {
     std::ifstream inputFile;
     std::string tempString;
     if(argn > 1) {
-        inputFile.open(argc[1], ios::in);
+        inputFile.open(argc[1], std::ios::in);
     }
     else {
-        inputFile.open((path + "/src/test/options.txt").c_str(), ios::in);
+        inputFile.open((path + "/src/test/options.txt").c_str(),std::ios::in);
     }
 
     inputFile >> sourceDirectory;
