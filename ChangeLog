@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Tue Jul 20 17:55:35 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.h 
+Log Message:
+make it a bit more robust
+
+    *
+------------------------------------------------------------
 User: lsrea  Tue Jul 20 17:33:53 PDT 2004
 calibGenTKR/src/test
 
