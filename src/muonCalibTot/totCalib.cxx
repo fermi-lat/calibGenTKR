@@ -21,10 +21,25 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   if( analysisType == "badStrips" ) m_badStrips = true;
   else m_badStrips = false;
 
+  // get version number from CVS string
+  std::string tag = "$Name: v1r4 $";
+  int i = tag.find( " " );
+  tag.assign( tag, i+1, tag.size() );
+  i = tag.find( " " );
+  tag.assign( tag, 0, i ) ;
+  m_tag = tag;
+
+  std::string version = "$Revision: 1.14 $";
+  i = version.find( " " );
+  version.assign( version, i+1, version.size() );
+  i = version.find( " " );
+  version.assign( version, 0, i ) ;
+  m_version = version;
+  std::cout << "Tag: " << m_tag << ", version: " << m_version << std::endl;
+
   m_tower_row=0;
   m_tower_col=0;
   m_tower_serial="TKrFMX";
-  m_version="1.13";
   m_first_run = 999999999;
   m_last_run = 0;
   m_tot_runid = "0";
@@ -44,6 +59,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
 
   if( m_badStrips ){
     m_occDist = new TH1F("occDist", "occDist", 200, 0, 200);
+    m_poissonDist = new TH1F("poissonDist", "poissonDist", 40, -20, 0);
     m_aPos[0] = new TH1F("apos0", "apos0", 100, -50, 50);
     m_aPos[1] = new TH1F("apos1", "apos1", 100, -50, 50);
     m_aPos[2] = new TH1F("apos2", "apos2", 100, -50, 50);
@@ -53,6 +69,8 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   for(int layer = 0; layer != g_nLayer; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
+      char vw = 'X';
+      if( iView != 0 ) vw = 'Y';
       if( !m_badStrips ){
 	char name[] = "var000";
 	sprintf(name,"var%2d%1d", layer, iView);
@@ -60,23 +78,25 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
 	m_totStrip[layer][iView]->SetName(name);
 	
 	char temp[] = "varCorr000";
-	sprintf(temp,"varCorr%2dl%1dv", layer, iView);
+	sprintf(temp,"varCorr%2d%1d", layer, iView);
 	m_chargeStrip[layer][iView] = new TGraphErrors(g_nDiv);
 	m_chargeStrip[layer][iView]->SetName(temp);
       }
-      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	if( m_badStrips ){
-	  char name1[] = "occ00p0v0w";
-	  sprintf(name1,"occ%2dl%1dv%1dw", layer, iView, iDiv);
-	  m_nHits[layer][iView][iDiv] = new TH1F(name1, name1, 1536, 0, 1536);
+      if( m_badStrips ){
+	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer) {
+	  char name1[] = "occX17w3";
+	  sprintf(name1,"occ%c%2dw%1d", vw, layer, iWafer);
+	  m_nHits[layer][iView][iWafer] = new TH1F(name1, name1, 1536, 0, 1536);
 	}
-	else{
-	  char name1[] = "tot00p0v0000fe";
-	  sprintf(name1,"tot%2dl%1dv%04dfe", layer, iView, iDiv);
+      }
+      else{
+	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
+	  char name1[] = "totX17fe0004";
+	  sprintf(name1,"tot%c%2dfe%04d", vw, layer, iDiv);
 	  m_totHist[layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
 
-	  char name2[] = "charge00p0v0000fe";
-	  sprintf(name2,"charge%2dl%1dv%04dfe", layer, iView, iDiv);
+	  char name2[] = "chargeX00fe0000";
+	  sprintf(name2,"charge%c%2dfe%04d", vw, layer, iDiv);
 	  m_chargeHist[layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
 	}
       }
@@ -88,10 +108,13 @@ totCalib::~totCalib()
 {
   if(m_totFile == 0) return;
 
+  std::cout << "save histgrams" << std::endl;
+
   m_totFile->cd();
 
   if( m_badStrips ){
     m_occDist->Write(0, TObject::kOverwrite);
+    m_poissonDist->Write(0, TObject::kOverwrite);
     m_aPos[0]->Write(0, TObject::kOverwrite);
     m_aPos[1]->Write(0, TObject::kOverwrite);
     m_aPos[2]->Write(0, TObject::kOverwrite);
@@ -102,21 +125,18 @@ totCalib::~totCalib()
 
     for(int iView = 0; iView != g_nView; ++iView) {
 
-      if( !m_badStrips ){
+      if( m_badStrips )
+	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
+	  m_nHits[layer][iView][iWafer]->Write(0, TObject::kOverwrite);
+      else{
 	m_totStrip[layer][iView]->Write(0, TObject::kOverwrite);
 	m_chargeStrip[layer][iView]->Write(0, TObject::kOverwrite);
-      }
-
-      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-
-	if( m_badStrips )
-	  m_nHits[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
-	else{
+	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 	  m_totHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
 	  m_chargeHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
 	}
-
       }
+
     }
   }
 
@@ -387,7 +407,8 @@ void totCalib::calibChargeScale( int nEvents )
   analyzeEvent(nEvents);
 
   if( m_badStrips ){
-    findBadStrips();
+    findBadStrips( nEvents );
+    fillBadStrips();
   }
   else{
     fitTot();
@@ -971,104 +992,41 @@ void totCalib::fillXml()//takuya
     std::cout << filename << " cannot be opened." << std::endl;
     return;
   }
+  std::ifstream dtd( m_dtd.c_str() );
+  if( dtd ){
+    std::cout << "Open dtd file: " << m_dtd << std::endl;
+    m_log << "dtd file: " << m_dtd << std::endl;
+  }
+  else{
+    std::cout << m_dtd << " cannot be opened." << std::endl;
+    return;
+  }
 
+  output << "<?xml version=\"1.0\" ?>" << std::endl
+	 << "<!DOCTYPE chargeScale [" << std::endl;
 
-  output << "<?xml version='1.0' ?>" << std::endl
-	 << "<!DOCTYPE chargeScale [" << std::endl
-	 << "<!-- dtd for Tracker calibrations -->" << endl
-	 << "<!ELEMENT tot (generic?, cuts?, tower*) >" << endl
-	 <<"<!ELEMENT threshold (generic?, cuts?, tower*) >" << endl
-	 <<"<!ELEMENT chargeScale (generic?, cuts?, tower*) >" << endl
-	 <<"<!ELEMENT  generic  (inputSample) >"<<endl
-	 <<"<!ATTLIST generic"<<endl
-	 <<"   instrument  (LAT | BFEM | BTEM | EM | CU | TWR) #REQUIRED"<<endl
-	 <<"   timestamp   NMTOKEN #IMPLIED"<<endl
-	 <<"   runId       NMTOKEN #IMPLIED"<<endl
-	 <<"   calType     NMTOKEN #IMPLIED"<<endl
-	 <<"   DTDVersion  NMTOKEN 'v1r0'"<<endl
-	 <<"   fmtVersion  NMTOKEN #IMPLIED"<<endl
-	 <<"   creatorName NMTOKEN #IMPLIED"<<endl
-	 <<"   creatorVersion NMTOKEN #IMPLIED "<<endl
-	 <<" >"<<endl
+  std::string line;
+  while( dtd ){
+    getline(dtd, line);
+    output << line << std::endl;
+  }
 
-	 <<"<!-- Description of events used as input to the procedure"<<endl
-	 <<"     Start- and stop-times should be timestamps of earliest and"<<endl
-	 <<"     latest events included in sample"<<endl
-	 <<"-->"<<endl
-	 <<"<!ELEMENT inputSample (#PCDATA) >"<<endl
-	 <<"<!ATTLIST inputSample  startTime CDATA    #REQUIRED"<<endl
-	 <<"                       stopTime  CDATA    #REQUIRED"<<endl
-	 <<"                       triggers  NMTOKENS #REQUIRED"<<endl
-	 <<"                       source    NMTOKENS #REQUIRED"<<endl
-	 <<"                       mode      NMTOKEN  #REQUIRED>"<<endl
-	 <<""<<endl
-	 <<"<!ELEMENT cuts EMPTY>"<<endl
-	 <<"<!ATTLIST cuts  tight       NMTOKEN #REQUIRED"<<endl
-	 <<"                loose       NMTOKEN #REQUIRED"<<endl
-	 <<"                expected    NMTOKEN #REQUIRED >"<<endl
-	 <<""<<endl
-	 <<""<<endl
-	 <<"<!ELEMENT tower (uniplane+) >"<<endl
-	 <<"<!ATTLIST tower"<<endl
-	 <<"   row      NMTOKEN #REQUIRED"<<endl
-	 <<"   col      NMTOKEN #REQUIRED"<<endl
-	 <<"   hwserial NMTOKEN #IMPLIED >"<<endl
-    
-	 <<"<!ELEMENT uniplane ((stripTot+) | (stripScale+) | (stripThresh+) |"<<endl
-	 <<"                    (gtfeScale+) | (gtfeThresh+) ) >"<<endl
-	 <<"<!ATTLIST uniplane"<<endl
-	 <<"  tray NMTOKEN #REQUIRED"<<endl
-	 <<"  which (bot | top ) #REQUIRED >"<<endl<<endl
-
-	 <<"<!ELEMENT stripTot EMPTY >"<<endl
-	 <<"<!ATTLIST stripTot"<<endl
-	 <<"   id        NMTOKEN #REQUIRED"<<endl
-	 <<"   slope     NMTOKEN #REQUIRED"<<endl
-	 <<"   intercept NMTOKEN #REQUIRED"<<endl
-	 <<"   quad      NMTOKEN #REQUIRED"<<endl
-	 <<"   chi2      NMTOKEN #REQUIRED"<<endl
-	 <<"   df        NMTOKEN #REQUIRED >"<<endl
-
-
-	 <<"<!ELEMENT stripScale EMPTY >"<<endl
-	 <<"<!ATTLIST stripScale"<<endl
-	 <<"   id          NMTOKEN #REQUIRED"<<endl
-	 <<"   chargeScale NMTOKEN #IMPLIED >"<<endl
-    
-
-	 <<"<!ELEMENT stripThresh EMPTY >"<<endl
-	 <<"<!ATTLIST stripThresh"<<endl
-	 <<"   id        NMTOKEN #REQUIRED"<<endl
-	 <<"   trg_thr      NMTOKEN #IMPLIED"<<endl
-	 <<"   data_thr     NMTOKEN #IMPLIED>"<<endl
-
-
-	 <<"<!ELEMENT gtfeScale EMPTY >"<<endl
-	 <<"<!ATTLIST gtfeScale"<<endl
-	 <<"  id           NMTOKEN #REQUIRED"<<endl
-	 <<"  chargeScale  NMTOKEN #IMPLIED >"<<endl
-    
-	 <<"<!ELEMENT gtfeThresh EMPTY >"<<endl
-	 <<"<!ATTLIST gtfeThresh"<<endl
-	 <<"   id        NMTOKEN #REQUIRED"<<endl
-	 <<"   trg_thr   NMTOKEN #IMPLIED"<<endl
-	 <<"   data_thr  NMTOKEN #IMPLIED >"<<endl
-	 << "]>" << std::endl;
+  output << "]>" << std::endl;
 
 
   output << "<chargeScale>" << endl
-	 << "   <generic calType='ChargeScale' creatorName='totCalib'"
-	 << " creatorVersion ='" << m_version
-	 << "' fmtVersion='NA' instrument='TWR' runId='" << m_tot_runid 
-	 << "' timestamp='" << m_dateStamp << m_timeStamp << "'>" << std::endl
-	 << "    <inputSample mode='NA' source='CosmicMuon' startTime='" 
-	 << m_startTime << "' stopTime='" << m_stopTime 
-	 << "' triggers='TKR'>" << std::endl
+	 << "   <generic calType=\"ChargeScale\" creatorName=\"totCalib\""
+	 << " creatorVersion =\"" << m_version
+	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_tot_runid 
+	 << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
+	 << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
+	 << m_startTime << "\" stopTime=\"" << m_stopTime 
+	 << "\" triggers=\"TKR\">" << std::endl
 	 << " Cosmic ray muon data for charge scale calibration " << std::endl
 	 << "    </inputSample>" << std::endl
 	 << "  </generic>" << std::endl
-	 << "  <tower row='" << m_tower_row << "' col='" << m_tower_col 
-	 << "' hwserial='" << m_tower_serial << "'>" << endl;
+	 << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
+	 << "\" hwserial=\"" << m_tower_serial << "\">" << endl;
 
   output.precision(3);
 
@@ -1090,11 +1048,11 @@ void totCalib::fillXml()//takuya
 	output << "   <!-- layer X" << layer << " -->" << std::endl;
       else
 	output << "   <!-- layer Y" << layer << " -->" << std::endl;
-      output << "   <uniplane tray='" << tray << "' which='"
-	     << which << "'>" << endl;
+      output << "   <uniplane tray=\"" << tray << "\" which=\""
+	     << which << "\">" << endl;
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	output << "    <gtfeScale id='" << iDiv << "' chargeScale='" 
-               <<  m_chargeScale[layer][iView][iDiv] << "'/>" << endl;
+	output << "    <gtfeScale id=\"" << iDiv << "\" chargeScale=\"" 
+               <<  m_chargeScale[layer][iView][iDiv] << "\"/>" << endl;
       }
       output << "   </uniplane>" << endl; 
     }
@@ -1115,10 +1073,10 @@ void totCalib::fillOccupancy()
 
   int nHitPlane = tkrTrack->getNumHits();
 
-  int nHits[g_nLayer][g_nView][5];
+  int nHits[g_nLayer][g_nView][g_nWafer+1];
   for( int layer=0; layer<g_nLayer; layer++)
     for( int view=0; view<g_nView; view++)
-      for( int i=0; i<5; i++) nHits[layer][view][i] = 0;
+      for( int i=0; i<g_nWafer+1; i++) nHits[layer][view][i] = 0;
 
   for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
     const TkrHitPlane* plane = tkrTrack->getHitPlane(iPlane);
@@ -1134,7 +1092,7 @@ void totCalib::fillOccupancy()
     for(int iStrip = cluster->getFirstStrip(); 
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip){
       nHits[layer][view][iStrip/384]++;
-      nHits[layer][view][4]++;
+      nHits[layer][view][g_nWafer]++;
     }
   }
 
@@ -1187,20 +1145,15 @@ void totCalib::fillOccupancy()
 
     for(int iStrip = cluster->getFirstStrip(); 
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip)
-      if( nHits[layer][aview][4] > 0 ){
-	for( int iw=0; iw<4; iw++ )
+      if( nHits[layer][aview][g_nWafer] > 0 ){
+	for( int iw=0; iw<g_nWafer; iw++ )
 	  if( nHits[layer][aview][iw] > 0 ){
 	    m_nHits[layer][view][iw]->Fill( iStrip );
 	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
-	    if( layer==4 && view==1 && iw==1 )
-	      if( abs(iStrip-570)<30 || abs(iStrip-680)<70 ){
-		std::cout << layer << " " << view << "; " << apos-89.5*(iw-1.5) << std::endl;
-		display = true;  
-	      }
 	  }
       }
       else
-	for( int iw=0; iw<4; iw++ )
+	for( int iw=0; iw<g_nWafer; iw++ )
 	  if( fabs( apos-89.5*(iw-1.5) ) < 42 ){
 	    m_nHits[layer][view][iw]->Fill( iStrip );
 	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
@@ -1228,53 +1181,211 @@ void totCalib::fillOccupancy()
 }
 
 
-void totCalib::findBadStrips()
+void totCalib::findBadStrips( int nEvents )
 {  
-  // define Gaussian convolved Laudau function.
-  std::cout << "Start fit." << std::endl;
 
+  float sumThreshold = sumThrPerEvent * nEvents;
+  if( sumThreshold < 2.0 ) sumThreshold = 2.0;
+  float occThreshold = occThrPerEvent * nEvents;
+  if( occThreshold < 1.0 ) occThreshold = 1.0;
+
+  double fac=1.0; //prepare factorial upto 99
+  double factorial[200];
+  factorial[0] = fac;
+  for(int k=1;k!=200;k++){
+    fac*=k;
+    factorial[k] = fac;
+  }
+  
   for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int view = 0; view != g_nView; ++view) {
-      m_log << "Layer: " << layer << ", View: " << view << std::endl;
-      std::cout << "Layer: " << layer << ", View: " << view << std::endl;
-      int deadChannel[g_nStrip][5];
-      for(int iDiv = 0; iDiv != 4; ++iDiv){
-	TH1F *occHist = m_nHits[layer][view][iDiv];
-	for( int strip=0; strip<g_nStrip; strip++){
-	  int occupancy = occHist->GetBinContent( strip + 1 );
+      int numDead = 0, numPartial = 0;
+      char vw = 'X';
+      if( view != 0 ) vw = 'Y';
+      m_log << "Layer: " << vw << layer << std::endl;
+      for( int strip=0; strip!=g_nStrip; strip++){
+	float sum = 0.0;
+	bool deadFlag = false;
+	int occ[g_nWafer];
+	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+	  int occupancy = m_nHits[layer][view][iWafer]->GetBinContent( strip + 1 );
+	  if(layer%2 == 0) occ[ g_nWafer-1-iWafer ] = occupancy;
+	  else occ[ iWafer ] = occupancy;
+	  sum += occupancy;
 	  m_occDist->Fill( occupancy+0.1 );
-	  if( iDiv == 0 ) deadChannel[strip][4] = 0;
-	  if( occupancy < 4 ){
-	    deadChannel[strip][4]++;
-	    deadChannel[strip][iDiv] = 1;
+	  if( occupancy < occThreshold ){
+	    deadFlag = true;
 	  }
-	  else deadChannel[strip][iDiv] = 0;
+	}
+	
+	if( deadFlag || sum < sumThreshold ){
+	  m_log << strip << ": " << sum << ", ";
+	  for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+	    m_log << " " << occ[iWafer];
+	  }
+	  if( sum == 0 ){
+	    m_deadStrips[layer][view].push_back(strip); //for xml output
+	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
+	    numDead++;	
+	    m_log << " **" << std::endl;
+	    continue;
+	  }
+	  else if( sum < sumThreshold ){
+	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
+	    numPartial++;
+	    m_log << " *" << std::endl;
+	    continue;
+	  }
+	  sum = occ[0];
+	  m_log << ", ";
+	  bool flagBreak = false;
+	  for(int iWafer = 1; iWafer != g_nWafer; ++iWafer){
+	    int value = occ[iWafer];
+	    sum += value;
+	    double mean = sum / (iWafer+1);
+	    if( value < 200 && mean < 199.5 ){
+	      float p_poisson = pow(mean,value)*exp(-mean)/factorial[value];
+	      float norm      = pow(mean,mean)*exp(-mean)/factorial[(int)(mean+0.5)];
+	      p_poisson = log( p_poisson/norm ); //normalize
+	      m_log << " " << (int)p_poisson;
+	      m_poissonDist->Fill( p_poisson );
+	      if( p_poisson < poissonThreshold ){ 
+		flagBreak = true;
+		break;
+	      }
+	    }
+	  }
+	  if( flagBreak ){
+	    m_partialDeadStrips[layer][view].push_back(strip); //for xml output
+	    numPartial++;
+	    m_log << " *" << std::endl;
+	    continue;
+	  }
+	  else m_log << std::endl;
 	}
       }
-      int numDead = 0, numPartial = 0;
-      for( int strip=0; strip<g_nStrip; strip++)
-	if( deadChannel[strip][4] > 0 ){
-	  if( deadChannel[strip][4] == 4 ) numDead++;
-	  else numPartial++;
-	  std::cout << strip << ", ";
-	  m_log << strip << ", ";
-	  for(int iDiv = 0; iDiv != 4; ++iDiv)
-	    if( deadChannel[strip][iDiv]  > 0 ){
-	      std::cout << " " << iDiv;
-	      m_log << " " << iDiv;
-	    }
-	  std::cout << std::endl;
-	  m_log << std::endl;
-	}
-
-      m_log << layer << " " << view << ", # of dead channel: " << numDead 
-		<< ", # of partial dead channel: " << numPartial << std::endl;
-      std::cout << layer << " " << view << ", # of dead channel: " << numDead 
+      
+      m_log << vw << layer << ", # of dead channel: " << numDead 
+	    << ", # of partial dead channel: " << numPartial << std::endl;
+      std::cout << vw << layer << ", # of dead channel: " << numDead 
 		<< ", # of partial dead channel: " << numPartial << std::endl;
     }
   }
+
 }
 
+void totCalib::fillBadStrips()
+{
+
+  std::string suffix = "AllDeadStrips";
+  for( int badness=0; badness!=2; badness++ ){
+    std::string filename = m_outputDir;
+    char fname[] = "/TkrFMX_AllDeadStrips_050131-161012.xml";
+    if( badness == 1 ) suffix = "DeadStrips";
+    
+    sprintf( fname, "/%s_%s_%s-%s.xml", m_tower_serial.c_str(), 
+	     suffix.c_str(), m_dateStamp.c_str(), m_timeStamp.c_str() );
+
+    filename += fname;
+
+    std::ofstream output( filename.c_str() );
+    if( output ){
+      std::cout << "Open output xml file: " << filename << std::endl;
+      m_log << "Output xml file: " << filename << std::endl;
+    }
+    else{
+      std::cout << filename << " cannot be opened." << std::endl;
+      return;
+    }
+    std::ifstream dtd( m_dtd.c_str() );
+    if( dtd ){
+      std::cout << "Open dtd file: " << m_dtd << std::endl;
+      m_log << "dtd file: " << m_dtd << std::endl;
+    }
+    else{
+      std::cout << m_dtd << " cannot be opened." << std::endl;
+      return;
+    }
+
+    output << "<?xml version=\"1.0\" ?>" << std::endl
+	   << "<!DOCTYPE badStrips [" << std::endl;
+    
+    std::string line;
+    while( dtd ){
+      getline(dtd, line);
+      output << line << std::endl;
+    }
+    
+    output << "]>" << std::endl;
+    
+    
+    if( badness == 0 )
+      output << "<badStrips badType=\"dead\">" << std::endl
+	     << "<!-- includes partial dead strips; "
+	     << " intermitent and/or wrire bond broken " 
+	     << "between SSD wafers -->" << std::endl;
+    else
+      output << "<badStrips badType=\"dead\"><!-- dead strips -->" << std::endl ;
+
+    output << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
+	   << " creatorVersion =\"" << m_version
+	   << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_last_run 
+	   << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
+	   << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
+	   << m_startTime << "\" stopTime=\"" << m_stopTime 
+	   << "\" triggers=\"TKR\">" << std::endl
+	   << " Cosmic ray muon data for occupancy analysis " << std::endl
+	   << "    </inputSample>" << std::endl
+	   << "  </generic>" << std::endl
+	   << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
+	   << "\" hwserial=\"" << m_tower_serial << "\">" << std::endl;
+    
+    
+    for(int layer = 0; layer != g_nLayer; ++layer) {
+      for(int view = 0; view != g_nView; ++view) {
+	int tray;
+	string which;
+	if(view==0){
+	  tray = 2 * ( layer/2 ) + 1;
+	  if(layer%2==0) which = "bot";
+	  else which = "top";
+	}
+	else{
+	  tray = 2 * ( (layer+1)/2 );
+	  if(layer%2==0) which = "top";
+	  else which = "bot";
+	}
+	if( view == 0 ){
+	  output << "    <!-- layer X" << layer << " -->";
+	}
+	else{
+	  output << "    <!-- layer Y" << layer << " -->";
+	}
+
+	std::vector<int>* deadStrips;
+	if( badness == 0 ) deadStrips = &m_partialDeadStrips[layer][view];
+	else deadStrips = &m_deadStrips[layer][view];
+	int itr = deadStrips->size();
+	output << " <!-- # of dead strips: " << itr << " -->" << std::endl 
+	       << "    <uniplane tray=\"" << tray << "\" which=\""
+	       << which << "\"";
+	
+	if(itr){
+	  output << ">" << std::endl << "      <stripList strips=\"";
+	  for(int i=0;i!=itr;i++)
+	    output << " " << deadStrips->at(i);
+	  output << "\"/>" << std::endl 
+		 << "    </uniplane>" << std::endl;
+	}
+	else output << "/>" << std::endl;
+	
+      }
+    }
+    output << "  </tower>" << std::endl << "</badStrips>";
+    output.close();
+    dtd.close();
+  }
+}
 
 //-----------------------------------------------------------------------
 //

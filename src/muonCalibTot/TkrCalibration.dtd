@@ -1,0 +1,81 @@
+<!-- dtd for Tracker calibrations -->
+
+<!ELEMENT tot (generic?, cuts?, tower*) >
+<!ELEMENT threshold (generic?, cuts?, tower*) >
+<!ELEMENT chargeScale (generic?, cuts?, tower*) >
+
+<!ELEMENT  generic  (inputSample) >
+<!ATTLIST generic
+   instrument  (LAT | BFEM | BTEM | EM | CU | TWR) #REQUIRED
+   timestamp   NMTOKEN #IMPLIED
+   runId       NMTOKEN #IMPLIED
+   calType     NMTOKEN #IMPLIED
+   DTDVersion  NMTOKEN "v1r0"
+   fmtVersion  NMTOKEN #IMPLIED
+   creatorName NMTOKEN #IMPLIED
+   creatorVersion NMTOKEN #IMPLIED
+ >
+
+<!-- Description of events used as input to the procedure
+     Start- and stop-times should be timestamps of earliest and
+     latest events included in sample
+-->
+<!ELEMENT inputSample (#PCDATA) >
+<!ATTLIST inputSample  startTime CDATA    #REQUIRED
+                       stopTime  CDATA    #REQUIRED
+                       triggers  NMTOKENS #REQUIRED
+                       source    NMTOKENS #REQUIRED
+                       mode      NMTOKEN  #REQUIRED>
+
+<!ELEMENT cuts EMPTY>
+<!ATTLIST cuts  tight       NMTOKEN #REQUIRED
+                loose       NMTOKEN #REQUIRED
+                expected    NMTOKEN #REQUIRED >
+
+
+<!ELEMENT tower (uniplane+) >
+<!ATTLIST tower
+   row      NMTOKEN #REQUIRED
+   col      NMTOKEN #REQUIRED
+   hwserial NMTOKEN #IMPLIED 
+   maxStripId NMTOKEN "1535" >
+
+<!ELEMENT uniplane ((stripTot+) | (stripScale+) | (stripThresh+) |
+                    (gtfeScale+) | (gtfeThresh+) ) >
+<!ATTLIST uniplane
+  tray NMTOKEN #REQUIRED
+  which (bot | top ) #REQUIRED >
+
+<!ELEMENT stripTot EMPTY >
+<!ATTLIST stripTot
+   id        NMTOKEN #REQUIRED
+   slope     NMTOKEN #REQUIRED
+   intercept NMTOKEN #REQUIRED
+   quad      NMTOKEN #REQUIRED
+   chi2      NMTOKEN #REQUIRED
+   df        NMTOKEN #REQUIRED >
+
+
+<!ELEMENT stripScale EMPTY >
+<!ATTLIST stripScale
+   id          NMTOKEN #REQUIRED
+   chargeScale NMTOKEN #IMPLIED >
+
+
+<!ELEMENT stripThresh EMPTY >
+<!ATTLIST stripThresh
+   id        NMTOKEN #REQUIRED
+   trg_thr      NMTOKEN #IMPLIED
+   data_thr     NMTOKEN #IMPLIED>
+
+
+<!ELEMENT gtfeScale EMPTY >
+<!ATTLIST gtfeScale
+   id           NMTOKEN #REQUIRED
+   chargeScale  NMTOKEN #IMPLIED >
+
+<!ELEMENT gtfeThresh EMPTY >
+<!ATTLIST gtfeThresh
+   id        NMTOKEN #REQUIRED
+   trg_thr   NMTOKEN #IMPLIED
+   data_thr  NMTOKEN #IMPLIED >
