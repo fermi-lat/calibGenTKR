@@ -8,6 +8,7 @@ version v1r4
 # use mcRootData *
 use digiRootData *
 use reconRootData *
+use calibRootData *
 use calibUtil *
 use xmlBase *
 use facilities *
@@ -18,7 +19,9 @@ set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 apply_pattern package_include
 
 include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
-             ${CALIBGENTKRROOT}/src/muonCalibTot
+             ${CALIBGENTKRROOT}/src/muonCalibTot   \
+             ${CALIBGENTKRROOT}/src/xml2root
+       
 
 #apply_pattern package_headers
 
@@ -35,7 +38,10 @@ macro badStripsFiles "" WIN32 "badStripsCalib/*.xml badStripsCalib/*.h"
 macro muonCalibFiles "" WIN32 "muonCalibTot/*.xml muonCalibTot/*.h \
                                muonCalibTot/*.txt"  
 
+macro xml2rootFiles  "" WIN32 "xml2root/*.h"
+
 application doBadStripsCalib badStripsCalib/*.cxx $(badStripsFiles)
 
 application doMuonCalibTot   muonCalibTot/*.cxx   $(muonCalibFiles)
 
+application doXml2root       xml2root/*.cxx       $(xml2rootFiles)
