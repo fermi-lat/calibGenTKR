@@ -26,7 +26,7 @@
 #include "TCollection.h"  // Declares TIter
 #include "TStopwatch.h"
 #include "digiRootData/DigiEvent.h"
-//#include "reconRootData/ReconEvent.h"
+#include "reconRootData/ReconEvent.h"
 //#include "mcRootData/McEvent.h"
 #include <iostream>
 #include <fstream>
@@ -41,20 +41,20 @@ class McEvent;
 #endif
 
 #include "xml/IFile.h"
+#include "facilities/Util.h"
 
-namespace {
+namespace {   
     std::string stripBlanks(std::string &str) {
         // strips off leading and trailing blanks
-        std::string temp = str;
-        if (temp.size()==0) return temp;
-        std::string::size_type pos;
-        pos = temp.find_first_not_of(" ", 0);
-        temp = temp.substr(pos);
-        pos = temp.find_last_not_of(" ", std::string::npos);
-        temp = temp.substr(0,pos+1);
-        return temp;
+        if (str.size()==0) return "";
+        std::string::size_type pos1, pos2;
+        pos1 = str.find_first_not_of(" ");
+        if (pos1==std::string::npos) return "";
+        pos2 = str.find_last_not_of(" ");
+        return str.substr(pos1, pos2-pos1+1);
     }
 
+/*
     int splitString(std::string &input, std::string &LH, std::string &RH, char* delim) {
         // splits off leftmost token from delim-delimited string
         std::string::size_type pos;
@@ -70,7 +70,9 @@ namespace {
         RH = stripBlanks(RH);
         return (int) pos;
     }
+    */
 }
+
 
 
 class BadStripsCalib {
@@ -106,7 +108,7 @@ public :
     /// pointer to a DigiEvent
     DigiEvent   *evt;
     /// pointer to a ReconEvent
-    //ReconEvent  *rec;
+    ReconEvent  *rec;
     /// Pointer to a McEvent
     //McEvent     *mc;
     /// name of the output histogram ROOT file
@@ -301,14 +303,12 @@ inline BadStripsCalib::BadStripsCalib(
         chainArr->Add(m_digiChain);
     }
     
-    /*
     if (recChain != 0) {
         m_recChain = recChain;
         rec = 0;
         m_recChain->SetBranchAddress("ReconEvent",&rec);
         chainArr->Add(m_recChain);
     }
-    */
 
     m_StartEvent = 0;   
 }
@@ -397,7 +397,7 @@ inline BadStripsCalib::~BadStripsCalib() {
     if (histFile) delete histFile;
     
     if (digiFile) delete digiFile;
-    //if (reconFile) delete reconFile;
+    if (reconFile) delete reconFile;
     //if (mcFile) delete mcFile;
     
     if (evt) { 
@@ -417,7 +417,7 @@ inline BadStripsCalib::~BadStripsCalib() {
 	*/
     
     digiTree = 0;
-    //reconTree = 0;
+    reconTree = 0;
     //mcTree = 0;
     
     if (fileArr) delete fileArr;
@@ -487,7 +487,6 @@ inline void BadStripsCalib::Init(const char* digiFileName, const char* reconFile
         }
     }
     
-    /*
     if (reconFile) {
         delete rec; 
         rec = 0;
@@ -495,9 +494,7 @@ inline void BadStripsCalib::Init(const char* digiFileName, const char* reconFile
         delete reconFile;
         reconFile = 0;
     }
-    */
-    
-    /*
+   
     std::string recName = reconFileName;
     if (recName != "") {
         std::cout << "reconFileName *" << reconFileName << "*" << std::endl;
@@ -513,7 +510,6 @@ inline void BadStripsCalib::Init(const char* digiFileName, const char* reconFile
             std::cout << "recon data file could not be opened!!" << std::endl;
         }
     }
-    */
     
     m_StartEvent = 0;
     
@@ -613,19 +609,19 @@ inline void BadStripsCalib::Clear() {
     m_histList = 0;
     
     digiFile = 0; 
-    //reconFile = 0;
+    reconFile = 0;
     //mcFile = 0;
     
     digiTree = 0; 
-    //reconTree = 0;
+    reconTree = 0;
     //mcTree = 0;
     
     m_digiChain = 0;
-    //m_recChain = 0;
+    m_recChain = 0;
     //m_mcChain = 0;
     
     evt = 0;
-    //rec = 0;
+    rec = 0;
     //mc = 0;
     
     fileArr = 0;

@@ -8,13 +8,8 @@
 @brief Driver for bad strips calibration
 */
 
-
 int main(int argn, char** argc) {
     
-#ifdef WIN32
-    gSystem->Load("libTree.dll");   
-#endif
-
     bool attended = false;
     std::string temp;
  
@@ -27,7 +22,7 @@ int main(int argn, char** argc) {
     std::string histPath(path+"/output/");
     std::string outputPrefix("test");
  
-    std::string xmlFile(path+"/src/test/options.xml");
+    std::string xmlFile(path+"/src/test/win_options.xml");
 
     if(argn > 1) {
         xmlFile = argc[1];
@@ -46,22 +41,22 @@ int main(int argn, char** argc) {
 
     std::string sourceFileString;
     if (myFile.contains("parameters","sourceFileList")) {
-        temp = myFile.getString("parameters", "sourceFileList");
-        sourceFileString = stripBlanks(temp);
+        sourceFileString = myFile.getString("parameters", "sourceFileList");
     }
 
-    int nFiles = 0;
+    std::vector <std::string> token;
+    facilities::Util::stringTokenize(sourceFileString, ";, ", token);
+    unsigned int nFiles = token.size();
+    TChain* digiChain = new TChain("Digi");
+
+    unsigned i;
     std::cout << "Input files:" << std::endl;
-    TChain* digiChain = new TChain("Digi");    
-    std::string::size_type pos;
-    temp = sourceFileString;
-    while(temp!="") {
-        pos = splitString(temp, sourceFile, temp, " ");
-        if (sourceFile!="") nFiles++;
-        digiChain->Add((sourceFilePath+sourceFile).c_str());
-        std::cout << "   " << nFiles << ") " << sourceFile << std::endl;
+    for (i=0; i<nFiles; ++i) {
+        if (token[i]=="") break;
+        digiChain->Add((sourceFilePath+token[i]).c_str());
+        std::cout << "   " << i+1 << ") " << token[i] << std::endl;
     }
-
+   
     if (myFile.contains("parameters","xmlPath")) {
         temp = myFile.getString("parameters", "xmlPath");
         if (temp!="") xmlPath = temp;
@@ -105,10 +100,3 @@ int main(int argn, char** argc) {
     }
     return 0;
 }
-
-
-
-
-
-
-
