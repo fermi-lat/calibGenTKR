@@ -1,9 +1,10 @@
 /** @file release.notes
  @brief Package calibGenTKR
- @author Leon Rochester
+ @author Leon Rochester, Xin Chen
   
  @verbatim
 
+ v1       02-Sep-2004 XChen add codes to do TOT calibration using cosmic ray data
  v0r1p8   02-Aug-2004 LSR  everything should be okay for unix now
  v0r1p7   02-Aug-2004 LSR  fix unix bug?
  v0r1p6   21-Jul-2004 XChen move some hard coded constants to job option file
