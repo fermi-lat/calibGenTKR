@@ -1,4 +1,44 @@
 ------------------------------------------------------------
+User: lsrea  Wed Aug  4 11:51:51 PDT 2004
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx badStripsCalib.h 
+Log Message:
+Prepare for tag v0r1p8; fix unix errors/warnings; add a bit more diagonstics to the histograms
+
+    *
+------------------------------------------------------------
+User: lsrea  Wed Aug  4 11:51:50 PDT 2004
+calibGenTKR/src
+
+Modified Files:
+	mainpage.h 
+Log Message:
+Prepare for tag v0r1p8; fix unix errors/warnings; add a bit more diagonstics to the histograms
+
+    *
+------------------------------------------------------------
+User: lsrea  Wed Aug  4 11:51:50 PDT 2004
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+Prepare for tag v0r1p8; fix unix errors/warnings; add a bit more diagonstics to the histograms
+
+    *
+------------------------------------------------------------
+User: lsrea  Wed Aug  4 11:51:50 PDT 2004
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+Prepare for tag v0r1p8; fix unix errors/warnings; add a bit more diagonstics to the histograms
+
+    *
+------------------------------------------------------------
 User: lsrea  Tue Aug  3 23:02:53 PDT 2004
 calibGenTKR/src/badStripsCalib
 
