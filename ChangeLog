@@ -1,4 +1,40 @@
 ------------------------------------------------------------
+User: lsrea  Thu Feb 26 08:34:27 PST 2004
+calibGenTKR/src/test
+
+Modified Files:
+	generateBadStrips.cxx options.txt 
+Log Message:
+prepare to tag v0r1
+    *
+------------------------------------------------------------
+User: lsrea  Thu Feb 26 08:34:27 PST 2004
+calibGenTKR/src
+
+Modified Files:
+	mainpage.h 
+Log Message:
+prepare to tag v0r1
+    *
+------------------------------------------------------------
+User: lsrea  Thu Feb 26 08:34:27 PST 2004
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+prepare to tag v0r1
+    *
+------------------------------------------------------------
+User: lsrea  Thu Feb 26 08:34:27 PST 2004
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+prepare to tag v0r1
+    *
+------------------------------------------------------------
 User: lsrea  Thu Feb 26 08:27:47 PST 2004
 calibGenTKR/src/test
 
