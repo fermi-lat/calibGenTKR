@@ -16,13 +16,13 @@ int main(int argn, char** argc) {
     std::string sourceFilePath;
     std::string sourceFile;
     std::string path = ::getenv("CALIBGENTKRROOT");
-    unsigned int numEvents = 5000000;
+    unsigned int numEvents = 500000;
 
     std::string xmlPath(path+"/output/");
     std::string histPath(path+"/output/");
     std::string outputPrefix("test");
  
-    std::string xmlFile(path+"/src/test/win_options.xml");
+    std::string xmlFile(path+"/src/badStripsCalib/options.xml");
 
     if(argn > 1) {
         xmlFile = argc[1];
@@ -32,9 +32,23 @@ int main(int argn, char** argc) {
     
     xml::IFile myFile(xmlFile.c_str());
 
+
+    // This code allows the same options file to be used for both windows and unix
+#ifdef WIN32
+    if (myFile.contains("parameters","winPath")) {
+        temp = myFile.getString("parameters", "winPath");
+        sourceFilePath = stripBlanks(temp);
+    }
+#else
+    if (myFile.contains("parameters","unixPath")) {
+        temp = myFile.getString("parameters", "unixPath");
+        sourceFilePath = stripBlanks(temp);
+    }
+#endif
+
     if (myFile.contains("parameters","sourceFilePath")) {
         temp = myFile.getString("parameters", "sourceFilePath");
-        sourceFilePath = stripBlanks(temp);
+        sourceFilePath += stripBlanks(temp);
     }
 
     std::cout << "Sourcefile path: " << sourceFilePath << std::endl;
@@ -75,7 +89,7 @@ int main(int argn, char** argc) {
     std::cout << "Output histPath:    " << histPath << std::endl;
     std::cout << "Output file prefix: " << outputPrefix << std::endl;
 
-    if (myFile.contains("parameters","nEvents")) {
+    if (myFile.contains("parameters","numEvents")) {
         numEvents = myFile.getInt("parameters", "numEvents");
     }
 
