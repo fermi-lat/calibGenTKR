@@ -37,30 +37,30 @@ totCalib::totCalib(): m_reconFile(0), m_reconTree(0),
   strftime( nts, ntsmax, "%H%M%S", gmtime( &rawtime ) );
   m_timeStamp = nts;
 
-  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+  for(int layer = 0; layer != g_nPlane; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
       char name[] = "var00";
-      sprintf(name,"var%1d%1d", iPlane, iView);
-      m_totStrip[iPlane][iView] = new TGraphErrors(g_nDiv);
-      m_totStrip[iPlane][iView]->SetName(name);
+      sprintf(name,"var%1d%1d", layer, iView);
+      m_totStrip[layer][iView] = new TGraphErrors(g_nDiv);
+      m_totStrip[layer][iView]->SetName(name);
 
       char temp[] = "varCorr00";
-      sprintf(temp,"varCorr%1dp%1dv", iPlane, iView);
-      m_chargeStrip[iPlane][iView] = new TGraphErrors(g_nDiv);
-      m_chargeStrip[iPlane][iView]->SetName(temp);
+      sprintf(temp,"varCorr%1dp%1dv", layer, iView);
+      m_chargeStrip[layer][iView] = new TGraphErrors(g_nDiv);
+      m_chargeStrip[layer][iView]->SetName(temp);
 
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 
 	char name1[] = "tot0p0v0000fe";
-	sprintf(name1,"tot%1dp%1dv%04dfe", iPlane, iView, iDiv);
+	sprintf(name1,"tot%1dp%1dv%04dfe", layer, iView, iDiv);
 
-	m_totHist[iPlane][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
+	m_totHist[layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
 
 	char name2[] = "charge0p0v0000fe";
-	sprintf(name2,"charge%1dp%1dv%04dfe", iPlane, iView, iDiv);
+	sprintf(name2,"charge%1dp%1dv%04dfe", layer, iView, iDiv);
 
-	m_chargeHist[iPlane][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
+	m_chargeHist[layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
 
 
       }
@@ -75,17 +75,17 @@ totCalib::~totCalib()
 
   m_totFile->cd();
   
-  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+  for(int layer = 0; layer != g_nPlane; ++layer) {
 
     for(int iView = 0; iView != g_nView; ++iView) {
 
-      m_totStrip[iPlane][iView]->Write(0, TObject::kOverwrite);
-      m_chargeStrip[iPlane][iView]->Write(0, TObject::kOverwrite);
+      m_totStrip[layer][iView]->Write(0, TObject::kOverwrite);
+      m_chargeStrip[layer][iView]->Write(0, TObject::kOverwrite);
 
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 
-	m_totHist[iPlane][iView][iDiv]->Write(0, TObject::kOverwrite);
-	m_chargeHist[iPlane][iView][iDiv]->Write(0, TObject::kOverwrite);
+	m_totHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
+	m_chargeHist[layer][iView][iDiv]->Write(0, TObject::kOverwrite);
 
       }
     }
@@ -495,6 +495,9 @@ void totCalib::fillTot()
     int planeId = cluster->getPlane();
     TkrCluster::view viewId = cluster->getView();
 
+    int layer = g_nLayer - planeId - 1;
+    int view = (viewId == TkrCluster::X) ? 0 : 1;
+
     // require only a single strip
     if(cluster->getSize() != 1) continue;
 
@@ -504,12 +507,12 @@ void totCalib::fillTot()
       int tot = findTot(planeId, viewId, iStrip);
       if( tot == 0 ) continue;
 
-      float charge = calcCharge(planeId, viewId, iStrip, tot);
+      float charge = calcCharge(layer, view, iStrip, tot);
 
       static int nStripPerGroup = g_nStrip / g_nDiv;
 
-      m_totHist[planeId][viewId][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
-      m_chargeHist[planeId][viewId][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
+      m_totHist[layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
+      m_chargeHist[layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
     }
   }
 }
@@ -542,20 +545,24 @@ void totCalib::fitTot()
   ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
   std::cout << "Start fit." << std::endl;
 
-  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+  for(int layer = 0; layer != g_nPlane; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
-	std::cout << "Layer: " << iPlane << ", View: " << iView 
+	std::cout << "Layer: " << layer << ", View: " << iView 
 		  << ", FE: " << iDiv << std::endl;
-	m_chargeScale[iPlane][iView][iDiv] = 1.0;
+	m_chargeScale[layer][iView][iDiv] = 1.0;
 
 	// fit uncorrected tot for each strip
-	float area = m_totHist[iPlane][iView][iDiv]->GetEntries();
-	float ave = m_totHist[iPlane][iView][iDiv]->GetMean();
-	float rms = m_totHist[iPlane][iView][iDiv]->GetRMS();
+	float area = m_totHist[layer][iView][iDiv]->GetEntries();
+	float ave = m_totHist[layer][iView][iDiv]->GetMean();
+	float rms = m_totHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  std::cout << "Layer: " << iPlane << ", View: " << iView 
+	  std::cout << "Layer: " << layer << ", View: " << iView 
+		    << ", FE: " << iDiv << ", Entries: " << area
+		    << ", Mean: " << ave << ", RMS: " << rms 
+		    << " skipped." << std::endl;
+	  m_log << "Layer: " << layer << ", View: " << iView 
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -568,7 +575,7 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 3, 0.0, rms );
 	ffit->SetRange( ave-2*rms, ave+3*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	//m_totHist[iPlane][iView][iDiv]->Fit( "langau", "RBQ" );
+	//m_totHist[layer][iView][iDiv]->Fit( "langau", "RBQ" );
 
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	Double_t *par = ffit->GetParameters();
@@ -583,20 +590,20 @@ void totCalib::fitTot()
 	float width = float( *(par+3) );
 	float errWidth = float( *(error+3) );
 
-	m_totStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
-	m_totStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
+	m_totStrip[layer][iView]->SetPoint(iDiv, pos, peak);
+	m_totStrip[layer][iView]->SetPointError(iDiv, errPos, errPeak);
 
-	/*m_log << "Uncorrected tot " << iPlane << ' ' << iView << ' ' << pos
+	/*m_log << "Uncorrected tot " << layer << ' ' << iView << ' ' << pos
 	       << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
 	       << errWidth << endl; */
 
 	// fit charge for each strip
-	area = m_chargeHist[iPlane][iView][iDiv]->GetEntries();
-	ave = m_chargeHist[iPlane][iView][iDiv]->GetMean();
-	rms = m_chargeHist[iPlane][iView][iDiv]->GetRMS();
+	area = m_chargeHist[layer][iView][iDiv]->GetEntries();
+	ave = m_chargeHist[layer][iView][iDiv]->GetMean();
+	rms = m_chargeHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  m_log << "Layer: " << iPlane << ", View: " << iView 
+	  m_log << "Layer: " << layer << ", View: " << iView 
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -609,13 +616,13 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 3, 0.0, rms );
 	ffit->SetRange( ave-2*rms, ave+3*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	m_chargeHist[iPlane][iView][iDiv]->Fit( "langau", "RBQ" );
+	m_chargeHist[layer][iView][iDiv]->Fit( "langau", "RBQ" );
 
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	par = ffit->GetParameters();
 	error = ffit->GetParErrors();
-	//par = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParameters();
-	//error = (m_chargeHist[iPlane][iView][iDiv]->GetFunction("landau"))->GetParErrors();
+	//par = (m_chargeHist[layer][iView][iDiv]->GetFunction("landau"))->GetParameters();
+	//error = (m_chargeHist[layer][iView][iDiv]->GetFunction("landau"))->GetParErrors();
 
         peak = float( *(par+1) );
 	errPeak = float( *(error+1) );
@@ -623,25 +630,25 @@ void totCalib::fitTot()
 	width = float( *(par+3) );
 	errWidth = float( *(error+3) );
 
-	m_chargeStrip[iPlane][iView]->SetPoint(iDiv, pos, peak);
-	m_chargeStrip[iPlane][iView]->SetPointError(iDiv, errPos, errPeak);
+	m_chargeStrip[layer][iView]->SetPoint(iDiv, pos, peak);
+	m_chargeStrip[layer][iView]->SetPointError(iDiv, errPos, errPeak);
 
 	if( peak > 0.0 ){
 	  float chargeScale = 5.0 / peak;
 	  if( fabs(chargeScale-1) > 0.3 ){
 	    std::cout << "WARNIN, Abnormal charge scale: " << chargeScale 
-		      << ", (L,V,FE)=(" << iPlane << ", " << iView << ", " 
+		      << ", (L,V,FE)=(" << layer << ", " << iView << ", " 
 		      << iDiv << ")" << std::endl;
 	    m_log << "WARNIN, Abnormal charge scale: " << chargeScale 
-		  << ", (L,V,FE)=(" << iPlane << ", " << iView << ", " 
+		  << ", (L,V,FE)=(" << layer << ", " << iView << ", " 
 		  << iDiv << ")" << std::endl;
 	    if( chargeScale > 1.3 ) chargeScale = 1.3;
 	    if( chargeScale < 0.7 ) chargeScale = 0.7;
 	  }
-	  m_chargeScale[iPlane][iView][iDiv] = chargeScale;
+	  m_chargeScale[layer][iView][iDiv] = chargeScale;
 	}
 	
-	m_log << "Charge " << iPlane << ' ' << iView << ' ' << pos << ' '
+	m_log << "Charge " << layer << ' ' << iView << ' ' << pos << ' '
 	       << area << ' ' << ave << ' ' << rms << ", " << *(par+0) << ' '
 	       << *(par+1) << ' ' << *(par+2) << ' ' << *(par+3)
 	       << std::endl;
@@ -657,15 +664,15 @@ bool totCalib::readTotConvFile(const char* dir, const char* runid)
 {
   string filename;
   char fname[] = "/398000364/TkrTotGainNt_LayerY17_398000364.tnt";
-  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+  for(int layer = 0; layer != g_nPlane; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       filename = dir;
       if( iView == 0 )
-	sprintf(fname,"/%s/TkrTotGainNt_LayerX%d_%s.tnt", runid, iPlane, runid);
+	sprintf(fname,"/%s/TkrTotGainNt_LayerX%d_%s.tnt", runid, layer, runid);
       else
-	sprintf(fname,"/%s/TkrTotGainNt_LayerY%d_%s.tnt", runid, iPlane, runid);
+	sprintf(fname,"/%s/TkrTotGainNt_LayerY%d_%s.tnt", runid, layer, runid);
       filename += fname;
-      if( !readTotConv( iPlane, iView, filename.c_str() ) )
+      if( !readTotConv( layer, iView, filename.c_str() ) )
 	return false;
     }
   }
@@ -863,14 +870,10 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
 
 
 
-float totCalib::calcCharge(int planeId, TkrCluster::view viewId, int iStrip, 
-			   int tot) const
+float totCalib::calcCharge(int layer, int view, int iStrip, int tot) const
 {
   // convert TOT raw count to micro second
   float time = (tot << 2) * 0.05;
-
-  int layer = g_nLayer - planeId - 1;
-  int view = (viewId == TkrCluster::X) ? 0 : 1;
 
   // TOT to charge conversion
   float charge = m_totOffset[layer][view][iStrip] 
@@ -887,7 +890,7 @@ void totCalib::fillXml()//takuya
   std::string filename = m_outputDir;
   char fname[] = "/TkrFMX_TkrChargeScale_050131-161012.xml";
   
-  sprintf( fname, "%s_TkrChargeScale_%s-%s.xml", 
+  sprintf( fname, "/%s_TkrChargeScale_%s-%s.xml", 
 	   m_tower_serial.c_str(), m_dateStamp.c_str(), m_timeStamp.c_str() );
 
   filename += fname;
@@ -1000,29 +1003,29 @@ void totCalib::fillXml()//takuya
 	 << "  <tower row='" << m_tower_row << "' col='" << m_tower_col 
 	 << "' hwserial='" << m_tower_serial << "'>" << endl;
 
-  for(int iPlane = 0; iPlane != g_nPlane; ++iPlane) {
+  for(int layer = 0; layer != g_nPlane; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
       int tray;
       string which;
       if(iView==0){
-	tray = 2 * ( iPlane/2 ) + 1;
-	if(iPlane%2==0) which = "bot";
+	tray = 2 * ( layer/2 ) + 1;
+	if(layer%2==0) which = "bot";
 	else which = "top";
       }
       else{
-	tray = 2 * ( (iPlane+1)/2 );
-	if(iPlane%2==0) which = "top";
+	tray = 2 * ( (layer+1)/2 );
+	if(layer%2==0) which = "top";
 	else which = "bot";
       }
       if( iView == 0 )
-	output << "   <!-- layer X" << iPlane << " -->" << std::endl;
+	output << "   <!-- layer X" << layer << " -->" << std::endl;
       else
-	output << "   <!-- layer Y" << iPlane << " -->" << std::endl;
+	output << "   <!-- layer Y" << layer << " -->" << std::endl;
       output << "   <uniplane tray='" << tray << "' which='"
 	     << which << "'>" << endl;
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
 	output << "    <gtfeScale id='" << iDiv << "' chargeScale='" 
-               <<  m_chargeScale[iPlane][iView][iDiv] << "'/>" << endl;
+               <<  m_chargeScale[layer][iView][iDiv] << "'/>" << endl;
       }
       output << "   </uniplane>" << endl; 
     }
