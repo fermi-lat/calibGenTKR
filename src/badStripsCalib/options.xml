@@ -3,38 +3,46 @@
 
 <!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/options.xml,v 1.6 2004/07/21 00:33:53 lsrea Exp $"
-       cvs_Revision="$Revision: 1.6 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/test/options.xml,v 1.7 2004/10/13 00:54:20 lsrea Exp $"
+       cvs_Revision="$Revision: 1.7 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
 
+    <!--
     <item name="detectorType" value="EM1"> 
     valid types are EM1, EM2, LAT_2Towers and LAT_Full</item>
-
+    -->
     <!-- another way to characterize the configuration: specify directly -->
-    
-    <!-- here's what LAT_2Towers looks like-->
-    <!--
+
     <item name="nPlanes"    value="36">
     the number of planes in each tower, including dummies</item>
       
-    <item name="towerNumbers"     value= "{8, 9}"  >
+    <item name="towerNumbers"     value= "{0}"  >
     Numbers (0-15) of instrumented towers.
     All others will be expected to produce no hits </item>
-    -->
        
-    <item name="maxOccupancy" value = "0.01"> occupancy above ambient to qualify as hot</item>
-    
-    <item name="sourceFilePath" value= "/nfs/farm/g/glast/u08/EM2003/rootFiles/em_v1r030302p5/digi/" > 
+    <!-- 
+        Supply unix path and windows path/drive_letter so same options file can be used 
+        for both platforms. Program chooses one or the other using "#ifdef WIN32". 
+        
+        Path to each file is [winPath|unixPath]+sourceFilePath+sourceFileList[n].
+    -->
+    <item name = "winPath"  value = "//slaccfs/glast_" />
+    <item name = "unixPath" value = "/nfs/farm/g/glast/" />
+       
+    <item name="sourceFilePath" value= "u12/EM2/rootData/398000525/grRoot/"  > 
           common part of the path to the digi.root files (may be blank) </item>
     <item name="sourceFileList"      
-        value= " ebf031006235353_digi.root  " > 
+        value= " digitization-EM2-v1r0_398000525_digi_DIGI.root "  > 
         blank-delimited list of input files, including any part of the path not specified above 
     </item> 
     <!-- default output path is $CALIBGENTKRROOT/output/ --> 
     <item name="xmlPath"         value= "">  path to location of output xml files </item> 
     <item name="histPath"        value= "">  path to location of output hist files </item>
-    <item name="outputPrefix"    value= "ebf031006235353" >  prefix for output files </item>   
-    <item name="numEvents"       value= "500000" > max number of events to read </item>
+    <item name="outputPrefix"    value= "TowerA_398000525" >  prefix for output files </item>
+       
+    <item name="numEvents"       value= "500000" > max number of events to read </item>  
+    <item name="maxOccupancy" value = "0.01"> occupancy above ambient to qualify as hot</item>
+
   </section>
 </ifile>
 
