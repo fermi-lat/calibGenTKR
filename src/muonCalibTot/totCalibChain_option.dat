@@ -38,17 +38,21 @@ calib-v1r0
 #
 398000364
 #
-# output text file
+# output Directory
 #
-../output/tot.txt
+/nfs/farm/g/glast/u02/TKR/TkrFMA
+#
+# output log file
+#
+mipCalib_1.log
 #
 # output xml file
 #
-../output/tot.xml
+TkrFMA_ChargeScale.xml
 #
 # output root file
 #
-../output/tot.root
+mipCalib_1.root
 
 
 
