@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb  1 23:32:12 PST 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalibChain_option.dat 
+Log Message:
+add more consistency checking in xml parser.
+
+    *
+------------------------------------------------------------
 User: htajima  Mon Jan 31 23:25:31 PST 2005
 calibGenTKR/src/muonCalibTot
 
