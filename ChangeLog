@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: lsrea  Thu Feb 26 15:32:32 PST 2004
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+preparing for tag v0r1p1 - code now runs on unix
+
+
+    *
+------------------------------------------------------------
 User: lsrea  Thu Feb 26 14:31:19 PST 2004
 calibGenTKR/src/badStripsCalib
 
