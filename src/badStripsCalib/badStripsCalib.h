@@ -82,6 +82,8 @@ public :
     std::vector<int> m_towerNums;
     /// hist Ids
     int m_histId[16];
+    /// maximum occupancy parameter
+    double m_maxOccupancy;
     /// vector of histograms
     std::vector<TH1F*> m_tkrHists;
 
@@ -343,6 +345,10 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
         for (i=0;i<(int)m_towerNums.size(); ++i) {
             m_histId[m_towerNums[i]] = i;
         }
+    }
+    m_maxOccupancy = 0.01;
+    if (myFile.contains("parameters","maxOccupancy")) {
+        m_maxOccupancy = myFile.getDouble("parameters", "maxOccupancy");
     }
 }
 
