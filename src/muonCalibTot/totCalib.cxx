@@ -327,7 +327,7 @@ bool totCalib::parseRcReport( const char* reportFile )
     keywords.push_back("StartTime");
     keywords.push_back("EndTime");
 
-    for( int i=0; i<keywords.size(); i++){
+    for( unsigned int i=0; i<keywords.size(); i++){
       DOMElement* childElt 
 	= xml::Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
       try {
@@ -468,6 +468,7 @@ void totCalib::getTot()
  
 void totCalib::retrieveCluster()
 {
+#ifdef OLD_RECON
   TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
  
   assert(tkrRecon != 0);
@@ -479,11 +480,11 @@ void totCalib::retrieveCluster()
     TkrCluster* cluster = dynamic_cast<TkrCluster*>(siClusterCol->At(i));
     m_cluster[cluster->getId()] = cluster;
   }
+#endif
 }
 
-int totCalib::findTot(int layerId, TkrCluster::view viewId, int stripId)
+int totCalib::findTot(int layerId, int view , int stripId)
 {
-  int view = (viewId == TkrCluster::X) ? 0 : 1;
   if(stripId <= m_lastRC0Strip[layerId][view] )
     return m_tot[layerId][view][0];
   else
@@ -496,6 +497,7 @@ void totCalib::fillTot()
 
   TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
 
+#ifdef OLD_RECON
   TObjArray* tracks = tkrRecon->getTrackCol();
   TkrKalFitTrack* tkrTrack = dynamic_cast<TkrKalFitTrack*>(tracks->At(0));
 
@@ -525,7 +527,10 @@ void totCalib::fillTot()
     for(int iStrip = cluster->getFirstStrip(); 
 	iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 
-      int tot = findTot(layer, viewId, iStrip);
+      int tot = findTot(layer, view, iStrip);
+#ifndef OLD_RECON
+      tot = cluster->getRawToT(); // we might want to check that this one is correct
+#endif
       if( tot == 0 ) continue;
 
       float charge = calcCharge(layer, view, iStrip, tot);
@@ -536,6 +541,47 @@ void totCalib::fillTot()
       m_chargeHist[layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
     }
   }
+#else
+  TObjArray* tracks = tkrRecon->getTrackCol();
+  TkrTrack* tkrTrack = dynamic_cast<TkrTrack*>(tracks->First());
+
+  int nHit = tkrTrack->GetEntries();
+
+  TIter trk1HitsItr(tkrTrack);
+  TkrTrackHit* pTrk1Hit = 0;
+  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
+    
+    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    if(cluster) {
+      //a cluster is attached to the hit: proceed
+      
+      int planeId = cluster->getLayer();
+      int view = cluster->getTkrId().getView();
+
+      int layer = g_nLayer - planeId - 1;
+    
+      // require only a single strip
+      if(cluster->getSize() != 1) continue;
+
+      for(int iStrip = cluster->getFirstStrip(); 
+	  iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
+	
+	int tot = findTot(planeId, view, iStrip);
+	if( tot == 0 ) continue;
+	
+	std::cout<<"plane: "<<planeId<<" view: "<<view<<" digi tot: "<<tot<<" cluster tot: "<<cluster->getRawToT()<<std::endl;
+	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
+	
+	float charge = calcCharge(layer, view, iStrip, tot);
+	
+	static int nStripPerGroup = g_nStrip / g_nDiv;
+	
+	m_totHist[layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
+	m_chargeHist[layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
+      }
+    }
+  }
+#endif
 }
 
 bool totCalib::passCut() 

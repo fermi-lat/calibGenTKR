@@ -8,9 +8,10 @@ version v1r4
 # use mcRootData *
 use digiRootData *
 use reconRootData *
-use RootPolicy v4r* 
+#use RootPolicy v4r* 
 use xml *
 use facilities *
+use ROOT v* IExternal
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
@@ -25,8 +26,12 @@ include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
 #                 WIN32 " ../src/badStripsCalib/badStripsCalib.h \
 #                         ../src/muonCalibToT/totCalib.h" 
 
-macro_append ROOT_libs " -lHist -l Graf " \
-             WIN32 " ${ROOT_PATH}/lib/libHist.lib ${ROOT_PATH}/lib/libGraf.lib"
+
+macro_append cppflags "-DOLD_RECON"
+macro_append ROOT_libs " $(ROOT_GUI_libs)"
+
+#macro_append ROOT_libs " -lHist -l Graf " \
+#             WIN32 " ${ROOT_PATH}/lib/libHist.lib ${ROOT_PATH}/lib/libGraf.lib"
 
 macro badStripsFiles "" WIN32 "badStripsCalib/*.xml badStripsCalib/*.h" 
  
