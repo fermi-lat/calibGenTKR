@@ -321,6 +321,7 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
     std::string temp1 = "";
     if (myFile.contains("parameters","detectorType")) {
         std::string temp = myFile.getString("parameters", "detectorType");
+        temp = stripBlanks(temp);
         if(temp=="") {temp = "EM1";} else {temp1 = temp;}
         if(temp=="EM1") {
             m_nPlanes = 8;
