@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: lsrea  Mon Aug  2 13:39:06 PDT 2004
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+Prepare for tag v0r1p7; fix for Anders' unix bug?
+
+    *
+------------------------------------------------------------
 User: lsrea  Mon Aug  2 13:39:05 PDT 2004
 calibGenTKR/cmt
 
