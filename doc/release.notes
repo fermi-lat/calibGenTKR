@@ -4,6 +4,7 @@
   
  @verbatim
 
+ v1r1     12-Oct-2004 LSR  change u03 to u08 in test options files
  v1       02-Sep-2004 XChen add codes to do TOT calibration using cosmic ray data
  v0r1p8   02-Aug-2004 LSR  everything should be okay for unix now
  v0r1p7   02-Aug-2004 LSR  fix unix bug?
