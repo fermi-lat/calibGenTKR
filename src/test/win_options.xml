@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<!-- windows test version -->
+
+<!DOCTYPE ifile SYSTEM "$(XMLROOT)/xmldata/ifile.dtd" >
+
+<ifile cvs_Header="$Header: /home/cvs/SLAC/xml/xmldata/myIFile.xml,v 1.1 2003/12/15 23:35:51 jrb Exp $"
+       cvs_Revision="$Revision: 1.1 $" >
+  <section name="parameters"> input parameters for TKR bad strips calibration
+    <!-- the original file is found at: 
+           /nfs/farm/g/glast/u03/EM2003/rootFiles/em_v1r030302p5/digi/
+    -->
+    <item name="sourceDirectory" value= "c:/Glast/files/em/" > 
+          directory containing digi files </item>
+    <item name="sourceFile"      value= "ebf031006235353_digi.root" > name of digi file </item>
+    <item name="outputString"    value= "ebf031006235353" >  prefix for output files </item>
+    <item name="numEvents"       value= "500000" > max number of events to read </item>
+  </section>
+</ifile>
+
+

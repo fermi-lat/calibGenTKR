@@ -9,6 +9,7 @@ version v0r1p1
 use digiRootData *
 #use reconRootData *
 use RootPolicy v2r* 
+use xml
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
