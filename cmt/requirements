@@ -1,6 +1,6 @@
 package calibGenTKR
 
-version v0r1p3
+version v0r1p5
 
 # This package contains the tracker bad strips calibration code
 
@@ -8,7 +8,7 @@ version v0r1p3
 # use mcRootData *
 use digiRootData *
 #use reconRootData *
-use RootPolicy v2r* 
+use RootPolicy v4r* 
 use xml *
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
