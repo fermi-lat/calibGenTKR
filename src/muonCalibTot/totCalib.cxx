@@ -46,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.19 $";
+  std::string version = "$Revision: 1.20 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -653,12 +653,11 @@ void totCalib::fitTot()
   ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
   std::cout << "Start fit." << std::endl;
 
+  char cvw[] = "XY";
   for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int iView = 0; iView != g_nView; ++iView) {
-      char cvw = 'X';
-      if( iView != 0 ) cvw = 'Y';
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
-	std::cout << "Layer: " << cvw << layer 
+	std::cout << "Layer: " << cvw[iView] << layer 
 		  << ", FE: " << iDiv << std::endl;
 	m_chargeScale[layer][iView][iDiv] = 1.0;
 
@@ -668,11 +667,11 @@ void totCalib::fitTot()
 	float rms = m_totHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  std::cout << "Layer: " << cvw << layer
+	  std::cout << "Layer: " << cvw[iView] << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
-	  m_log << "Layer: " << cvw << layer
+	  m_log << "Layer: " << cvw[iView] << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -713,7 +712,7 @@ void totCalib::fitTot()
 	rms = m_chargeHist[layer][iView][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  m_log << "Layer: " << cvw << layer
+	  m_log << "Layer: " << cvw[iView] << layer
 		    << ", FE: " << iDiv << ", Entries: " << area
 		    << ", Mean: " << ave << ", RMS: " << rms 
 		    << " skipped." << std::endl;
@@ -1490,6 +1489,7 @@ void totCalib::fillBadStrips()
   std::string cBad[g_nBad] = {"dead","disconnected","partially disconnected",
 			      "intermittently disconnected",
 			      "intermittently partially connected"};
+  char cvw[] = "XY";
 
   for(int layer = 0; layer != g_nLayer; ++layer) {
     for(int view = 0; view != g_nView; ++view) {
@@ -1505,12 +1505,9 @@ void totCalib::fillBadStrips()
 	if(layer%2==0) which = "top";
 	else which = "bot";
       }
-      if( view == 0 ){
-	output << "    <!-- layer X" << layer << " -->" << std::endl;
-      }
-      else{
-	output << "    <!-- layer Y" << layer << " -->" << std::endl;
-      }
+
+      output << std::endl
+	     << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
       
       for( int iBad=0; iBad!=g_nBad; iBad++ ){
 	int itr = m_deadStrips[layer][view][iBad].size();
