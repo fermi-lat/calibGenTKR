@@ -315,9 +315,13 @@ inline BadStripsCalib::BadStripsCalib(
 
 inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
 {
+    int i;
+    m_nPlanes = 0;
+    bool overridden = false;
+    std::string temp1 = "";
     if (myFile.contains("parameters","detectorType")) {
         std::string temp = myFile.getString("parameters", "detectorType");
-        temp = stripBlanks(temp);
+        if(temp=="") {temp = "EM1";} else {temp1 = temp;}
         if(temp=="EM1") {
             m_nPlanes = 8;
             m_towerNums.push_back(0);
@@ -329,6 +333,7 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
             m_towerNums.push_back(8);
             m_towerNums.push_back(9);
         }else if(temp=="LAT_Full") {
+            m_nPlanes = 36;
             int tower;
             for (tower=0; tower<16; ++tower) {
                 m_towerNums.push_back(tower);
@@ -336,19 +341,50 @@ inline void BadStripsCalib::GetOptions(xml::IFile& myFile)
         } else {
             std::cout << "no valid detector found" << std::endl;
         }
+    }
+    // direct specification overrides detectorType
 
-        int i;
-        for (i=0; i<16; ++i) {
-            m_histId[i] = -1;
-        }
-        // fill in histId sequence for existing towers
-        for (i=0;i<(int)m_towerNums.size(); ++i) {
-            m_histId[m_towerNums[i]] = i;
+    if (myFile.contains("parameters","nPlanes")) {
+        int temp = myFile.getInt("parameters", "nPlanes");
+        overridden = true;
+        if(temp>0) {
+            m_nPlanes = temp;
         }
     }
+    
+    if(myFile.contains("parameters","towerNumbers")) {
+        m_towerNums.clear();
+        m_towerNums = myFile.getIntVector("parameters", "towerNumbers");
+        overridden = true;
+    }  
+
+    if (temp1=="") {
+        std::cout << "No standard configuration chosen" << std::endl;
+    } else {
+        std::cout << "Configuration: " << temp1 << std::endl;
+    }
+    if(temp1>"" && overridden) {
+        std::cout << "Standard parameters have been overridden" << std::endl;
+    }
+    std::cout << "number of planes: " << m_nPlanes << std::endl;
+    std::cout << "Towers in config: " ;
+    for (i=0;i<m_towerNums.size(); ++i) {
+        std::cout << m_towerNums[i] << " " ;
+    }
+    std::cout << std::endl;
+
     m_maxOccupancy = 0.01;
     if (myFile.contains("parameters","maxOccupancy")) {
         m_maxOccupancy = myFile.getDouble("parameters", "maxOccupancy");
+    }
+
+    // -1 means a missing tower
+    for (i=0; i<16; ++i) {
+        m_histId[i] = -1;
+    }
+    // fill in histId sequence for existing towers
+    for (i=0;i<(int)m_towerNums.size(); ++i) {
+        m_histId[m_towerNums[i]] = i;
     }
 }
 
