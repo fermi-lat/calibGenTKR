@@ -191,7 +191,8 @@ void BadStripsCalib::Go(Int_t numEvents)
     else if (nEventsToRead<200000) {nTimeCheck = 20000;}
     else                           {nTimeCheck = 50000;}
     for (Int_t ievent=m_StartEvent; ievent<nMax; ievent++, curI=ievent) {
-        if ((ievent-m_StartEvent)%nTimeCheck==0) {
+        int nProcessed = ievent-m_StartEvent;
+        if (nProcessed%nTimeCheck==0 && nProcessed>0) {
             std::cout << ievent-m_StartEvent << " events processed, " 
                 << " Real time " << timer.RealTime()
                 << " Cpu time " << timer.CpuTime() << std::endl;
