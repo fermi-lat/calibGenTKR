@@ -1,0 +1,33 @@
+------------------------------------------------------------
+User: lsrea  Mon Feb 23 13:38:57 PST 2004
+calibGenTKR
+
+Log Message:
+First import of calibGenTKR package
+
+Status:
+
+Vendor Tag:	GLAST
+Release Tags:	v0r0
+		
+N calibGenTKR/.cvsignore
+N calibGenTKR/ChangeLog
+N calibGenTKR/cmt/cleanup.bat
+N calibGenTKR/cmt/requirements
+N calibGenTKR/cmt/setup.bat
+N calibGenTKR/doc/release.notes
+N calibGenTKR/output/example_deadStrips.xml
+N calibGenTKR/output/example_hist.root
+N calibGenTKR/output/example_hotStrips.xml
+N calibGenTKR/src/mainpage.h
+N calibGenTKR/src/badStripsCalib/badStripsCalib.cxx
+N calibGenTKR/src/badStripsCalib/badStripsCalib.h
+N calibGenTKR/src/test/generateBadStrips.cxx
+N calibGenTKR/src/test/setup/rootalias.C
+N calibGenTKR/src/test/setup/rootlogoff.C
+N calibGenTKR/src/test/setup/rootlogon.C
+N calibGenTKR/xml/badStrips.dtd
+
+No conflicts created by this import
+
+    *
