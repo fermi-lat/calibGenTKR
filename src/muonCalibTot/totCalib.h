@@ -1,9 +1,29 @@
 #ifndef totCalib_Class
 #define totCalib_Class
 
-#include "xml/XmlParser.h" 
-#include <map>
+#include "xml/Dom.h"
+#include <xercesc/dom/DOMElement.hpp>
+#include <xercesc/dom/DOMNodeList.hpp>
+#include <xercesc/dom/DOMCharacterData.hpp>
+#include <xercesc/dom/DOMNamedNodeMap.hpp>
+#include <xercesc/dom/DOMDocument.hpp>
+#include <xercesc/dom/DOMException.hpp>
+#include <xercesc/dom/DOMTreeWalker.hpp>
+#include <xercesc/util/TransService.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/PlatformUtils.hpp>
+#include "xml/XmlParser.h"
+
+#include "xml/Dom.h"
+#include <xercesc/dom/DOMElement.hpp>
+#include <xercesc/dom/DOMNodeList.hpp>
+#include "facilities/Util.h"
+
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <map>
+
 #include "TROOT.h"
 #include "TGraphErrors.h"
 #include "TChain.h"
@@ -18,26 +38,7 @@
 #include "TNtuple.h"
 #include "digiRootData/DigiEvent.h"
 #include "reconRootData/ReconEvent.h"
-#include "xml/Dom.h"
-#include <xercesc/dom/DOMElement.hpp>
-#include <xercesc/dom/DOMNodeList.hpp>
-#include <xercesc/dom/DOMCharacterData.hpp>
-#include <xercesc/dom/DOMNamedNodeMap.hpp>
-#include <xercesc/dom/DOMDocument.hpp>
-#include <xercesc/dom/DOMException.hpp>
-#include <xercesc/dom/DOMTreeWalker.hpp>
-#include <xercesc/util/TransService.hpp>
-#include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
 
-#include "xml/Dom.h"
-#include <xercesc/dom/DOMElement.hpp>
-#include <xercesc/dom/DOMNodeList.hpp>
-#include "facilities/Util.h"
-
-#include <string>
-#include <iostream>
-#include <fstream>
 
 using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 
@@ -52,7 +53,7 @@ class totCalib {
 			 const std::vector<std::string>& runIds );
   int setInputRootFiles( TChain* digi, TChain* recon );
 
-  bool setOutputFiles( const char* txt, const char* xml, const char* root);
+  bool setOutputFiles( const char* outputDir );
 
   bool readTotConvFile(const char* dir, const char* runid);
   bool readTotConvXmlFile(const char* dir, const char* runid);
@@ -132,8 +133,8 @@ class totCalib {
  
   //file stream for log output
   std::ofstream m_log;
-  // file name for output xml file
-  std::string m_xmlOutput;//takuya
+  // output directory
+  std::string m_outputDir;
 
   float m_totQuadra[g_nLayer][g_nView][g_nStrip];
   float m_totGain[g_nLayer][g_nView][g_nStrip];
@@ -141,9 +142,10 @@ class totCalib {
 
   //xml related parameters
   int m_tower_row, m_tower_col, m_first_run, m_last_run;
-  std::string m_tower_serial, m_version, m_tot_runid, m_timeStamp, 
-    m_startTime, m_stopTime;
+  std::string m_tower_serial, m_version, m_tot_runid, 
+    m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
 };
+
 Double_t langaufun(Double_t *x, Double_t *par);//takuya0122
 #endif
