@@ -1,5 +1,15 @@
 ------------------------------------------------------------
 User: lsrea  Thu Mar  3 14:59:34 PST 2005
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.h generateBadStrips.cxx 
+Log Message:
+a bunch of Windows fixes (but not all!)
+
+    *
+------------------------------------------------------------
+User: lsrea  Thu Mar  3 14:59:34 PST 2005
 calibGenTKR/cmt
 
 Modified Files:
