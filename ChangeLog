@@ -1,5 +1,19 @@
 ------------------------------------------------------------
 User: lsrea  Sun Feb 13 21:40:34 PST 2005
+calibGenTKR/src/test
+
+Removed Files:
+	generateBadStrips.cxx options.xml unix_options.xml 
+	win_options.xml 
+Log Message:
+move the main badstrips program to the badStripsCalib directory
+implement common unix/windows options... only leading part of path needs
+to be different
+
+
+    *
+------------------------------------------------------------
+User: lsrea  Sun Feb 13 21:40:34 PST 2005
 calibGenTKR/src/badStripsCalib
 
 Added Files:
