@@ -100,14 +100,14 @@ private:
 
     void fillXml();//takuya
 
-    int findTot(int planeId, int view, int stripId);
+    int findTot(int tower,int planeId, int view, int stripId);
 
-    bool readTotConv(int layer, int view, const char* file);
+    bool readTotConv(int tower, int layer, int view, const char* file);
     bool readTotConv(const char* file);
 
     bool getParam(const DOMElement* totElement,int layer,int view);
 
-    float calcCharge(int layer, int view, int iStrip, int tot) const;
+    float calcCharge(int tower, int layer, int view, int iStrip, int tot) const;
 
     static const int g_nLayer = 18;
     // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
@@ -119,13 +119,15 @@ private:
     // group of strips so that each group has enough statistics
     static const int g_nDiv = 24; //used to be 64;takuya
 
-    TGraphErrors* m_totStrip[g_nLayer][g_nView];
-    TGraphErrors* m_chargeStrip[g_nLayer][g_nView];
+    static const int g_nTower = 2;
 
-    TH1F* m_totHist[g_nLayer][g_nView][g_nDiv];
-    TH1F* m_chargeHist[g_nLayer][g_nView][g_nDiv];
+    TGraphErrors* m_totStrip[g_nTower][g_nLayer][g_nView];
+    TGraphErrors* m_chargeStrip[g_nTower][g_nLayer][g_nView];
 
-    float m_chargeScale[g_nLayer][g_nView][g_nDiv];
+    TH1F* m_totHist[g_nTower][g_nLayer][g_nView][g_nDiv];
+    TH1F* m_chargeHist[g_nTower][g_nLayer][g_nView][g_nDiv];
+
+    float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
 
     TNtuple* m_tuple;
 
@@ -142,8 +144,8 @@ private:
     // reconstructed event vertex and direction
     TVector3 m_pos, m_dir;
 
-    int m_tot[g_nLayer][g_nView][2];
-    int m_lastRC0Strip[g_nLayer][g_nView];
+    int m_tot[g_nTower][g_nLayer][g_nView][2];
+    int m_lastRC0Strip[g_nTower][g_nLayer][g_nView];
 
     // Index of cluster hit in the TkrSiClusters
     std::map<int, TkrCluster*> m_cluster;
@@ -155,9 +157,9 @@ private:
     // dtd file
     std::string m_dtd;
 
-    float m_totQuadra[g_nLayer][g_nView][g_nStrip];
-    float m_totGain[g_nLayer][g_nView][g_nStrip];
-    float m_totOffset[g_nLayer][g_nView][g_nStrip];
+    float m_totQuadra[g_nTower][g_nLayer][g_nView][g_nStrip];
+    float m_totGain[g_nTower][g_nLayer][g_nView][g_nStrip];
+    float m_totOffset[g_nTower][g_nLayer][g_nView][g_nStrip];
 
     //xml related parameters
     int m_tower_row, m_tower_col, m_first_run, m_last_run;
@@ -171,8 +173,8 @@ private:
     void fillBadStrips();
 
     bool m_badStrips;
-    std::vector<int> m_deadStrips[g_nLayer][g_nView][g_nBad];
-    TH1F* m_nHits[g_nLayer][g_nView][g_nWafer];
+    std::vector<int> m_deadStrips[g_nTower][g_nLayer][g_nView][g_nBad];
+    TH1F* m_nHits[g_nTower][g_nLayer][g_nView][g_nWafer];
     TH1F* m_aPos[g_nWafer];
     TH1F* m_occDist, *m_poissonDist;
 
