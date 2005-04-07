@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Wed Apr  6 19:41:08 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.h totCalib.cxx 
+Log Message:
+first attempt at multitower generalization: still buggy for now
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r2, operation: add
 Package: calibGenTKR
