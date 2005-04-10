@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Sun Apr 10 00:27:55 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+It is not compatible with multiple towers.
+
+    *
+------------------------------------------------------------
 User: cohen  Wed Apr  6 19:41:08 PDT 2005
 calibGenTKR/src/muonCalibTot
 
