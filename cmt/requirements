@@ -13,6 +13,7 @@ use calibUtil *
 use xmlBase *
 use facilities *
 use ROOT v* IExternal
+use idents *
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
