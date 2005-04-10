@@ -46,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.22 $";
+  std::string version = "$Revision: 1.23 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -54,12 +54,8 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   m_version = version;
   std::cout << "Tag: " << m_tag << ", version: " << m_version << std::endl;
 
-  m_tower_row=0;
-  m_tower_col=0;
-  m_tower_serial="TKrFMX";
   m_first_run = 999999999;
   m_last_run = 0;
-  m_tot_runid = "0";
   m_startTime="01/20 2005, 22:52 GMT";
   m_stopTime="01/20 2005, 22:52 GMT";
 
@@ -84,37 +80,39 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   }
 
   for(int tower = 0; tower != g_nTower; ++tower) {
+    m_tower_serial[tower] = "None";
+    m_tot_runid[tower] = "-1";
+
     for(int layer = 0; layer != g_nLayer; ++layer) {
-      
       for(int iView = 0; iView != g_nView; ++iView) {
 	char vw = 'X';
 	if( iView != 0 ) vw = 'Y';
 	if( !m_badStrips ){
-	  char name[] = "var000";
-	  sprintf(name,"var%d%d", layer, iView);
+	  char name[] = "var00000";
+	  sprintf(name,"var%d%d%d", tower, layer, iView);
 	  m_totStrip[tower][layer][iView] = new TGraphErrors(g_nDiv);
 	  m_totStrip[tower][layer][iView]->SetName(name);
 	  
-	  char temp[] = "varCorr000";
-	  sprintf(temp,"varCorr%d%d", layer, iView);
+	  char temp[] = "varCorr00000";
+	  sprintf(temp,"varCorr%d%d%d", tower, layer, iView);
 	  m_chargeStrip[tower][layer][iView] = new TGraphErrors(g_nDiv);
 	  m_chargeStrip[tower][layer][iView]->SetName(temp);
 	}
 	if( m_badStrips ){
 	  for(int iWafer = 0; iWafer != g_nWafer; ++iWafer) {
-	    char name1[] = "occX17w3";
-	    sprintf(name1,"occ%c%dw%d", vw, layer, iWafer);
+	    char name1[] = "occT00X17w3";
+	    sprintf(name1,"occT%d%c%dw%d", tower, vw, layer, iWafer);
 	    m_nHits[tower][layer][iView][iWafer] = new TH1F(name1, name1, 1536, 0, 1536);
 	  }
 	}
 	else{
 	  for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	    char name1[] = "totX17fe0004";
-	    sprintf(name1,"tot%c%dfe%d", vw, layer, iDiv);
+	    char name1[] = "totT00X17fe0004";
+	    sprintf(name1,"totT%d%c%dfe%d", tower, vw, layer, iDiv);
 	    m_totHist[tower][layer][iView][iDiv] = new TH1F(name1, name1, 100, 0, 200);
 	    
-	    char name2[] = "chargeX00fe0000";
-	    sprintf(name2,"charge%c%dfe%d", vw, layer, iDiv);
+	    char name2[] = "chargeT00X00fe0000";
+	    sprintf(name2,"chargeT%d%c%dfe%d", tower, vw, layer, iDiv);
 	    m_chargeHist[tower][layer][iView][iDiv] = new TH1F(name2, name2, 200, 0, 20);
 	  }
 	}
@@ -253,12 +251,13 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
 }
 
 
-int totCalib::setInputRootFiles( const char* rootDir, const char* reconDir, 
+int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
+				 const char* reconPrefix, 
 				 const std::vector<std::string>& runIds )
 {
 
   std::string digiFile, reconFile;
-  char fname[] = "/398000362/calib-v1r0/grRoot/recon-EM2-v1r0_398000362_recon_RECON.root";
+  char fname[] = "135000933/v4r060302p8/calib-v1r0/grRoot/recon-v3r1p2_135000933_recon_RECON_100.root";
   TChain* digiChain = new TChain("Digi");
   TChain* reconChain = new TChain("Recon");
 
@@ -270,24 +269,47 @@ int totCalib::setInputRootFiles( const char* rootDir, const char* reconDir,
     if( runid > m_last_run ) m_last_run = runid;
 
     digiFile = rootDir;
-    sprintf(fname,"/%d/grRoot/digitization-EM2-v1r0_%d_digi_DIGI.root",
-	    runid, runid);
+    sprintf(fname,"/%d/%s_%d_digi_DIGI.root",
+	    runid, digiPrefix, runid);
     digiFile += fname;
     std::cout << "open digi file: " << digiFile << endl;
     m_log << "digi file: " << digiFile << endl;
     digiChain->Add( digiFile.c_str() );
 
-    reconFile = rootDir;
-    sprintf(fname,"/%d/%s/grRoot/recon-EM2-v1r0_%d_recon_RECON.root",
-	    runid, reconDir, runid);
-    reconFile += fname;
-    std::cout << "open recon file: " << reconFile << endl;
-    m_log << "recon file: " << reconFile << endl;
-    reconChain->Add( reconFile.c_str() );
+    int split = 0;
+    while( true ){
+      reconFile = rootDir;
+      if( split == 0 )
+	sprintf(fname,"/%d/%s_%d_recon_RECON.root",
+		runid, reconPrefix, runid);
+      else
+	sprintf(fname,"/%d/%s_%d_recon_RECON_%d.root",
+		runid, reconPrefix, runid, split);
+      reconFile += fname;
+      if( ! checkFile( reconFile ) ){
+	if( split == 0 ) return false;
+	else break;
+      }
+      std::cout << "open recon file: " << reconFile << endl;
+      m_log << "recon file: " << reconFile << endl;
+      reconChain->Add( reconFile.c_str() );
+      split++;
+    }
 
   }
   return setInputRootFiles( digiChain, reconChain );
 
+}
+
+bool totCalib::checkFile( const std::string fname ){
+
+  bool flag;
+  ifstream file( fname.c_str(), std::ios::in | std::ios::binary );
+  flag = file.good();
+  file.clear();
+  file.close();
+
+  return flag;
 }
 
 
@@ -373,18 +395,62 @@ bool totCalib::parseRcReport( const char* reportFile )
     keywords.push_back("RunId");
     keywords.push_back("StartTime");
     keywords.push_back("EndTime");
+    keywords.push_back("SerialNos");
 
     for( unsigned int i=0; i<keywords.size(); i++){
       DOMElement* childElt 
 	= Dom::findFirstChildByName( rcElt, keywords[i].c_str() );
       try {
 	values.push_back( Dom::getTextContent(childElt) );
+	//std::cout << keywords[i] << ": " << values[i] << std::endl;
       }
       catch (DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
 	return false;
       }
     }
+
+    std::string serials = values[3], towerId, tower_serial;
+    while( true ){
+      int pos = serials.find( "GTEM" );
+      if( pos == string::npos ) break;
+      serials.assign( serials, pos+5, serials.size() );
+      pos = serials.find( "," );
+      towerId.assign( serials, 0, pos );
+      pos = serials.find( "tkr" );
+      serials.assign( serials, pos+5, serials.size() );
+      pos = serials.find( "'" );
+      serials.assign( serials, pos+1, serials.size() );
+      pos = serials.find( "'" );
+      tower_serial.assign( serials, 0, pos );
+      if( pos == string::npos ) break;
+      int tower = atoi( towerId.c_str() );
+      if( tower >= 0 && tower < g_nTower ){
+	if( m_tower_serial[ tower ] == "None" ){
+	  std::cout << towerId << " " << tower_serial << std::endl;
+	  m_log << towerId << " " << tower_serial << std::endl;
+	  m_towerList.push_back( tower );
+	  m_tower_serial[ tower ] = tower_serial;
+	}
+	else if( m_tower_serial[ tower ] != tower_serial ){
+	  std::cout << "Inconsistent tower serial IDs for tower " << tower
+		    << ": " << m_tower_serial[ tower ] << " " << tower_serial
+		    << std::endl;
+	  m_log << "Inconsistent tower serial IDs for tower " << tower
+		<< ": " << m_tower_serial[ tower ] << " " << tower_serial
+		<< std::endl;
+	  return false;
+	}
+      }
+      else {
+	std::cout << "Invalid tower number, contents of SerialNos:" 
+		  << values[3] << std::endl;
+	m_log << "Invalid tower number, contents of SerialNos:" 
+	      << values[3] << std::endl;
+	return false;
+      }
+    }
+
     int runid = atoi( values[0].c_str() );
     if( runid != m_first_run && runid != m_last_run ) return true;
     if( runid == m_first_run ) getDate( values[1].c_str(), m_startTime );
@@ -566,7 +632,12 @@ void totCalib::fillTot()
     int planeId = cluster->getPlane();
     TkrCluster::view viewId = cluster->getView();
 
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id() ;
+#ifdef OLD_RECON
+    int tower = cluster->getTower();
+#else
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+#endif
+
     int layer = g_nLayer - planeId - 1;
     int view = (viewId == TkrCluster::X) ? 0 : 1;
 
@@ -775,58 +846,6 @@ void totCalib::fitTot()
   }
 }
 
- 
-bool totCalib::readTotConvFile(const char* dir, const char* runid)
-{
-  string filename;
-  char fname[] = "/398000364/TkrTotGainNt_LayerY17_398000364.tnt";
-  for(int tower=0;tower!=g_nTower;++tower){
-    for(int layer = 0; layer != g_nLayer; ++layer) {
-      for(int iView = 0; iView != g_nView; ++iView) {
-	filename = dir;
-	if( iView == 0 )
-	  sprintf(fname,"/%s/TkrTotGainNt_LayerX%d_%s.tnt", runid, layer, runid);
-	else
-	  sprintf(fname,"/%s/TkrTotGainNt_LayerY%d_%s.tnt", runid, layer, runid);
-	filename += fname;
-	if( !readTotConv( tower, layer, iView, filename.c_str() ) )
-	  return false;
-      }
-    }
-  }
-  return true;
-}
-
-bool totCalib::readTotConv(int tower,int layer, int view, const char* file)
-{
-  ifstream convFile(file);
-  if(  !convFile ){
-    std::cout << file << " cannot be opened." << std::endl;
-    return false;
-  }
-  else std::cout << "Reading " << file << std::endl;
-  for(int i = 0; i != 2; ++i) {
-    string temp;
-    getline(convFile, temp);
-  }
-
-  int stripId, feId;
-  float gain, offset, quadra, chisq;
-  bool display = false;
-
-  while(convFile >> stripId >> feId >> offset >> gain >> quadra >> chisq) {
-    if( display ){
-      std::cout << stripId << " " << offset << " " << quadra << std::endl;
-      display = false;
-    }
-    m_totOffset[tower][layer][view][stripId] = offset;
-    m_totGain[tower][layer][view][stripId] = gain;
-    m_totQuadra[tower][layer][view][stripId] = quadra;
-  }
-
-  return true;
-}
-
 
 bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 {
@@ -866,8 +885,9 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     DOMElement* attElt = Dom::findFirstChildByName(docElt,"generic");
     //DOMElement* isElt = xml::Dom::findFirstChildByName(attElt,"inputSample");
     
+    std::string tot_runid, hwserial;
     try {
-      m_tot_runid  = Dom::getAttribute(attElt, "runId");
+      tot_runid  = Dom::getAttribute(attElt, "runId");
       //m_timeStamp = xml::Dom::getAttribute(attElt, "timestamp");
     }
     catch (DomException ex) {
@@ -877,18 +897,20 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     // look up tower attributes
     attElt = Dom::findFirstChildByName(docElt,"tower");
     try {
-      m_tower_col  = Dom::getIntAttribute(attElt, "col");
-      m_tower_row = Dom::getIntAttribute(attElt, "row");
-      m_tower_serial  = Dom::getAttribute(attElt, "hwserial");
+      hwserial  = Dom::getAttribute(attElt, "hwserial");
     }
     catch (DomException ex) {
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
-    std::cout << "tower row: " << m_tower_row << ", col: " << m_tower_col 
-	      << ", serial: " << m_tower_serial 
-	      << ", runid: " << m_tot_runid << ", timeStamp: " << m_timeStamp
+    int towerId=-1;
+    for( unsigned int tw=0; tw<m_towerList.size(); tw++)
+      if( m_tower_serial[ m_towerList[tw] ] == hwserial )
+	towerId = m_towerList[ tw ];
+    std::cout << "tower: " << towerId << ", serial: " << hwserial 
+	      << ", runid: " << tot_runid << ", timeStamp: " << m_timeStamp
 	      << std::endl;
+    if( towerId < 0 ) return false;
 
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
@@ -919,7 +941,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       }
 	
       int numStrip = 0;
-      while( getParam( elder, layer, view ) ){
+      while( getParam( elder, towerId, layer, view ) ){
 	younger = Dom::getSiblingElement( elder );
 	elder = younger;
 	numStrip++;
@@ -937,7 +959,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   return true;
 }
 
-bool totCalib::getParam(const DOMElement* totElement, int layer, int view){  
+bool totCalib::getParam(const DOMElement* totElement, int tower, int layer, int view){  
 #ifdef OLD_RECON
   //typdef xml xmlBase;
   using namespace xml;
@@ -946,9 +968,14 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
 #endif
 
   int stripId;
-  double quad,gain,offset;
+  std::vector<std::string> keywords;
+  std::vector<float> values;
+  keywords.push_back( "intercept" );
+  keywords.push_back( "slope" );
+  keywords.push_back( "quad" );
+
   try{
-    stripId = Dom::getIntAttribute( totElement, "id" );
+    stripId = Dom::getIntAttribute( totElement, "id" ); 
   } //if there isn't next strip,go to next layer or view
   catch(DomException ex){
     cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
@@ -962,44 +989,28 @@ bool totCalib::getParam(const DOMElement* totElement, int layer, int view){
     return true;
   }
 
-  try{
-    quad = Dom::getDoubleAttribute(totElement,"quad");
-  }
-  catch(DomException ex){
-    cout << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
-	 << view << ", "  << stripId << ")" << endl;
-    m_log << "ERROR, no attribute for quad: (L,V,S)=(" << layer << ", " 
-	  << view << ", "  << stripId << ")" << endl;
-  }
-  try{
-    gain = Dom::getDoubleAttribute(totElement,"slope");
-  }
-  catch(DomException ex){
-    cout << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
-	 << view << ", "  << stripId << ")" << endl;
-    m_log << "ERROR, no attribute for slope: (L,V,S)=(" << layer << ", " 
-	  << view << ", "  << stripId << ")" << endl;
-  }
-  try{
-    offset = Dom::getDoubleAttribute(totElement,"intercept");
-  }
-  catch(DomException ex){
-    cout << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
-	 << view << ", "  << stripId << ")" << endl;
-    m_log << "ERROR, no attribute for offset: (L,V,S)=(" << layer << ", " 
-	  << view << ", "  << stripId << ")" << endl;
+  for( unsigned int i=0; i<keywords.size(); i++){
+    try{
+      float value = Dom::getDoubleAttribute( totElement, keywords[i].c_str() );
+      values.push_back( value );
+    }
+    catch(DomException ex){
+      cout << "ERROR, no attribute for " << keywords[i] << ": (L,V,S)=(" 
+	   << layer << ", " << view << ", "  << stripId << ")" << endl;
+      m_log << "ERROR, no attribute for " << keywords[i] << ": (L,V,S)=(" 
+	    << layer << ", " << view << ", "  << stripId << ")" << endl;
+    }
   }
   /*  cout <<"stripId" << stripId
-       <<",offset" << offset
-       <<",gain" << gain
-       <<",quad" << quad <<endl;*/
-  int tower=0;
-  m_totOffset[tower][layer][view][stripId] = offset;
-  m_totGain[tower][layer][view][stripId] = gain;
-  m_totQuadra[tower][layer][view][stripId] = quad;
+      <<",offset" << offset
+      <<",gain" << gain
+      <<",quad" << quad <<endl;*/
+  
+  m_totOffset[tower][layer][view][stripId] = values[0];
+  m_totGain[tower][layer][view][stripId] = values[1];
+  m_totQuadra[tower][layer][view][stripId] = values[2];
   return true;
 }
-
 
 
 float totCalib::calcCharge(int tower, int layer, int view, int iStrip, int tot) const
@@ -1022,9 +1033,19 @@ void totCalib::fillXml()//takuya
   std::string filename = m_outputDir;
   char fname[] = "/TkrFMX_TkrChargeScale_050131-161012.xml";
   
-  sprintf( fname, "/%s_TkrChargeScale_%s-%s.xml", 
-	   m_tower_serial.c_str(), m_dateStamp.c_str(), m_timeStamp.c_str() );
-
+  std::string tot_runid = m_tot_runid[ m_towerList[0] ];
+  if( m_towerList.size() == 1 ){
+    sprintf( fname, "/%s_TkrChargeScale_%s-%s.xml", 
+	     m_tower_serial[ m_towerList[0] ].c_str(), 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );
+  }
+  else{
+    sprintf( fname, "/LAT_TkrChargeScale_%s-%s.xml", 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );
+    for( unsigned int i=1; i<m_towerList.size(); i++){
+      tot_runid += ':' + m_tot_runid[ m_towerList[i] ];
+    }
+  }
   filename += fname;
 
   std::ofstream output( filename.c_str() );
@@ -1061,59 +1082,71 @@ void totCalib::fillXml()//takuya
   output << "<chargeScale>" << endl
 	 << "   <generic calType=\"ChargeScale\" creatorName=\"totCalib\""
 	 << " creatorVersion =\"" << m_version
-	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_tot_runid 
+	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << tot_runid 
 	 << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
 	 << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
 	 << m_startTime << "\" stopTime=\"" << m_stopTime 
 	 << "\" triggers=\"TKR\">" << std::endl
 	 << " Cosmic ray muon data for charge scale calibration " << std::endl
 	 << "    </inputSample>" << std::endl
-	 << "  </generic>" << std::endl
-	 << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
-	 << "\" hwserial=\"" << m_tower_serial << "\">" << endl;
+	 << "  </generic>" << std::endl;
 
   output.precision(3);
   char cvw[] = "XY";
 
-  for(int layer = 0; layer != g_nLayer; ++layer) {
-    for(int iView = 0; iView != g_nView; ++iView) {
-      int tray;
-      string which;
-      if(iView==0){
-	tray = 2 * ( layer/2 ) + 1;
-	if(layer%2==0) which = "bot";
-	else which = "top";
-      }
-      else{
-	tray = 2 * ( (layer+1)/2 );
-	if(layer%2==0) which = "top";
-	else which = "bot";
-      }
-      output << std::endl
-	     << "   <!-- **** layer " << cvw[iView]  << layer 
-	     << " **** -->" << std::endl
-	     << "   <uniplane tray=\"" << tray << "\" which=\""
-	     << which << "\">" << std::endl;
-      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	output << "    <gtfeScale id=\"" << iDiv << "\" chargeScale=\"" 
-               <<  m_chargeScale[layer][iView][iDiv] << "\"/>" << endl;
-      }
-      output << "   </uniplane>" << endl; 
-    }
-  }
-  output     << "  </tower>" << endl;  
-  output     << " </chargeScale>" << endl;
-}
+  for( unsigned int tw=0; tw<m_towerList.size(); tw++ ){
+    int tower = m_towerList[ tw ];
+    idents::TowerId twrId(tower); 
+    int tower_row = twrId.ix();
+    int tower_col = twrId.iy();
+    std::string hwserial = m_tower_serial[ tower ];
+    output << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
+	   << "\" hwserial=\"" << hwserial << "\">" << endl;
 
+    for(int layer = 0; layer != g_nLayer; ++layer) {
+      for(int iView = 0; iView != g_nView; ++iView) {
+	int tray;
+	string which;
+	if(iView==0){
+	  tray = 2 * ( layer/2 ) + 1;
+	  if(layer%2==0) which = "bot";
+	  else which = "top";
+	}
+	else{
+	  tray = 2 * ( (layer+1)/2 );
+	  if(layer%2==0) which = "top";
+	  else which = "bot";
+	}
+	output << std::endl
+	       << "   <!-- **** layer " << cvw[iView]  << layer 
+	       << " **** -->" << std::endl
+	       << "   <uniplane tray=\"" << tray << "\" which=\""
+	       << which << "\">" << std::endl;
+	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
+	  output << "    <gtfeScale id=\"" << iDiv << "\" chargeScale=\"" 
+		 <<  m_chargeScale[tower][layer][iView][iDiv] << "\"/>" << endl;
+	}
+	output << "   </uniplane>" << endl; 
+      }
+    }
+    output     << "  </tower>" << endl;  
+  }
+  output     << " </chargeScale>" << endl;
+
+}
+  
 
 void totCalib::fillOccupancy() 
 {
+
   //initialize container
   int nHits[g_nTower][g_nLayer][g_nView][g_nWafer+1];
-  for( int tower=0; tower<g_nLayer; tower++)
+  for( unsigned int tw=0; tw<m_towerList.size(); tw++){
+    int tower = m_towerList[tw];
     for( int layer=0; layer<g_nLayer; layer++)
       for( int view=0; view<g_nView; view++)
 	for( int i=0; i<g_nWafer+1; i++) nHits[tower][layer][view][i] = 0;
+  }
 
   retrieveCluster();
 
@@ -1134,7 +1167,11 @@ void totCalib::fillOccupancy()
     int planeId = cluster->getPlane();
     TkrCluster::view viewId = cluster->getView();
 
+#ifdef OLD_RECON
+    int tower = cluster->getTower();
+#else
     int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+#endif
     int layer = g_nLayer - planeId - 1;
     int view = (viewId == TkrCluster::X) ? 0 : 1;
 
@@ -1156,7 +1193,11 @@ void totCalib::fillOccupancy()
     assert(itr != m_cluster.end());
     TkrCluster* cluster = itr->second;
     int planeId = cluster->getPlane();
+#ifdef OLD_RECON
+    int tower = cluster->getTower();
+#else
     int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+#endif
     TkrCluster::view viewId = cluster->getView();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
@@ -1216,7 +1257,11 @@ void totCalib::fillOccupancy()
       assert(itr != m_cluster.end());
       TkrCluster* cluster = itr->second;
       int planeId = cluster->getPlane();
+#ifdef OLD_RECON
+      int tower = cluster->getTower();
+#else
       int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+#endif
       TkrCluster::view viewId = cluster->getView();
       
       int layer = g_nLayer - planeId - 1;
@@ -1244,9 +1289,15 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) 
       {
-	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-	int layer = cluster->getLayer();
+#ifdef OLD_RECON
+	int tower = cluster->getTower();
+	TkrCluster::view viewId = cluster->getView();
+	int view = (viewId == TkrCluster::X) ? 0 : 1;
+#else
+	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
 	int  view = cluster->getTkrId().getView();
+#endif
+	int layer = cluster->getLayer();
 	
 	for(int iStrip = cluster->getFirstStrip(); 
 	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
@@ -1267,9 +1318,15 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-    int layer = cluster->getLayer();
+#ifdef OLD_RECON
+    int tower = cluster->getTower();
+    TkrCluster::view viewId = cluster->getView();
+    int view = (viewId == TkrCluster::X) ? 0 : 1;
+#else
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
     int view = cluster->getTkrId().getView();
+#endif
+    int layer = cluster->getLayer();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
     float deltay = m_pos.Y()+m_dir.Y()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.Y();
@@ -1326,9 +1383,15 @@ void totCalib::fillOccupancy()
       const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
       if(!cluster) continue;
 
-      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-      int layer = cluster->getLayer();
+#ifdef OLD_RECON
+      int tower = cluster->getTower();
+      TkrCluster::view viewId = cluster->getView();
+      int view = (viewId == TkrCluster::X) ? 0 : 1;
+#else
+      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
       int view = cluster->getTkrId().getView();
+#endif
+      int layer = cluster->getLayer();
       
       //      int layer = g_nLayer - planeId - 1;
       //      int view = (viewId == TkrCluster::X) ? 0 : 1;
@@ -1360,7 +1423,9 @@ void totCalib::findBadStrips( int nEvents )
     factorial[k] = fac;
   }
 
-  for(int tower=0;tower!=g_nTower;++tower){
+  for( unsigned int tw=0; tw!=m_towerList.size(); ++tw){
+    int tower = m_towerList[ tw ]; 
+    m_log << "Tower: " << tower << ", ID: " << m_tower_serial[tower] << std::endl;
     for(int layer = 0; layer != g_nLayer; ++layer) {
       for(int view = 0; view != g_nView; ++view) {
 	char vw = 'X';
@@ -1447,11 +1512,17 @@ void totCalib::fillBadStrips()
   std::string filename = m_outputDir;
   char fname[] = "/TkrFMX_DeadStrips_050131-161012.xml";
     
-  sprintf( fname, "/%s_DeadStrips_%s-%s.xml", m_tower_serial.c_str(), 
-	   m_dateStamp.c_str(), m_timeStamp.c_str() );
-
+  if( m_towerList.size() == 1 )
+    sprintf( fname, "/%s_DeadStrips_%s-%s.xml", 
+	     m_tower_serial[ m_towerList[0] ].c_str(), 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );
+  else
+    sprintf( fname, "/LAT_TkrChargeScale_%s-%s.xml", 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );
+  
+  
   filename += fname;
-
+  
   std::ofstream output( filename.c_str() );
   if( output ){
     std::cout << "Open output xml file: " << filename << std::endl;
@@ -1490,18 +1561,15 @@ void totCalib::fillBadStrips()
 
   output << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
 	 << " creatorVersion =\"" << m_version
-	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << m_last_run 
+	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" 
+	 << m_first_run << '-' << m_last_run
 	 << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
 	 << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
 	 << m_startTime << "\" stopTime=\"" << m_stopTime 
 	 << "\" triggers=\"TKR\">" << std::endl
 	 << " Cosmic ray muon data for occupancy analysis " << std::endl
 	 << "    </inputSample>" << std::endl
-	 << "  </generic>" << std::endl
-	 << "  <tower row=\"" << m_tower_row << "\" col=\"" << m_tower_col 
-	 << "\" hwserial=\"" << m_tower_serial << "\"" 
-	 << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
-	 << " nOnbdData=\"false\"" << ">" << std::endl;
+	 << "  </generic>" << std::endl;
 
   //dead, disconnected, partial disconnected, intermittently disconnected, 
   //intermittently partial disconnexcted
@@ -1510,8 +1578,18 @@ void totCalib::fillBadStrips()
 			      "intermittently disconnected",
 			      "intermittently partially connected"};
   char cvw[] = "XY";
-
-  for(int tower = 0; tower != g_nLayer; ++tower) {
+  
+  for( unsigned int tw=0; tw<m_towerList.size(); tw++ ){
+    int tower = m_towerList[ tw ];
+    idents::TowerId twrId(tower); 
+    int tower_row = twrId.ix();
+    int tower_col = twrId.iy();
+    std::string hwserial = m_tower_serial[ tower ];
+    output << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
+	   << "\" hwserial=\"" << hwserial << "\""
+	   << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+	   << " nOnbdData=\"false\"" << ">" << std::endl;
+    
     for(int layer = 0; layer != g_nLayer; ++layer) {
       for(int view = 0; view != g_nView; ++view) {
 	int tray;
@@ -1550,8 +1628,9 @@ void totCalib::fillBadStrips()
 	}
       }
     }
+    output << "  </tower>" << std::endl;
   }
-  output << "  </tower>" << std::endl << "</badStrips>";
+  output << "</badStrips>" << std::endl;
   output.close();
   dtd.close();
 }
