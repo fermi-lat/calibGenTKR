@@ -58,10 +58,15 @@ int main(int argn, char** argc) {
   } while( line[0] == '#' ); // skip the line with #.
   std::string rootDir = line;
 
-  // directory name for recon root files
+  // prefix for digi root files
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string reconDir = line;
+  std::string digiPrefix = line;
+
+  // prefix for recon root files
+  do{ getline(inputFile, line);
+  } while( line[0] == '#' );
+  std::string reconPrefix = line;
 
   // top directory for input root files
   do{ getline(inputFile, line);
@@ -80,9 +85,10 @@ int main(int argn, char** argc) {
   std::string totConvDir = line;
 
   // run Id for TOT conversion factors
+  std::vector<std::string> totConvRunIds;
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string totConvRunId = line;
+  parseFileNames( totConvRunIds, line );
 
   // output directory name
   do{ getline(inputFile, line);
@@ -103,17 +109,19 @@ int main(int argn, char** argc) {
 
   if( !calib.setOutputFiles( outputDir.c_str() ) ) return 1;
 
-  if( !calib.readTotConvXmlFile( totConvDir.c_str(), totConvRunId.c_str() ) )
-    if( !calib.readTotConvFile( totConvDir.c_str(), totConvRunId.c_str() ) )
+  int nEvents = calib.setInputRootFiles( rootDir.c_str(), digiPrefix.c_str(),
+					 reconPrefix.c_str(), runIds );
+  if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
+
+  for( int tw=0; tw<totConvRunIds.size(); tw++){
+    std::string totConvRunId = totConvRunIds[tw];
+    if( !calib.readTotConvXmlFile( totConvDir.c_str(), totConvRunId.c_str() ) )
       return 1;
+  }
 
   if( dtd.size() > 5 ) calib.setDtd( dtd );
 
-  int nEvents = calib.setInputRootFiles( rootDir.c_str(), reconDir.c_str(), 
-					 runIds );
   if( maxEvents > 0 ) nEvents = maxEvents;
-
-  if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
 
   calib.calibChargeScale( nEvents );
 

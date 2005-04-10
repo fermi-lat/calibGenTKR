@@ -47,7 +47,7 @@
 #include "TNtuple.h"
 #include "digiRootData/DigiEvent.h"
 #include "reconRootData/ReconEvent.h"
-
+#include "idents/TowerId.h"
 
 using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 
@@ -64,8 +64,9 @@ public:
     ~totCalib();
 
     int setInputRootFiles( const char* digi, const char* recon );
-    int setInputRootFiles( const char* rootDir, const char* reconDir,  
-        const std::vector<std::string>& runIds );
+    int setInputRootFiles( const char* rootDir, const char* digiPrefix,
+			   const char* reconPrefix,  
+			   const std::vector<std::string>& runIds );
     int setInputRootFiles( TChain* digi, TChain* recon );
 
     bool setOutputFiles( const char* outputDir );
@@ -73,7 +74,6 @@ public:
     std::cout << "DTD file: " << m_dtd << std::endl;
     };
 
-    bool readTotConvFile(const char* dir, const char* runid);
     bool readTotConvXmlFile(const char* dir, const char* runid);
 
     bool readRcReports( const char* reportDir, 
@@ -102,10 +102,8 @@ private:
 
     int findTot(int tower,int planeId, int view, int stripId);
 
-    bool readTotConv(int tower, int layer, int view, const char* file);
-    bool readTotConv(const char* file);
-
-    bool getParam(const DOMElement* totElement,int layer,int view);
+    bool getParam(const DOMElement* totElement, int tower, int layer, int view);
+    bool checkFile( const std::string );
 
     float calcCharge(int tower, int layer, int view, int iStrip, int tot) const;
 
@@ -157,14 +155,17 @@ private:
     // dtd file
     std::string m_dtd;
 
+    // tower list
+    std::vector<int> m_towerList;
+
     float m_totQuadra[g_nTower][g_nLayer][g_nView][g_nStrip];
     float m_totGain[g_nTower][g_nLayer][g_nView][g_nStrip];
     float m_totOffset[g_nTower][g_nLayer][g_nView][g_nStrip];
 
     //xml related parameters
-    int m_tower_row, m_tower_col, m_first_run, m_last_run;
-    std::string m_tower_serial, m_version, m_tag, m_tot_runid, 
-        m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
+    int m_first_run, m_last_run;
+    std::string m_tower_serial[g_nTower], m_tot_runid[g_nTower], 
+      m_version, m_tag, m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
     // bad strips analysis related stuff
     static const int g_nWafer = 4, g_nBad=5;
