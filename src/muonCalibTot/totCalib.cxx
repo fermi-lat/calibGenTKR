@@ -46,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.23 $";
+  std::string version = "$Revision: 1.24 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -1455,6 +1455,7 @@ void totCalib::findBadStrips( int nEvents )
 	    if( sum == 0 ){
 	      //categorize as disconnected
 	      m_deadStrips[tower][layer][view][1].push_back(strip); 
+	      m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
 	      m_log << " *1*" << std::endl;
 	      continue;
 	    }
@@ -1486,6 +1487,7 @@ void totCalib::findBadStrips( int nEvents )
 	      else nBad = 4; // intermittent partial disconnected
 	    if( nBad > 0 ){
 	      m_deadStrips[tower][layer][view][nBad].push_back(strip);
+	      m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
 	      m_log << " *" << nBad << "*" << std::endl;
 	      continue;
 	    }
@@ -1508,30 +1510,7 @@ void totCalib::findBadStrips( int nEvents )
 
 void totCalib::fillBadStrips()
 {
-
-  std::string filename = m_outputDir;
-  char fname[] = "/TkrFMX_DeadStrips_050131-161012.xml";
-    
-  if( m_towerList.size() == 1 )
-    sprintf( fname, "/%s_DeadStrips_%s-%s.xml", 
-	     m_tower_serial[ m_towerList[0] ].c_str(), 
-	     m_dateStamp.c_str(), m_timeStamp.c_str() );
-  else
-    sprintf( fname, "/LAT_TkrChargeScale_%s-%s.xml", 
-	     m_dateStamp.c_str(), m_timeStamp.c_str() );
   
-  
-  filename += fname;
-  
-  std::ofstream output( filename.c_str() );
-  if( output ){
-    std::cout << "Open output xml file: " << filename << std::endl;
-    m_log << "Output xml file: " << filename << std::endl;
-  }
-  else{
-    std::cout << filename << " cannot be opened." << std::endl;
-    return;
-  }
   std::ifstream dtd( m_dtd.c_str() );
   if( dtd ){
     std::cout << "Open dtd file: " << m_dtd << std::endl;
@@ -1541,98 +1520,156 @@ void totCalib::fillBadStrips()
     std::cout << m_dtd << " cannot be opened." << std::endl;
     return;
   }
+  
+  std::string filename = m_outputDir;
+  char fname[] = "/TkrFMX_DeadStrips_050131-161012.xml";
 
-  output << "<?xml version=\"1.0\" ?>" << std::endl
-	 << "<!DOCTYPE badStrips [" << std::endl;
-    
+  std::ofstream latxml, fmxml;
+  if( m_towerList.size() > 1 ){
+    sprintf( fname, "/LAT_TkrChargeScale_%s-%s.xml", 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );
+    filename += fname;
+
+    latxml.open( filename.c_str() );
+    if( latxml ){
+      std::cout << "Open LAT bad strips xml file: " << filename << std::endl;
+      m_log << "LAT bad strips xml file: " << filename << std::endl;
+    }
+    else{
+      std::cout << filename << " cannot be opened." << std::endl;
+      return;
+    }
+    openBadStripsXml( latxml, dtd );
+  }
+
+  for( unsigned int tw=0; tw<m_towerList.size(); tw++ ){
+    int tower = m_towerList[tw];
+    filename = m_outputDir;
+    sprintf( fname, "/%s_DeadStrips_%s-%s.xml", 
+	     m_tower_serial[ tower ].c_str(), 
+	     m_dateStamp.c_str(), m_timeStamp.c_str() );  
+    filename += fname;
+
+    fmxml.open( filename.c_str() );
+    if( fmxml ){
+      std::cout << "Open bad strips xml file: " << filename << std::endl;
+      m_log << "Bad strips xml file: " << filename << std::endl;
+    }
+    else{
+      std::cout << filename << " cannot be opened." << std::endl;
+      return;
+    }
+
+    openBadStripsXml( fmxml, dtd );
+    fillTowerBadStrips( fmxml, tower, g_nBad ); // add all bad sttrips field
+    if( m_towerList.size() > 1 ) fillTowerBadStrips( latxml, tower );
+
+    fmxml << "</badStrips>" << std::endl;
+    fmxml.close();
+  }
+
+  if( m_towerList.size() > 1 ){
+    latxml << "</badStrips>" << std::endl;
+    latxml.close();
+  }
+  dtd.close();
+}
+  
+  
+void totCalib::openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ){
+  
+  xmlFile << "<?xml version=\"1.0\" ?>" << std::endl
+	  << "<!DOCTYPE badStrips [" << std::endl;
+  
   std::string line;
   while( dtd ){
     getline(dtd, line);
-    output << line << std::endl;
+    xmlFile << line << std::endl;
   }
-    
-  output << "]>" << std::endl;
-    
-    
-  output << "<badStrips badType=\"dead\">" << std::endl
-	 << "<!-- includes partial dead strips; "
-	 << " intermitent and/or wrire bond broken " 
-	 << "between SSD wafers -->" << std::endl;
+  
+  xmlFile << "]>" << std::endl;
+  
+  
+  xmlFile << "<badStrips badType=\"dead\">" << std::endl
+	  << "<!-- includes partial dead strips; "
+	  << " intermitent and/or wrire bond broken " 
+	  << "between SSD wafers -->" << std::endl;
+  
+  xmlFile << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
+	  << " creatorVersion =\"" << m_version
+	  << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" 
+	  << m_first_run << '-' << m_last_run
+	  << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
+	  << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
+	  << m_startTime << "\" stopTime=\"" << m_stopTime 
+	  << "\" triggers=\"TKR\">" << std::endl
+	  << " Cosmic ray muon data for occupancy analysis " << std::endl
+	  << "    </inputSample>" << std::endl
+	  << "  </generic>" << std::endl;
+  
+}
+ 
 
-  output << "  <generic calType=\"stripOccupancy\" creatorName=\"badStrips\""
-	 << " creatorVersion =\"" << m_version
-	 << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" 
-	 << m_first_run << '-' << m_last_run
-	 << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
-	 << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
-	 << m_startTime << "\" stopTime=\"" << m_stopTime 
-	 << "\" triggers=\"TKR\">" << std::endl
-	 << " Cosmic ray muon data for occupancy analysis " << std::endl
-	 << "    </inputSample>" << std::endl
-	 << "  </generic>" << std::endl;
-
+void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tower, 
+				   const int nBad ){
+  
   //dead, disconnected, partial disconnected, intermittently disconnected, 
   //intermittently partial disconnexcted
-  int howBad[g_nBad] = {2,4,12,20,28}; 
+  int howBad[g_nBad] = {2,4,12,20,28,128}; 
   std::string cBad[g_nBad] = {"dead","disconnected","partially disconnected",
 			      "intermittently disconnected",
-			      "intermittently partially connected"};
+			      "intermittently partially connected","all bad"};
   char cvw[] = "XY";
   
-  for( unsigned int tw=0; tw<m_towerList.size(); tw++ ){
-    int tower = m_towerList[ tw ];
-    idents::TowerId twrId(tower); 
-    int tower_row = twrId.ix();
-    int tower_col = twrId.iy();
-    std::string hwserial = m_tower_serial[ tower ];
-    output << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
-	   << "\" hwserial=\"" << hwserial << "\""
-	   << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
-	   << " nOnbdData=\"false\"" << ">" << std::endl;
-    
-    for(int layer = 0; layer != g_nLayer; ++layer) {
-      for(int view = 0; view != g_nView; ++view) {
-	int tray;
-	string which;
-	if(view==0){
-	  tray = 2 * ( layer/2 ) + 1;
-	  if(layer%2==0) which = "bot";
-	  else which = "top";
-	}
-	else{
-	  tray = 2 * ( (layer+1)/2 );
-	  if(layer%2==0) which = "top";
-	  else which = "bot";
-	}
+  idents::TowerId twrId( tower ); 
+  int tower_row = twrId.ix();
+  int tower_col = twrId.iy();
+  std::string hwserial = m_tower_serial[ tower ];
+  xmlFile << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
+	  << "\" hwserial=\"" << hwserial << "\""
+	  << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+	  << " nOnbdData=\"false\"" << ">" << std::endl;
+  
+  for(int layer = 0; layer != g_nLayer; ++layer) {
+    for(int view = 0; view != g_nView; ++view) {
+      int tray;
+      string which;
+      if(view==0){
+	tray = 2 * ( layer/2 ) + 1;
+	if(layer%2==0) which = "bot";
+	else which = "top";
+      }
+      else{
+	tray = 2 * ( (layer+1)/2 );
+	if(layer%2==0) which = "top";
+	else which = "bot";
+      }
+      
+      xmlFile << std::endl
+	      << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
+      
+      for( int iBad=0; iBad!=nBad; iBad++ ){
+	int itr = m_deadStrips[tower][layer][view][iBad].size();
+	xmlFile << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
+		<< " -->" << std::endl 
+		<< "    <uniplane tray=\"" << tray << "\" which=\""
+		<< which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+		<< " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
 	
-	output << std::endl
-	       << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
-	
-	for( int iBad=0; iBad!=g_nBad; iBad++ ){
-	  int itr = m_deadStrips[tower][layer][view][iBad].size();
-	  output << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
-		 << " -->" << std::endl 
-		 << "    <uniplane tray=\"" << tray << "\" which=\""
-		 << which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
-		 << " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
-	  
-	  if(itr){
-	    output << ">" << std::endl << "      <stripList strips=\"";
-	    for(int i=0;i!=itr;i++)
-	      output << " " << m_deadStrips[tower][layer][view][iBad][i];
-	    output << "\"/>" << std::endl 
-		   << "    </uniplane>" << std::endl;
-	  }
-	  else output << "/>" << std::endl;
-	  
+	if(itr){
+	  xmlFile << ">" << std::endl << "      <stripList strips=\"";
+	  for(int i=0;i!=itr;i++)
+	    xmlFile << " " << m_deadStrips[tower][layer][view][iBad][i];
+	  xmlFile << "\"/>" << std::endl 
+		  << "    </uniplane>" << std::endl;
 	}
+	else xmlFile << "/>" << std::endl;
+	
       }
     }
-    output << "  </tower>" << std::endl;
   }
-  output << "</badStrips>" << std::endl;
-  output.close();
-  dtd.close();
+  xmlFile << "  </tower>" << std::endl;
+
 }
 
 //-----------------------------------------------------------------------
