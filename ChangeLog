@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sun Apr 10 17:45:10 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalib.h 
+Log Message:
+create bad strips xml file for offline which combines all towers and xml files for online which contain one tower for each file.
+
+    *
+------------------------------------------------------------
 User: htajima  Sun Apr 10 00:29:34 PDT 2005
 calibGenTKR/cmt
 
