@@ -168,10 +168,13 @@ private:
       m_version, m_tag, m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
     // bad strips analysis related stuff
-    static const int g_nWafer = 4, g_nBad=5;
+    static const int g_nWafer = 4, g_nBad=6;
     void fillOccupancy();
     void findBadStrips( int );
+    void openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ); 
     void fillBadStrips();
+    void fillTowerBadStrips( std::ofstream &xmlFile, const int tower, 
+			     const int nBad=g_nBad-1 );
 
     bool m_badStrips;
     std::vector<int> m_deadStrips[g_nTower][g_nLayer][g_nView][g_nBad];
