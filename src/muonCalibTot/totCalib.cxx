@@ -46,7 +46,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.24 $";
+  std::string version = "$Revision: 1.25 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -635,7 +635,7 @@ void totCalib::fillTot()
 #ifdef OLD_RECON
     int tower = cluster->getTower();
 #else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 #endif
 
     int layer = g_nLayer - planeId - 1;
@@ -1170,7 +1170,7 @@ void totCalib::fillOccupancy()
 #ifdef OLD_RECON
     int tower = cluster->getTower();
 #else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 #endif
     int layer = g_nLayer - planeId - 1;
     int view = (viewId == TkrCluster::X) ? 0 : 1;
@@ -1196,7 +1196,7 @@ void totCalib::fillOccupancy()
 #ifdef OLD_RECON
     int tower = cluster->getTower();
 #else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 #endif
     TkrCluster::view viewId = cluster->getView();
     TVector3 position = cluster->getPosition();
@@ -1260,7 +1260,7 @@ void totCalib::fillOccupancy()
 #ifdef OLD_RECON
       int tower = cluster->getTower();
 #else
-      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 #endif
       TkrCluster::view viewId = cluster->getView();
       
@@ -1294,7 +1294,7 @@ void totCalib::fillOccupancy()
 	TkrCluster::view viewId = cluster->getView();
 	int view = (viewId == TkrCluster::X) ? 0 : 1;
 #else
-	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 	int  view = cluster->getTkrId().getView();
 #endif
 	int layer = cluster->getLayer();
@@ -1323,7 +1323,7 @@ void totCalib::fillOccupancy()
     TkrCluster::view viewId = cluster->getView();
     int view = (viewId == TkrCluster::X) ? 0 : 1;
 #else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
     int view = cluster->getTkrId().getView();
 #endif
     int layer = cluster->getLayer();
@@ -1388,7 +1388,7 @@ void totCalib::fillOccupancy()
       TkrCluster::view viewId = cluster->getView();
       int view = (viewId == TkrCluster::X) ? 0 : 1;
 #else
-      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY())id();
+      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
       int view = cluster->getTkrId().getView();
 #endif
       int layer = cluster->getLayer();
