@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Wed Apr 13 11:10:36 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx 
+Log Message:
+create a TkrId object to avoid multiple destructions
+
+    *
+------------------------------------------------------------
 User: cohen  Wed Apr 13 10:41:28 PDT 2005
 calibGenTKR/src/muonCalibTot
 
