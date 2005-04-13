@@ -6,6 +6,7 @@ version v2r2
 
 #use these to get the env vars defined
 # use mcRootData *
+use commonRootData *
 use digiRootData *
 use reconRootData *
 use calibRootData *
@@ -13,7 +14,6 @@ use calibUtil *
 use xmlBase *
 use facilities *
 use ROOT v* IExternal
-use idents *
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
@@ -32,6 +32,7 @@ include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
 
 
 #macro_append cppflags "-DOLD_RECON"
+
 macro_append ROOT_libs " $(ROOT_GUI_libs)"
 
 macro badStripsFiles "" WIN32 "badStripsCalib/*.xml badStripsCalib/*.h" 

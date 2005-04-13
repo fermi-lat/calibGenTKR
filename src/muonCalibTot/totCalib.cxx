@@ -5,7 +5,11 @@
 
 #include "totCalib.h"
 #include "facilities/Util.h"
- 
+//#ifndef OLD_RECON
+//#include "commonRootData/idents/TkrId.h"
+//#endif
+#include "commonRootData/idents/TowerId.h"
+
 using std::string;
 using std::cout;
 using std::endl;
@@ -46,7 +50,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.25 $";
+  std::string version = "$Revision: 1.26 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -632,12 +636,7 @@ void totCalib::fillTot()
     int planeId = cluster->getPlane();
     TkrCluster::view viewId = cluster->getView();
 
-#ifdef OLD_RECON
     int tower = cluster->getTower();
-#else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-#endif
-
     int layer = g_nLayer - planeId - 1;
     int view = (viewId == TkrCluster::X) ? 0 : 1;
 
@@ -730,7 +729,7 @@ void totCalib::fitTot()
   std::cout << "Start fit." << std::endl;
   
   char cvw[] = "XY";
-  for(int tower = 0; tower != g_nLayer; ++tower){
+  for(int tower = 0; tower != g_nTower; ++tower){
     for(int layer = 0; layer != g_nLayer; ++layer) {
       for(int iView = 0; iView != g_nView; ++iView) {
 	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
@@ -1096,7 +1095,7 @@ void totCalib::fillXml()//takuya
 
   for( unsigned int tw=0; tw<m_towerList.size(); tw++ ){
     int tower = m_towerList[ tw ];
-    idents::TowerId twrId(tower); 
+    TowerId twrId(tower); 
     int tower_row = twrId.ix();
     int tower_col = twrId.iy();
     std::string hwserial = m_tower_serial[ tower ];
@@ -1167,11 +1166,7 @@ void totCalib::fillOccupancy()
     int planeId = cluster->getPlane();
     TkrCluster::view viewId = cluster->getView();
 
-#ifdef OLD_RECON
     int tower = cluster->getTower();
-#else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-#endif
     int layer = g_nLayer - planeId - 1;
     int view = (viewId == TkrCluster::X) ? 0 : 1;
 
@@ -1193,11 +1188,8 @@ void totCalib::fillOccupancy()
     assert(itr != m_cluster.end());
     TkrCluster* cluster = itr->second;
     int planeId = cluster->getPlane();
-#ifdef OLD_RECON
     int tower = cluster->getTower();
-#else
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-#endif
+
     TkrCluster::view viewId = cluster->getView();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
@@ -1257,11 +1249,8 @@ void totCalib::fillOccupancy()
       assert(itr != m_cluster.end());
       TkrCluster* cluster = itr->second;
       int planeId = cluster->getPlane();
-#ifdef OLD_RECON
+
       int tower = cluster->getTower();
-#else
-      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-#endif
       TkrCluster::view viewId = cluster->getView();
       
       int layer = g_nLayer - planeId - 1;
@@ -1289,14 +1278,8 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) 
       {
-#ifdef OLD_RECON
-	int tower = cluster->getTower();
-	TkrCluster::view viewId = cluster->getView();
-	int view = (viewId == TkrCluster::X) ? 0 : 1;
-#else
 	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
 	int  view = cluster->getTkrId().getView();
-#endif
 	int layer = cluster->getLayer();
 	
 	for(int iStrip = cluster->getFirstStrip(); 
@@ -1318,14 +1301,8 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 
-#ifdef OLD_RECON
-    int tower = cluster->getTower();
-    TkrCluster::view viewId = cluster->getView();
-    int view = (viewId == TkrCluster::X) ? 0 : 1;
-#else
     int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
     int view = cluster->getTkrId().getView();
-#endif
     int layer = cluster->getLayer();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
@@ -1383,14 +1360,8 @@ void totCalib::fillOccupancy()
       const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
       if(!cluster) continue;
 
-#ifdef OLD_RECON
-      int tower = cluster->getTower();
-      TkrCluster::view viewId = cluster->getView();
-      int view = (viewId == TkrCluster::X) ? 0 : 1;
-#else
       int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
       int view = cluster->getTkrId().getView();
-#endif
       int layer = cluster->getLayer();
       
       //      int layer = g_nLayer - planeId - 1;
@@ -1621,7 +1592,7 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tower,
 			      "intermittently partially connected","all bad"};
   char cvw[] = "XY";
   
-  idents::TowerId twrId( tower ); 
+  TowerId twrId( tower ); 
   int tower_row = twrId.ix();
   int tower_col = twrId.iy();
   std::string hwserial = m_tower_serial[ tower ];
