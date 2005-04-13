@@ -5,9 +5,9 @@
 
 #include "totCalib.h"
 #include "facilities/Util.h"
-//#ifndef OLD_RECON
-//#include "commonRootData/idents/TkrId.h"
-//#endif
+#ifndef OLD_RECON
+#include "commonRootData/idents/TkrId.h"
+#endif
 #include "commonRootData/idents/TowerId.h"
 
 using std::string;
@@ -50,7 +50,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.26 $";
+  std::string version = "$Revision: 1.27 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -554,6 +554,8 @@ void totCalib::analyzeEvent(int nEvents)
   }
   std::cout << "Data scan finished." << std::endl;
   time( &currentTime );
+  //protection against crash when testing with small number of events
+  if(startTime==currentTime) return;
   std::cout << "total # of events: " << nEvents 
 		<< " in " << (currentTime-startTime) << " s, "
 		<< nEvents/(currentTime-startTime) << " events/s"
@@ -671,30 +673,39 @@ void totCalib::fillTot()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) {
       //a cluster is attached to the hit: proceed
-      
-      int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
+      commonRootData::TkrId id = cluster->getTkrId();
+      int tower = TowerId(id.getTowerX(),id.getTowerY()).id();
       int layer = cluster->getLayer();
-      int view = cluster->getTkrId().getView();
+      int view = id.getView();
 
       // require only a single strip
       if(cluster->getSize() != 1) continue;
+      int tot = cluster->getRawToT();
+      if( tot == 0 ) continue;
+      int iStrip = cluster->getFirstStrip();
+      float charge = calcCharge(tower,layer, view, iStrip, tot);
+      
+      static int nStripPerGroup = g_nStrip / g_nDiv;
+      
+      m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
+      m_chargeHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
 
-      for(int iStrip = cluster->getFirstStrip(); 
-	  iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
+//       for(int iStrip = cluster->getFirstStrip(); 
+// 	  iStrip != int(cluster->getLastStrip()+1); ++iStrip) {
 	
-	int tot = cluster->getRawToT();
-	if( tot == 0 ) continue;
+// 	int tot = cluster->getRawToT();
+// 	if( tot == 0 ) continue;
 	
-	//	std::cout<<"plane: "<<layer<<" view: "<<view<<" digi tot: "<<tot<<std::endl;
-	//	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
+// 	//	std::cout<<"plane: "<<layer<<" view: "<<view<<" digi tot: "<<tot<<std::endl;
+// 	//	std::cout<<m_totX[planeId][0]<<" "<<m_totX[planeId][1]<<" "<<m_totY[planeId][0]<<" "<<m_totY[planeId][1]<<std::endl;
 	
-	float charge = calcCharge(tower,layer, view, iStrip, tot);
+// 	float charge = calcCharge(tower,layer, view, iStrip, tot);
 	
-	static int nStripPerGroup = g_nStrip / g_nDiv;
+// 	static int nStripPerGroup = g_nStrip / g_nDiv;
 	
-	m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
-	m_chargeHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
-      }
+// 	m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
+// 	m_chargeHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
+//       }
     }
   }
 #endif
@@ -821,10 +832,10 @@ void totCalib::fitTot()
 	  if( peak > 0.0 ){
 	    float chargeScale = 5.0 / peak;
 	    if( fabs(chargeScale-1) > 0.3 ){
-	      std::cout << "WARNIN, Abnormal charge scale: " << chargeScale 
+	      std::cout << "WARNING, Abnormal charge scale: " << chargeScale 
 			<< ", (L,V,FE)=(" << layer << ", " << iView << ", " 
 			<< iDiv << ")" << std::endl;
-	      m_log << "WARNIN, Abnormal charge scale: " << chargeScale 
+	      m_log << "WARNING, Abnormal charge scale: " << chargeScale 
 		    << ", (L,V,FE)=(" << layer << ", " << iView << ", " 
 		    << iDiv << ")" << std::endl;
 	      if( chargeScale > 1.3 ) chargeScale = 1.3;
@@ -1278,8 +1289,9 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(cluster) 
       {
-	int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-	int  view = cluster->getTkrId().getView();
+	commonRootData::TkrId id = cluster->getTkrId();
+	int tower = TowerId(id.getTowerX(),id.getTowerY()).id();
+	int  view = id.getView();
 	int layer = cluster->getLayer();
 	
 	for(int iStrip = cluster->getFirstStrip(); 
@@ -1301,8 +1313,9 @@ void totCalib::fillOccupancy()
     const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 
-    int tower = TowerId(cluster->getTkrId().getTowerX(),cluster->getTkrId().getTowerY()).id();
-    int view = cluster->getTkrId().getView();
+    commonRootData::TkrId id = cluster->getTkrId();
+    int tower = TowerId(id.getTowerX(),id.getTowerY()).id();
+    int view = id.getView();
     int layer = cluster->getLayer();
     TVector3 position = cluster->getPosition();
     float deltax = m_pos.X()+m_dir.X()/m_dir.Z()*(position.Z()-m_pos.Z()) - position.X();
