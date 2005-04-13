@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Wed Apr 13 10:41:27 PDT 2005
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+switch dependancy from idents to commonRootData, remove spurious preproc codes, fix an ooops in a tower for loop
+
+    *
+------------------------------------------------------------
 User: cohen  Sun Apr 10 23:19:57 PDT 2005
 calibGenTKR/src/muonCalibTot
 
