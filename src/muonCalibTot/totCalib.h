@@ -47,7 +47,6 @@
 #include "TNtuple.h"
 #include "digiRootData/DigiEvent.h"
 #include "reconRootData/ReconEvent.h"
-#include "idents/TowerId.h"
 
 using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 
