@@ -1,6 +1,6 @@
 package calibGenTKR
 
-version v2r2
+version v2r3
 
 # This package contains the tracker bad strips calibration code
 
@@ -32,6 +32,10 @@ include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
 
 
 #macro_append cppflags "-DOLD_RECON"
+
+#profiling :
+#macro_append cppflags "-pg"
+#macro_append cpplinkflags "-pg"
 
 macro_append ROOT_libs " $(ROOT_GUI_libs)"
 

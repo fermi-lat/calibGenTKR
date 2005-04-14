@@ -4,7 +4,7 @@
   
  @verbatim
                         EOH
-
+ v2r3     13-Apr-2005 JCT  add multi tower capabilities, fix bugs, cleanup
  v2r2     1-Apr-2005  jrb  Add xml2root translator program
  v2r0     02-Mar-2005 JCT  New Recon compatible
  v1r4     14-Feb-2005 LSR  Repair bad strips code... 

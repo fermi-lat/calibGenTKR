@@ -50,7 +50,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.27 $";
+  std::string version = "$Revision: 1.28 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -1067,6 +1067,7 @@ void totCalib::fillXml()//takuya
     std::cout << filename << " cannot be opened." << std::endl;
     return;
   }
+
   std::ifstream dtd( m_dtd.c_str() );
   if( dtd ){
     std::cout << "Open dtd file: " << m_dtd << std::endl;
@@ -1276,12 +1277,6 @@ void totCalib::fillOccupancy()
   }
 #else
   TkrTrack* tkrTrack = dynamic_cast<TkrTrack*>(tracks->First());
-
-//   int nHits[g_nLayer][g_nView][g_nWafer+1];
-//   for( int layer=0; layer<g_nLayer; layer++)
-//     for( int view=0; view<g_nView; view++)
-//       for( int i=0; i<g_nWafer+1; i++) nHits[layer][view][i] = 0;
-
   TIter trk1HitsItr(tkrTrack);
   TkrTrackHit* pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {
