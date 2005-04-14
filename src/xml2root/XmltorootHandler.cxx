@@ -1,4 +1,4 @@
-//   $Header: /nfs/slac/g/glast/ground/cvs/users/jrb/xmlToRoot/src/XmltorootHandler.cxx,v 1.3 2005/03/31 20:27:07 jrb Exp $
+//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.1 2005/03/31 23:13:51 jrb Exp $
 /**
    @file XmltorootHandler.cxx
 
@@ -34,6 +34,7 @@ namespace {
   static XMLCh* gtfeScaleX = 0;
   static XMLCh* gtfeTrgThreshX = 0;
   static XMLCh* gtfeDataThreshX = 0;
+  static XMLCh* inputSampleX = 0;
   void initElementNames() {
     totX = XMLString::transcode("tot");
     thresholdX = XMLString::transcode("threshhold");
@@ -48,6 +49,7 @@ namespace {
     gtfeScaleX = XMLString::transcode("gtfeScale");
     gtfeTrgThreshX = XMLString::transcode("gtfeTrgThresh");
     gtfeDataThreshX = XMLString::transcode("gtfeDataThresh");
+    inputSampleX = XMLString::transcode("inputSample");
   }
 }
 
@@ -177,21 +179,34 @@ void XmltorootHandler::startElement(const XMLCh* const name,
     return startScaleObj(attributes, true);
   }  
   else if (XMLString::equals(name, stripTrgThreshX)) {
-    return;    // or throw NYI
+    std::cerr << "Thresholds calibrations not supported.  Exiting.."
+              << std::endl;
+    std::cerr.flush();
+    exit(0);
   }  
   else if (XMLString::equals(name, stripDataThreshX)) {
-    return;    // or throw NYI
+    std::cerr << "Thresholds calibrations not supported.  Exiting.."
+              << std::endl;
+    std::cerr.flush();
+    exit(0);
   }  
   else if (XMLString::equals(name, gtfeScaleX)) {
     return startScaleObj(attributes, false);
   }  
+  else if (XMLString::equals(name, inputSampleX)) {
+    return;
+  }  
   else if (XMLString::equals(name, gtfeTrgThreshX)) {
-    
-    return;    // or throw NYI
+    std::cerr << "Thresholds calibrations not supported.  Exiting.."
+              << std::endl;
+    std::cerr.flush();
+    exit(0);
   }   
   else if (XMLString::equals(name, gtfeDataThreshX)) {
-    
-    return;    // or throw NYI
+    std::cerr << "Thresholds calibrations not supported.  Exiting.."
+              << std::endl;
+    std::cerr.flush();
+    exit(0);
   }   
   else { // a tag we don't care about, at least for now
     // includes cuts, inputSample
@@ -345,6 +360,14 @@ void XmltorootHandler::startStripTot(AttributeList& attributes) {
   const XMLCh* chi2X = attributes.getValue("chi2");
   const XMLCh* dfX = attributes.getValue("df");
 
+  if ((!idX) || (!slopeX) || (!interceptX) || (!quadX) || (!chi2X) 
+      || (!dfX) ) {
+    std::cerr << "Missing attribute values for <stripTot>" << std::endl;
+    std::cerr << "Are you using the correct dtd?    Exiting..." << std::endl;
+    std::cerr.flush();
+    exit(0);
+  }
+
   char* trans = XMLString::transcode(idX);
   std::string s = std::string(trans);
   int id = facilities::Util::stringToInt(s);
@@ -428,6 +451,16 @@ void XmltorootHandler::startScaleObj(AttributeList& attributes, bool isStrip) {
   const XMLCh* chi2X = attributes.getValue("chi2");
   const XMLCh* dfX = attributes.getValue("df");
   
+  if ((!idX) ||  (!scaleX) || (!errorX) || (!chi2X) 
+      || (!dfX) ) {
+    std::cerr << "Missing attribute values for <stripScale> or <gtfeScale>" 
+              << std::endl;
+    std::cerr << "Are you using the correct dtd?    Exiting..." << std::endl;
+    std::cerr.flush();
+    exit(0);
+  }
+
+
   char* trans = XMLString::transcode(idX);
   std::string s = std::string(trans);
   int id = facilities::Util::stringToInt(s);
