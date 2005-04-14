@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: jrb  Thu Apr 14 12:00:16 PDT 2005
+calibGenTKR/src/xml2root
+
+Modified Files:
+	XmltorootHandler.cxx 
+Log Message:
+Beef up error handling
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r3, operation: add
 Package: calibGenTKR
