@@ -1,4 +1,16 @@
 ------------------------------------------------------------
+User: htajima  Fri May  6 16:39:37 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+	totCalibChain_option.dat 
+Log Message:
+revamp cluster selection routine to reduce the dependence on tracking. Start from recon clusters associated with a track, and then add clusters which is consistent with a line created by closest associated clusters.
+modify charge scale xml writer to create seprate xml files for each towers in the LAT.
+
+    *
+------------------------------------------------------------
 User: jrb  Thu Apr 14 12:00:16 PDT 2005
 calibGenTKR/src/xml2root
 
