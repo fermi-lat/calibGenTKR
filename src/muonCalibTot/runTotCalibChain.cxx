@@ -41,14 +41,20 @@ int main(int argn, char** argc) {
   std::ifstream inputFile;
   int maxEvents = -1;
 
+  std::cout << "Start doMuonCalibTot" << std::endl;
+
   if(argn > 1) {
     maxEvents = atoi( argc[1] );
+    std::cout << "# of events spesified: " << maxEvents << std::endl;
   }
   if(argn > 2) {
     inputFile.open(argc[2]);
+    std::cout << "job option file: " << argc[2] << std::endl;
   }
   else {
     inputFile.open("../src/muonCalibTot/totCalibChain_option.dat");
+    std::cout << "job option file: " 
+	       << "../src/muonCalibTot/totCalibChain_option.dat" << std::endl;
   }
 
   std::string line;
@@ -98,12 +104,14 @@ int main(int argn, char** argc) {
   //dtd name for output xml
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
-  std::string dtd = line;
+  std::string dtdDir = line;
 
   // muon MIP calibration or bad strip
   do{ getline(inputFile, line);
   } while( line[0] == '#' );
   std::string analysisType = line;
+
+  std::cout << "finished reading joboption file." << std::endl;
 
   totCalib calib( analysisType );
 
@@ -111,6 +119,8 @@ int main(int argn, char** argc) {
 
   int nEvents = calib.setInputRootFiles( rootDir.c_str(), digiPrefix.c_str(),
 					 reconPrefix.c_str(), runIds );
+  if( nEvents < 0 ) return 1;
+
   if( !calib.readRcReports( reportDir.c_str(), runIds ) ) return 1;
 
   for( int tw=0; tw<totConvRunIds.size(); tw++){
@@ -119,7 +129,7 @@ int main(int argn, char** argc) {
       return 1;
   }
 
-  if( dtd.size() > 5 ) calib.setDtd( dtd );
+  if( dtdDir.size() > 5 ) calib.setDtdDir( dtdDir );
 
   if( maxEvents > 0 ) nEvents = maxEvents;
 
