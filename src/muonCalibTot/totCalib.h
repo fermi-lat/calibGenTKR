@@ -54,7 +54,11 @@ static const float sumThrPerEvent = 60.0 / 2.0E6;
 static const float occThrPerEvent = 10.0 / 1.6E6;
 static const float poissonThreshold = -5.0;
 
-
+struct clusterId{
+  int tower;
+  int layer;
+  int view;
+};
 
 class totCalib {
 public:
@@ -69,8 +73,8 @@ public:
     int setInputRootFiles( TChain* digi, TChain* recon );
 
     bool setOutputFiles( const char* outputDir );
-    void setDtd( const std::string &dtd ){ m_dtd = dtd;
-    std::cout << "DTD file: " << m_dtd << std::endl;
+    void setDtdDir( const std::string &dtdDir ){ m_dtdDir = dtdDir;
+    std::cout << "DTD directory: " << m_dtdDir << std::endl;
     };
 
     bool readTotConvXmlFile(const char* dir, const char* runid);
@@ -96,8 +100,12 @@ private:
     void fitTot();
 
     void retrieveCluster();
+    clusterId getClusterId( const TkrCluster* );
+    bool closeToTrack( const TkrCluster* );
 
     void fillXml();//takuya
+    void fillTowerChargeScales( std::ofstream &xmlFile, const int tower );
+    void openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, const std::string tot_runid );
 
     int findTot(int tower,int planeId, int view, int stripId);
 
@@ -108,7 +116,9 @@ private:
 
     static const int g_nLayer = 18;
     // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
+#ifdef OLD_RECON
     static const int g_nPlane = 18;
+#endif
     static const int g_nFecd = 24;
     static const int g_nView = 2;
     static const int g_nStrip = 1536;
@@ -116,12 +126,14 @@ private:
     // group of strips so that each group has enough statistics
     static const int g_nDiv = 24; //used to be 64;takuya
 
-    static const int g_nTower = 2;
+    static const int g_nTower = 4;
 
+#ifdef FULLHIST
     TGraphErrors* m_totStrip[g_nTower][g_nLayer][g_nView];
     TGraphErrors* m_chargeStrip[g_nTower][g_nLayer][g_nView];
 
     TH1F* m_totHist[g_nTower][g_nLayer][g_nView][g_nDiv];
+#endif
     TH1F* m_chargeHist[g_nTower][g_nLayer][g_nView][g_nDiv];
 
     float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
@@ -145,14 +157,15 @@ private:
     int m_lastRC0Strip[g_nTower][g_nLayer][g_nView];
 
     // Index of cluster hit in the TkrSiClusters
-    std::map<int, TkrCluster*> m_cluster;
+    TkrCluster* m_cluster[g_nTower][g_nLayer][g_nView];
+    int m_numHits[g_nTower];
 
     //file stream for log output
     std::ofstream m_log;
     // output directory
     std::string m_outputDir;
     // dtd file
-    std::string m_dtd;
+    std::string m_dtdDir;
 
     // tower list
     std::vector<int> m_towerList;
@@ -179,7 +192,7 @@ private:
     std::vector<int> m_deadStrips[g_nTower][g_nLayer][g_nView][g_nBad];
     TH1F* m_nHits[g_nTower][g_nLayer][g_nView][g_nWafer];
     TH1F* m_aPos[g_nWafer];
-    TH1F* m_occDist, *m_poissonDist;
+    TH1F* m_armsDist, *m_brmsDist[g_nLayer/3], *m_occDist, *m_poissonDist, *m_lrecX, *m_lrecY, *m_lallX, *m_lallY, *m_loccX, *m_loccY;
 
 };
 
