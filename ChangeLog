@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sat May  7 22:56:16 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalib.h totCalibChain_option.dat 
+Log Message:
+fix cluster selection algorithm. (loop from top instead of bottom.) improve algorithm to incorporate the track across towers.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r4, operation: add
 Package: calibGenTKR
