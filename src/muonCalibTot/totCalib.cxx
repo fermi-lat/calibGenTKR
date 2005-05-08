@@ -16,6 +16,61 @@ using std::endl;
 
 XERCES_CPP_NAMESPACE_USE
 
+inline layerId::layerId( int lyr, int vw, int twr ){ 
+  setLayer( lyr, vw, twr ); }
+inline layerId::layerId( int tr, std::string wh, int twr ){ 
+  setTray( tr, wh, twr ); }
+inline layerId::layerId( int unp ){ setUniPlane( unp ); }
+
+inline void layerId::setLayer( int lyr, int vw, int twr ){
+  layer = lyr; view = vw; tower = twr;
+  layerToTray();
+  trayToUniPlane();
+}
+
+inline void layerId::setUniPlane( int unp, int twr ){
+  uniPlane = unp; tower = twr;
+  uniPlaneToTray();
+  trayToLayer();
+}
+
+inline void layerId::setTray( int tr, std::string wh, int twr ){
+  tray = tr; which=wh; tower=twr;
+  trayToUniPlane();
+  trayToLayer();
+}
+
+inline void layerId::trayToUniPlane(){
+  uniPlane = tray * 2;
+  if( which == "bot" ) uniPlane--;
+}
+
+inline void layerId::trayToLayer(){
+  view = (tray+1) % 2;
+  layer = tray;
+  if( which == "bot" ) layer--;
+}
+
+void layerId::layerToTray(){
+  if(view==0){
+    tray = 2 * ( layer/2 ) + 1;
+    if(layer%2==0) which = "bot";
+    else which = "top";
+  }
+  else{
+    tray = 2 * ( (layer+1)/2 );
+    if(layer%2==0) which = "top";
+    else which = "bot";
+  }
+}
+
+
+inline void layerId::uniPlaneToTray(){
+  tray = (uniPlane+1) / 2;
+  if( uniPlane%2 == 0 ) which ="top";
+  else which = "bot";
+}
+
 
 totCalib::totCalib( const std::string analysisType = "MIP calibration" ): 
   m_reconFile(0), m_reconTree(0), 
@@ -44,7 +99,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.29 $";
+  std::string version = "$Revision: 1.30 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -68,20 +123,19 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   strftime( nts, ntsmax, "%H%M%S", gmtime( &rawtime ) );
   m_timeStamp = nts;
 
-  m_armsDist = new TH1F("arms", "arms", 100, -25, 25);
-  m_lrecX = new TH1F("lrecX", "lrecX", 18, 0, 18);
-  m_lrecY = new TH1F("lrecY", "lrecY", 18, 0, 18);
-  m_lallX = new TH1F("lallX", "lallX", 18, 0, 18);
-  m_lallY = new TH1F("lallY", "lallY", 18, 0, 18);
-  m_loccX = new TH1F("loccX", "loccX", 18, 0, 18);
-  m_loccY = new TH1F("loccY", "loccY", 18, 0, 18);
+  m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
+  m_armsDist = new TH1F("arms", "arms", 100, -5, 5);
+  m_lrec = new TH1F("lrec", "lrec", g_nUniPlane, 0, g_nUniPlane);
+  m_lall = new TH1F("lall", "lall", g_nUniPlane, 0, g_nUniPlane);
   if( m_badStrips ){
-    m_brmsDist[0] = new TH1F("brms0", "brms 0-2", 100, -100, 100);
-    m_brmsDist[1] = new TH1F("brms1", "brms 3-5", 100, -100, 100);
-    m_brmsDist[2] = new TH1F("brms2", "brms 6-8", 100, -100, 100);
-    m_brmsDist[3] = new TH1F("brms3", "brms 9-11", 100, -100, 100);
-    m_brmsDist[4] = new TH1F("brms4", "brms 12-14", 100, -100, 100);
-    m_brmsDist[5] = new TH1F("brms5", "brms 15-17", 100, -100, 100);
+    m_locc = new TH1F("locc", "locc", g_nUniPlane, 0, g_nUniPlane);
+    m_dist = new TH1F("dist", "distance", 50, 0, 200);
+    m_brmsDist[0] = new TH1F("brms0", "brms 0-2", 100, -5, 5);
+    m_brmsDist[1] = new TH1F("brms1", "brms 3-5", 100, -5, 5);
+    m_brmsDist[2] = new TH1F("brms2", "brms 6-8", 100, -5, 5);
+    m_brmsDist[3] = new TH1F("brms3", "brms 9-11", 100, -5, 5);
+    m_brmsDist[4] = new TH1F("brms4", "brms 12-14", 100, -5, 5);
+    m_brmsDist[5] = new TH1F("brms5", "brms 15-17", 100, -5, 5);
     m_occDist = new TH1F("occDist", "occDist", 200, 0, 200);
     m_poissonDist = new TH1F("poissonDist", "poissonDist", 40, -20, 0);
     m_aPos[0] = new TH1F("apos0", "apos0", 100, -50, 50);
@@ -143,16 +197,15 @@ totCalib::~totCalib()
 
   m_totFile->cd();
 
+  m_nTrackDist->Write(0, TObject::kOverwrite);
   m_armsDist->Write(0, TObject::kOverwrite);
-  m_lrecX->Write(0, TObject::kOverwrite);
-  m_lrecY->Write(0, TObject::kOverwrite);
-  m_lallX->Write(0, TObject::kOverwrite);
-  m_lallY->Write(0, TObject::kOverwrite);
-  m_loccX->Write(0, TObject::kOverwrite);
-  m_loccY->Write(0, TObject::kOverwrite);
+  m_lrec->Write(0, TObject::kOverwrite);
+  m_lall->Write(0, TObject::kOverwrite);
   if( m_badStrips ){
     for( int i=0; i<g_nLayer/3; i++) 
       m_brmsDist[i]->Write(0, TObject::kOverwrite);
+    m_locc->Write(0, TObject::kOverwrite);
+    m_dist->Write(0, TObject::kOverwrite);
     m_occDist->Write(0, TObject::kOverwrite);
     m_poissonDist->Write(0, TObject::kOverwrite);
     m_aPos[0]->Write(0, TObject::kOverwrite);
@@ -414,9 +467,11 @@ bool totCalib::parseRcReport( const char* reportFile )
     return false;
   }
 
-  if (docrcReport != 0){//successful
-    std::cout <<  reportFile << " is successfully parsed" << std::endl;
-    
+  if (docrcReport == 0){ //unsuccessful
+    std::cout <<  "Parsing FAILURE: " << reportFile << std::endl;
+    return false;
+  }
+  else{
     //look up attributes
     string timeStamp;
     DOMElement* rcElt = docrcReport -> getDocumentElement();
@@ -578,9 +633,9 @@ void totCalib::analyzeEvent(int nEvents)
 
     if(! passCut()) continue;
 
-    retrieveCluster();
+    retrieveClusters();
 
-    if( m_badStrips ) fillOccupancy();
+    if( m_badStrips ) fillOccupancy( iEvent*g_nTime/nEvents );
     else{
       getTot();
       fillTot();
@@ -620,42 +675,51 @@ void totCalib::getTot()
   } 
 }
 
-clusterId totCalib::getClusterId( const TkrCluster* cluster )
+layerId totCalib::getLayerId( const TkrCluster* cluster )
 {
-  clusterId clsId;
 #ifdef OLD_RECON
   int planeId = cluster->getPlane();
   TkrCluster::view viewId = cluster->getView();
-  clsId.tower = cluster->getTower();
-  clsId.layer = g_nLayer - planeId - 1;
-  clsId.view = (viewId == TkrCluster::X) ? 0 : 1;
+  int tower = cluster->getTower();
+  int layer = g_nLayer - planeId - 1;
+  int view = (viewId == TkrCluster::X) ? 0 : 1;
 #else
   commonRootData::TkrId id = cluster->getTkrId();
-  clsId.tower = TowerId( id.getTowerX(), id.getTowerY() ).id();
-  clsId.view = id.getView();
-  clsId.layer = cluster->getLayer();
+  int tower = TowerId( id.getTowerX(), id.getTowerY() ).id();
+  int view = id.getView();
+  int layer = cluster->getLayer();
 #endif
-  return clsId;
+  layerId lid( layer, view, tower);
+  return lid;
 }
 
 
-void totCalib::retrieveCluster()
+void totCalib::retrieveClusters()
 {
+#ifdef PRINT_DEBUG
+  std::cout << "retrieveClusters start" << std::endl;
+#endif
+  // clear cluster list
+  m_clusters.clear();
+  
   // initialize cluster info
+  TkrCluster* clusters[g_nTower][g_nUniPlane];
   for( unsigned int tw=0; tw<m_towerList.size(); tw++){
     int tower = m_towerList[tw];
     m_numHits[ tower ] = 0;
-    for( int layer=0; layer<g_nLayer; layer++)
-      for( int view=0; view<g_nView; view++)
-	m_cluster[tower][layer][view] = 0;
+    for( int unp=0; unp<g_nUniPlane; unp++)
+	clusters[tower][unp] = 0;
   }
-
+  std::vector<int> towerList;
+  int lastTower = -1;
+  
   TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
   assert(tkrRecon != 0);
-
+  
   int numRecCls = 0;
   TObjArray* tracks = tkrRecon->getTrackCol();
-
+  m_nTrackDist->Fill( tracks->GetEntries() );
+  
 #ifdef OLD_RECON
   std::map<int, TkrCluster*> clsMap;
   TObjArray* siClusterCol = tkrRecon->getClusterCol();
@@ -664,7 +728,7 @@ void totCalib::retrieveCluster()
     TkrCluster* cluster = dynamic_cast<TkrCluster*>(siClusterCol->At(i));
     clsMap[cluster->getId()] = cluster;
   }
-
+  
   TkrKalFitTrack* tkrTrack = dynamic_cast<TkrKalFitTrack*>(tracks->At(0));
   int nHitPlane = tkrTrack->getNumHits();
   for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
@@ -677,17 +741,21 @@ void totCalib::retrieveCluster()
   TIter trk1HitsItr(tkrTrack);
   TkrTrackHit* pTrk1Hit = 0;
   while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {    
-    const TkrCluster* cluster = pTrk1Hit->getClusterPtr();
+    TkrCluster* cluster = pTrk1Hit->getClusterPtr();
     if(!cluster) continue;
 #endif
     numRecCls++;
-    clusterId clsId = getClusterId( cluster );
-    m_cluster[clsId.tower][clsId.layer][clsId.view] = cluster;
-    m_numHits[ clsId.tower ]++;
-    if( clsId.view == 0 ) m_lrecX->Fill( clsId.layer );
-    else m_lrecY->Fill( clsId.layer );
+    layerId lid = getLayerId( cluster );
+    //std::cout << lid.tower << " " << lid.uniPlane << " " << lid.layer << " " << lid.view << std::endl;
+    clusters[lid.tower][lid.uniPlane] = cluster;
+    if( lid.tower != lastTower ){
+      lastTower = lid.tower;
+      towerList.push_back( lastTower );
+    }
+    m_numHits[ lid.tower ]++;
+    m_lrec->Fill( lid.uniPlane );
   }
-
+  
   TObjArray* clusCol = tkrRecon->getClusterCol();
   Int_t numCls = clusCol->GetEntries(), numGoodCls = numRecCls;  
   //
@@ -695,47 +763,70 @@ void totCalib::retrieveCluster()
   //
   for (int jc=numCls-1;jc>=0; jc--) {
     TkrCluster* cluster = dynamic_cast<TkrCluster*> ( clusCol->At(jc) );
-    clusterId clsId = getClusterId( cluster );
+    layerId lid = getLayerId( cluster );
+
     // check if cluster already exist. No need to add if we already have.
-    if( m_cluster[clsId.tower][clsId.layer][clsId.view] ) continue;
+    if( clusters[lid.tower][lid.uniPlane] ) continue;
+
     // check if this cluster is close to the track position
-    if( ! closeToTrack( cluster ) ) continue;
-    m_cluster[clsId.tower][clsId.layer][clsId.view] = cluster;
-    m_numHits[ clsId.tower ]++;
+    if( ! closeToTrack( cluster, clusters ) ) continue;
+
+    clusters[lid.tower][lid.uniPlane] = cluster;
+    m_numHits[ lid.tower ]++;
     numGoodCls++;
+    //std::cout << lid.tower << "+ " << lid.uniPlane << " " << lid.layer << " " << lid.view << std::endl;
   }
   //std::cout << numCls << " " << numGoodCls << " " << numRecCls << std::endl;
+  
+  //
+  // register all associated clusters
+  //
+  for( int tw=0; tw<towerList.size(); tw++ ){
+    int tower = towerList[tw];
+    for( int uniPlane=g_nUniPlane-1; uniPlane>=0; uniPlane--)
+      if( clusters[tower][uniPlane] ){
+	m_clusters.push_back( clusters[tower][uniPlane] );
+	m_lall->Fill( uniPlane );
+	//std::cout << tower << " " << uniPlane << std::endl;
+      }
+  }
+
+#ifdef PRINT_DEBUG
+  std::cout << "retrieveClusters end" << std::endl;
+#endif
+
 }
 
-
-bool totCalib::closeToTrack( const TkrCluster* cluster )
+bool totCalib::closeToTrack( const TkrCluster* cluster, TkrCluster* clusters[g_nTower][g_nUniPlane] )
 {
-  clusterId clsId = getClusterId( cluster );
-  int tower = clsId.tower;
-  int view = clsId.view;
-  int layer = clsId.layer, tlayer;
+  layerId lid = getLayerId( cluster ), tlid;
+  int tower = lid.tower;
+  int layer = lid.layer;
+  int view = lid.view;
   float zpos = cluster->getPosition().Z();
 
   // find closest hits
   float dzmin=1000, dzmin2=1000, dz;
-  int numSkip=0, lmin, lmin2;
+  int numSkip=0, umin, umin2, tl, tunp;
   TkrCluster* tcls;
   for( int dl=1; dl<g_nLayer; dl++){
     for( int dir=-1; dir<2; dir+=2){
-      tlayer = layer+dl*dir;
-      if( tlayer < g_nLayer && tlayer >=0 ){
-	tcls = m_cluster[tower][tlayer][view];
+      tl = layer + dl*dir;
+      if( tl < g_nLayer && tl >=0 ){
+	tlid.setLayer( tl, view );
+	tunp = tlid.uniPlane;
+	tcls = clusters[tower][tunp];
 	if( tcls ){
 	  dz = fabs( zpos - tcls->getPosition().Z() );
 	  if( dz < dzmin ){
 	    dzmin2 = dzmin;
-	    lmin2 = lmin;
+	    umin2 = umin;
 	    dzmin = dz;
-	    lmin = tlayer;
+	    umin = tunp;
 	  }
 	  else if( dz < dzmin2 ){
 	    dzmin2 = dz;
-	    lmin2 = tlayer;	
+	    umin2 = tunp;	
 	  }
 	  else numSkip++;
 	}
@@ -745,11 +836,13 @@ bool totCalib::closeToTrack( const TkrCluster* cluster )
     if( numSkip > 1 ) break;
   }
 
-  TVector3 pos1 = m_cluster[tower][lmin][view]->getPosition();
-  TVector3 pos2 = m_cluster[tower][lmin2][view]->getPosition();
+  if( numSkip < 2 ) return false;
+
+  TVector3 pos1 = clusters[tower][umin]->getPosition();
+  TVector3 pos2 = clusters[tower][umin2]->getPosition();
 
   float delta, pos;
-  if( view == 0 ){
+  if( lid.view == 0 ){
     pos = pos1.X() + ( pos2.X()-pos1.X() ) * ( zpos-pos1.Z() ) / ( pos2.Z() - pos1.Z() );
     delta = cluster->getPosition().X() - pos;
   }
@@ -758,9 +851,9 @@ bool totCalib::closeToTrack( const TkrCluster* cluster )
     delta = cluster->getPosition().Y() - pos;
   }
   
-  //std::cout << tower << " " << layer << " " << view << ", " << delta << " " << " " << pos << " " << zpos;
+  //std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
   m_armsDist->Fill( delta );
-  if( fabs(delta) > 4.0 ){
+  if( fabs(delta) > 2.0 ){
     //std::cout << " **************" << std::endl;
     return false;
   }
@@ -772,45 +865,58 @@ bool totCalib::closeToTrack( const TkrCluster* cluster )
 
 int totCalib::findTot(int towerId, int layerId, int view , int stripId)
 {
+#ifdef PRINT_DEBUG
+  std::cout << "findTot start" << std::endl;
+#endif
+
   if(stripId <= m_lastRC0Strip[towerId][layerId][view] )
     return m_tot[towerId][layerId][view][0];
   else
     return m_tot[towerId][layerId][view][1];
+
+#ifdef PRINT_DEBUG
+  std::cout << "findTot end" << std::endl;
+#endif
 }
 
 void totCalib::fillTot() 
 {
   
-  for( unsigned int tw=0; tw<m_towerList.size(); tw++){
-    int tower = m_towerList[tw];
-    if( m_numHits[ tower ] == 0 ) continue;
-    for( int layer=0; layer<g_nLayer; layer++)
-      for( int view=0; view<g_nView; view++){
-	TkrCluster* cluster = m_cluster[tower][layer][view];
-	if( ! cluster ) continue;
-
-	// require only a single strip
-	if(cluster->getSize() != 1) continue;
-
-	int iStrip = cluster->getFirstStrip();
-	
-#ifdef OLD_RECON
-	int tot = findTot(tower,layer, view, iStrip);
-#else
-	int tot = cluster->getRawToT();
+#ifdef PRINT_DEBUG
+  std::cout << "fillTot start" << std::endl;
 #endif
-	if( tot == 0 ) continue;
+
+  for( unsigned int cls=0; cls<m_clusters.size(); cls++){
+    TkrCluster* cluster = m_clusters[cls];
+    layerId lid = getLayerId( cluster );
+    int tower = lid.tower;
+    int view = lid.view;
+    int layer = lid.layer;
+
+    // require only a single strip
+    if(cluster->getSize() != 1) continue;
+    
+    int iStrip = cluster->getFirstStrip();
+    
+#ifdef OLD_RECON
+    int tot = findTot(tower,layer, view, iStrip);
+#else
+    int tot = cluster->getRawToT();
+#endif
+    if( tot == 0 ) continue;
 	
-	float charge = calcCharge(tower,layer, view, iStrip, tot);
-	static int nStripPerGroup = g_nStrip / g_nDiv;
+    float charge = calcCharge(tower,layer, view, iStrip, tot);
+    static int nStripPerGroup = g_nStrip / g_nDiv;
 	
 #ifdef FULLHIST
-	m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
+    m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
 #endif
-	m_chargeHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
-      }
+    m_chargeHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
   }
   
+#ifdef PRINT_DEBUG
+  std::cout << "fillTot end" << std::endl;
+#endif
 }
 
 bool totCalib::passCut() 
@@ -1045,15 +1151,15 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       DOMNode* childNode = conList->item(i);
       int tray = Dom::getIntAttribute(childNode, "tray");
       std::string which = Dom::getAttribute(childNode, "which");
-      std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
+      //std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
      
       //get first child element
       DOMElement* elder = Dom::getFirstChildElement(childNode);
       DOMElement* younger;
 
-      int view = (tray+1) % 2;
-      int layer = tray;
-      if( which == "bot" ) layer -= 1;
+      layerId lid( tray, which );
+      int view = lid.view;
+      int layer = lid.layer;
       if( layer >= g_nLayer || layer < 0 ){
 	std::cout << "Invalid layer id: " << layer << std::endl;
 	m_log << "Invalid layer id: " << layer << std::endl;
@@ -1098,7 +1204,7 @@ bool totCalib::getParam(const DOMElement* totElement, int tower, int layer, int 
     stripId = Dom::getIntAttribute( totElement, "id" ); 
   } //if there isn't next strip,go to next layer or view
   catch(DomException ex){
-    cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
+    //cout << "finished (layer,view)=(" << layer << ", "<< view << ")" << endl;
     return false;
   }
   if( stripId < 0 || stripId >= g_nStrip ){
@@ -1210,11 +1316,11 @@ void totCalib::fillXml()//takuya
     if( m_towerList.size() > 1 ) fillTowerChargeScales( latxml, tower );
 
     fmxml << "</chargeScale>" << endl;
-    fmxml.close;
+    fmxml.close();
   }
   if( m_towerList.size() > 1 ){
     latxml << "</chargeScale>" << endl;
-    latxml.close;
+    latxml.close();
   }
   dtd.close();
 }
@@ -1229,31 +1335,23 @@ void totCalib::fillTowerChargeScales( std::ofstream &xmlFile, const int tower ){
 	  << "\" hwserial=\"" << hwserial << "\">" << endl;
   char cvw[] = "XY";
   
-  for(int layer = 0; layer != g_nLayer; ++layer) {
-    for(int iView = 0; iView != g_nView; ++iView) {
-      int tray;
-      string which;
-      if(iView==0){
-	tray = 2 * ( layer/2 ) + 1;
-	if(layer%2==0) which = "bot";
-	else which = "top";
-      }
-      else{
-	tray = 2 * ( (layer+1)/2 );
-	if(layer%2==0) which = "top";
-	else which = "bot";
-      }
-      xmlFile << std::endl
-	      << "   <!-- **** layer " << cvw[iView]  << layer 
-	      << " **** -->" << std::endl
-	      << "   <uniplane tray=\"" << tray << "\" which=\""
-	      << which << "\">" << std::endl;
-      for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	xmlFile << "    <gtfeScale id=\"" << iDiv << "\" chargeScale=\"" 
-		<<  m_chargeScale[tower][layer][iView][iDiv] << "\"/>" << endl;
-      }
-      xmlFile << "   </uniplane>" << endl; 
+  for( int uniPlane = 0; uniPlane < g_nUniPlane; uniPlane++){
+    layerId lid( uniPlane );
+    int layer = lid.layer;
+    int view = lid.view;
+    int tray = lid.tray;
+    std::string which = lid.which;
+
+    xmlFile << std::endl
+	    << "   <!-- **** layer " << cvw[view]  << layer 
+	    << " **** -->" << std::endl
+	    << "   <uniplane tray=\"" << tray << "\" which=\""
+	    << which << "\">" << std::endl;
+    for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
+      xmlFile << "    <gtfeScale id=\"" << iDiv << "\" chargeScale=\"" 
+	      <<  m_chargeScale[tower][layer][view][iDiv] << "\"/>" << endl;
     }
+    xmlFile << "   </uniplane>" << endl; 
   }
   xmlFile     << "  </tower>" << endl;  
 }
@@ -1288,8 +1386,11 @@ void  totCalib::openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, 
 }
   
 
-void totCalib::fillOccupancy() 
+void totCalib::fillOccupancy( int tDiv ) 
 {
+#ifdef PRINT_DEBUG
+  std::cout << "fillOccupancy start" << std::endl;
+#endif
 
   //initialize container
   int nHits[g_nTower][g_nLayer][g_nView][g_nWafer+1];
@@ -1300,95 +1401,99 @@ void totCalib::fillOccupancy()
 	for( int i=0; i<g_nWafer+1; i++) nHits[tower][layer][view][i] = 0;
   }
 
-  for( unsigned int tw=0; tw<m_towerList.size(); tw++){
-    int tower = m_towerList[tw];
-    if( m_numHits[ tower ] == 0 ) continue;
-    for( int layer=0; layer<g_nLayer; layer++)
-      for( int view=0; view<g_nView; view++){
-	TkrCluster* cluster = m_cluster[tower][layer][view];
-	if( ! cluster ) continue;
+  for( unsigned int cls=0; cls<m_clusters.size(); cls++){
+    TkrCluster* cluster = m_clusters[cls];
+    layerId lid = getLayerId( cluster );
+    int tower = lid.tower;
+    int view = lid.view;
+    int layer = lid.layer;
 
-	for(int iStrip = cluster->getFirstStrip(); 
-	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-	  nHits[tower][layer][view][iStrip/384]++;
-	  nHits[tower][layer][view][g_nWafer]++;
-	}
-      }
+    for(int iStrip = cluster->getFirstStrip(); 
+	iStrip != int(cluster->getLastStrip()+1); ++iStrip){
+      nHits[tower][layer][view][iStrip/384]++;
+      nHits[tower][layer][view][g_nWafer]++;
+    }
   }
 
-  float pos, apos, dirX=m_dir.X()/m_dir.Z(), dirY=m_dir.Y()/m_dir.Z(), 
+  float pos, apos, dist, dz, delta;
+  float dirX=m_dir.X()/m_dir.Z(), dirY=m_dir.Y()/m_dir.Z(), 
     preX=m_pos.X(), preY=m_pos.Y(), preXZ=m_pos.Z(), preYZ=m_pos.Z();
   int aview;
 
-  for( unsigned int tw=0; tw<m_towerList.size(); tw++){
-    int tower = m_towerList[tw];
-    if( m_numHits[ tower ] == 0 ) continue;
-    for( int layer=0; layer<g_nLayer; layer++)
-      for( int view=0; view<g_nView; view++){
-	TkrCluster* cluster = m_cluster[tower][layer][view];
-	if( ! cluster ) continue;
+  for( unsigned int cls=0; cls<m_clusters.size(); cls++){
+    TkrCluster* cluster = m_clusters[cls];
+    layerId lid = getLayerId( cluster );
+    int tower = lid.tower;
+    int view = lid.view;
+    int layer = lid.layer;
+    
+    TVector3 position = cluster->getPosition();
+    float dxz = position.Z()-preXZ;
+    float dyz = position.Z()-preYZ;
+    float deltax = preX + dirX*dxz - position.X();
+    float deltay = preY + dirY*dyz - position.Y();
+    
+    if( view == 0 ){
+      dz = dxz;
+      delta = deltax;
+    }
+    else{
+      dz = dyz;
+      delta = deltay;
+    }
 
-	TVector3 position = cluster->getPosition();
-	float dxz = position.Z()-preXZ;
-	float dyz = position.Z()-preYZ;
-	float deltax = preX + dirX*dxz - position.X();
-	float deltay = preY + dirY*dyz - position.Y();
+    float dx = dirX*dz;
+    float dy = dirY*dz;
+    dist =sqrt( dz*dz+dx*dx+dy*dy );
+    m_dist->Fill( dist );
+    if( dist < 30 ) dist = 30;
+    delta *= (35.0/dist);
+    m_brmsDist[layer/3]->Fill( delta );
 
-	if( view == 0 ){
-	  aview = 1;
-	  float dx = dirX*dxz;
-	  float dy = dirY*dxz;
-	  float flength =sqrt( dxz*dxz+dx*dx+dy*dy );
-	  m_brmsDist[layer/3]->Fill( deltax*1000/flength );
-	  m_lallX->Fill( layer );
-	  if( fabs(deltax/flength) > 0.04  ){
-	    continue;
+    // select good clusters
+    if( fabs(delta) > 3.0  ) continue;
+    m_locc->Fill( lid.uniPlane );
+    
+    if( view == 0 ){
+      aview = 1;
+      pos = deltax;
+      apos = deltay;
+      if( dxz > 10.0 ) dirX = ( position.X() - preX ) / dxz;
+      preX = position.X();
+      preXZ = position.Z();
+    }
+    else{
+      aview = 0;
+      pos = deltay;
+      apos = deltax;
+      if( dyz > 10.0 ) dirY = ( position.Y() - preY ) / dyz;
+      preY = position.Y();
+      preYZ = position.Z();
+    }
+    
+    //std::cout << layer << " " << view << ", " << pos << " " << apos
+    //      << std::endl;
+    
+    for(int iStrip = cluster->getFirstStrip(); 
+	iStrip != int(cluster->getLastStrip()+1); ++iStrip)
+      if( nHits[layer][aview][g_nWafer] > 0 ){
+	for( int iw=0; iw<g_nWafer; iw++ )
+	  if( nHits[tower][layer][aview][iw] > 0 ){
+	    m_nHits[tower][layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
 	  }
-	  m_loccX->Fill( layer );
-	  pos = deltax;
-	  apos = deltay;
-	  dirX = ( position.X() - preX ) / ( position.Z() - preXZ );
-	  preX = position.X();
-	  preXZ = position.Z();
-	}
-	else{
-	  aview = 0;
-	  float dx = dirX*dyz;
-	  float dy = dirY*dyz;
-	  float flength =sqrt( dyz*dyz+dx*dx+dy*dy );
-	  m_brmsDist[layer/3]->Fill( deltay*1000/flength );
-	  m_lallY->Fill( layer );
-	  if( fabs(deltay/flength) > 0.04  ){
-	    continue;
-	  }
-	  m_loccY->Fill( layer );
-	  pos = deltay;
-	  apos = deltax;
-	  dirY = ( position.Y() - preY ) / ( position.Z() - preYZ );
-	  preY = position.Y();
-	  preYZ = position.Z();
-	}
-	
-	//std::cout << layer << " " << view << ", " << pos << " " << apos
-	//      << std::endl;
-	
-	for(int iStrip = cluster->getFirstStrip(); 
-	    iStrip != int(cluster->getLastStrip()+1); ++iStrip)
-	  if( nHits[layer][aview][g_nWafer] > 0 ){
-	    for( int iw=0; iw<g_nWafer; iw++ )
-	      if( nHits[tower][layer][aview][iw] > 0 ){
-		m_nHits[tower][layer][view][iw]->Fill( iStrip );
-		m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
-	      }
-	  }
-	  else
-	    for( int iw=0; iw<g_nWafer; iw++ )
-	      if( fabs( apos-89.5*(iw-1.5) ) < 42 ){
-		m_nHits[tower][layer][view][iw]->Fill( iStrip );
-		m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
-	      }
       }
+      else
+	for( int iw=0; iw<g_nWafer; iw++ )
+	  if( fabs( apos-89.5*(iw-1.5) ) < 42 ){
+	    m_nHits[tower][layer][view][iw]->Fill( iStrip );
+	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
+	  }
   }
+
+#ifdef PRINT_DEBUG
+  std::cout << "fillOccupancy end" << std::endl;
+#endif
 }
 
 
@@ -1411,84 +1516,86 @@ void totCalib::findBadStrips( int nEvents )
   for( unsigned int tw=0; tw!=m_towerList.size(); ++tw){
     int tower = m_towerList[ tw ]; 
     m_log << "Tower: " << tower << ", ID: " << m_tower_serial[tower] << std::endl;
-    for(int layer = 0; layer != g_nLayer; ++layer) {
-      for(int view = 0; view != g_nView; ++view) {
-	char vw = 'X';
-	if( view != 0 ) vw = 'Y';
-	m_log << "Layer: " << vw << layer << std::endl;
-	for( int strip=0; strip!=g_nStrip; strip++){
-	  float sum = 0.0;
-	  bool deadFlag = false;
-	  int occ[g_nWafer];
-	  for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
-	    int occupancy = m_nHits[tower][layer][view][iWafer]->GetBinContent( strip + 1 );
-	    if(layer%2 == 0) occ[ g_nWafer-1-iWafer ] = occupancy;
-	    else occ[ iWafer ] = occupancy;
-	    sum += occupancy;
-	    m_occDist->Fill( occupancy+0.1 );
-	    if( occupancy < occThreshold ){
-	      deadFlag = true;
-	    }
-	  }
-	  
-	  if( deadFlag || sum < sumThreshold ){
-	    m_log << strip << ": " << sum << ", ";
-	    int nBad = 0;
-	    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
-	      m_log << " " << occ[iWafer];
-	    }
-	    if( sum == 0 ){
-	      //categorize as disconnected
-	      m_deadStrips[tower][layer][view][1].push_back(strip); 
-	      m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
-	      m_log << " *1*" << std::endl;
-	      continue;
-	    }
-	    // intermittently disconnected
-	    else if( sum < sumThreshold ) nBad = 3;
-	    
-	    sum = occ[0];
-	    m_log << ", ";
-	    bool flagBreak = false;
-	    int occBreak = 0;
-	    for(int iWafer = 1; iWafer != g_nWafer; ++iWafer){
-	      int value = occ[iWafer];
-	      sum += value;
-	      double mean = sum / (iWafer+1);
-	      if( value < 200 && mean < 199.5 ){
-		float p_poisson = pow(mean,value)*exp(-mean)/factorial[value];
-		float norm      = pow(mean,mean)*exp(-mean)/factorial[(int)(mean+0.5)];
-		p_poisson = log( p_poisson/norm ); //normalize
-		m_log << " " << (int)p_poisson;
-		m_poissonDist->Fill( p_poisson );
-		if( p_poisson < poissonThreshold ){ 
-		  flagBreak = true;
-		  occBreak += occ[iWafer];
-		}
-	      }
-	    }
-	    if( flagBreak )
-	      if( occBreak == 0 ) nBad = 2; // partial disconnected
-	      else nBad = 4; // intermittent partial disconnected
-	    if( nBad > 0 ){
-	      m_deadStrips[tower][layer][view][nBad].push_back(strip);
-	      m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
-	      m_log << " *" << nBad << "*" << std::endl;
-	      continue;
-	    }
-	    else m_log << std::endl;
+    for( int uniPlane = g_nUniPlane-1; uniPlane >=0; uniPlane--){
+      layerId lid( uniPlane );
+      int layer = lid.layer;
+      int view = lid.view;
+
+      char vw = 'X';
+      if( view != 0 ) vw = 'Y';
+      m_log << "Layer: " << vw << layer << std::endl;
+      for( int strip=0; strip!=g_nStrip; strip++){
+	float sum = 0.0;
+	bool deadFlag = false;
+	int occ[g_nWafer];
+	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+	  int occupancy = m_nHits[tower][layer][view][iWafer]->GetBinContent( strip + 1 );
+	  if(layer%2 == 0) occ[ g_nWafer-1-iWafer ] = occupancy;
+	  else occ[ iWafer ] = occupancy;
+	  sum += occupancy;
+	  m_occDist->Fill( occupancy+0.1 );
+	  if( occupancy < occThreshold ){
+	    deadFlag = true;
 	  }
 	}
 	
-	m_log << vw << layer << ", # of bad channels:";
-	std::cout << vw << layer << ", # of bad channel:";
-	for( int iBad=0; iBad<g_nBad; iBad++){
-	  m_log << " " << m_deadStrips[tower][layer][view][iBad].size();
-	  std::cout << " " << m_deadStrips[tower][layer][view][iBad].size();
+	if( deadFlag || sum < sumThreshold ){
+	  m_log << strip << ": " << sum << ", ";
+	  int nBad = 0;
+	  for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+	    m_log << " " << occ[iWafer];
+	  }
+	  if( sum == 0 ){
+	    //categorize as disconnected
+	    m_deadStrips[tower][layer][view][1].push_back(strip); 
+	    m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
+	    m_log << " *1*" << std::endl;
+	    continue;
+	  }
+	  // intermittently disconnected
+	  else if( sum < sumThreshold ) nBad = 3;
+	  
+	  sum = occ[0];
+	  m_log << ", ";
+	  bool flagBreak = false;
+	  int occBreak = 0;
+	  for(int iWafer = 1; iWafer != g_nWafer; ++iWafer){
+	    int value = occ[iWafer];
+	    sum += value;
+	    double mean = sum / (iWafer+1);
+	    if( value < 200 && mean < 199.5 ){
+	      float p_poisson = pow(mean,value)*exp(-mean)/factorial[value];
+	      float norm      = pow(mean,mean)*exp(-mean)/factorial[(int)(mean+0.5)];
+	      p_poisson = log( p_poisson/norm ); //normalize
+	      m_log << " " << (int)p_poisson;
+	      m_poissonDist->Fill( p_poisson );
+	      if( p_poisson < poissonThreshold ){ 
+		flagBreak = true;
+		occBreak += occ[iWafer];
+	      }
+	    }
+	  }
+	  if( flagBreak )
+	    if( occBreak == 0 ) nBad = 2; // partial disconnected
+	    else nBad = 4; // intermittent partial disconnected
+	  if( nBad > 0 ){
+	    m_deadStrips[tower][layer][view][nBad].push_back(strip);
+	    m_deadStrips[tower][layer][view][g_nBad-1].push_back(strip); 
+	    m_log << " *" << nBad << "*" << std::endl;
+	    continue;
+	  }
+	  else m_log << std::endl;
 	}
-	m_log << std::endl;
-	std::cout << std::endl;
       }
+      
+      m_log << vw << layer << ", # of bad channels:";
+      std::cout << vw << layer << ", # of bad channel:";
+      for( int iBad=0; iBad<g_nBad; iBad++){
+	m_log << " " << m_deadStrips[tower][layer][view][iBad].size();
+	std::cout << " " << m_deadStrips[tower][layer][view][iBad].size();
+      }
+      m_log << std::endl;
+      std::cout << std::endl;
     }
   }
 }
@@ -1616,46 +1723,37 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tower,
 	  << " nOnbdCalib=\"false\" nOnbdTrig=\"false\""
 	  << " nOnbdData=\"false\"" << ">" << std::endl;
   
-  for(int layer = 0; layer != g_nLayer; ++layer) {
-    for(int view = 0; view != g_nView; ++view) {
-      int tray;
-      string which;
-      if(view==0){
-	tray = 2 * ( layer/2 ) + 1;
-	if(layer%2==0) which = "bot";
-	else which = "top";
-      }
-      else{
-	tray = 2 * ( (layer+1)/2 );
-	if(layer%2==0) which = "top";
-	else which = "bot";
-      }
+  for( int uniPlane = g_nUniPlane-1; uniPlane >=0; uniPlane--){
+    layerId lid( uniPlane );
+    int layer = lid.layer;
+    int view = lid.view;
+    int tray = lid.tray;
+    std::string which = lid.which;
       
-      xmlFile << std::endl
-	      << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
+    xmlFile << std::endl
+	    << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
       
-      for( int iBad=0; iBad!=nBad; iBad++ ){
-	int itr = m_deadStrips[tower][layer][view][iBad].size();
-	xmlFile << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
-		<< " -->" << std::endl 
-		<< "    <uniplane tray=\"" << tray << "\" which=\""
-		<< which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
-		<< " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
-	
-	if(itr){
-	  xmlFile << ">" << std::endl << "      <stripList strips=\"";
-	  for(int i=0;i!=itr;i++)
-	    xmlFile << " " << m_deadStrips[tower][layer][view][iBad][i];
-	  xmlFile << "\"/>" << std::endl 
-		  << "    </uniplane>" << std::endl;
-	}
-	else xmlFile << "/>" << std::endl;
-	
+    for( int iBad=0; iBad!=nBad; iBad++ ){
+      int itr = m_deadStrips[tower][layer][view][iBad].size();
+      xmlFile << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
+	      << " -->" << std::endl 
+	      << "    <uniplane tray=\"" << tray << "\" which=\""
+	      << which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
+	      << " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
+      
+      if(itr){
+	xmlFile << ">" << std::endl << "      <stripList strips=\"";
+	for(int i=0;i!=itr;i++)
+	  xmlFile << " " << m_deadStrips[tower][layer][view][iBad][i];
+	xmlFile << "\"/>" << std::endl 
+		<< "    </uniplane>" << std::endl;
       }
+      else xmlFile << "/>" << std::endl;
+      
     }
   }
   xmlFile << "  </tower>" << std::endl;
-
+  
 }
 
 //-----------------------------------------------------------------------
