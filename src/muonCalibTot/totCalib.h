@@ -54,11 +54,47 @@ static const float sumThrPerEvent = 60.0 / 2.0E6;
 static const float occThrPerEvent = 10.0 / 1.6E6;
 static const float poissonThreshold = -5.0;
 
-struct clusterId{
-  int tower;
-  int layer;
-  int view;
+    static const int g_nLayer = 18;
+    // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
+#ifdef OLD_RECON
+    static const int g_nPlane = 18;
+#endif
+    static const int g_nView = 2;
+    static const int g_nUniPlane = g_nLayer*g_nView;
+
+    static const int g_nFecd = 24;
+    static const int g_nStrip = 1536;
+    static const int g_nTower = 4;
+
+
+class layerId{
+ public:
+      layerId(){;};
+      layerId( int, int, int twr=0 );
+      layerId( int, std::string, int twr=0 );
+      layerId( int );
+      ~layerId(){;};
+      
+      void setLayer( int, int, int twr=0 );
+      void setTray( int, std::string, int twr=0 );
+      void setUniPlane( int, int twr=0 );
+      
+      void trayToUniPlane();
+      void trayToLayer();
+      void layerToTray();
+      inline void layerToUniPlane(){ layerToTray(); trayToUniPlane(); };
+      void uniPlaneToTray();
+      inline void uniPlaneToLayer(){ uniPlaneToTray(); trayToLayer(); };
+      
+      int tower;
+      int layer;
+      int view;
+      int uniPlane;
+      int tray;
+      std::string which;
+      
 };
+
 
 class totCalib {
 public:
@@ -99,9 +135,9 @@ private:
 
     void fitTot();
 
-    void retrieveCluster();
-    clusterId getClusterId( const TkrCluster* );
-    bool closeToTrack( const TkrCluster* );
+    void retrieveClusters();
+    layerId getLayerId( const TkrCluster* );
+    bool closeToTrack( const TkrCluster*, TkrCluster*[g_nTower][g_nUniPlane] );
 
     void fillXml();//takuya
     void fillTowerChargeScales( std::ofstream &xmlFile, const int tower );
@@ -114,19 +150,9 @@ private:
 
     float calcCharge(int tower, int layer, int view, int iStrip, int tot) const;
 
-    static const int g_nLayer = 18;
-    // g_nPlane=0 refers to top biLayer while g_nLayer=0 refers to bottom biLayer
-#ifdef OLD_RECON
-    static const int g_nPlane = 18;
-#endif
-    static const int g_nFecd = 24;
-    static const int g_nView = 2;
-    static const int g_nStrip = 1536;
-
     // group of strips so that each group has enough statistics
     static const int g_nDiv = 24; //used to be 64;takuya
 
-    static const int g_nTower = 4;
 
 #ifdef FULLHIST
     TGraphErrors* m_totStrip[g_nTower][g_nLayer][g_nView];
@@ -157,7 +183,7 @@ private:
     int m_lastRC0Strip[g_nTower][g_nLayer][g_nView];
 
     // Index of cluster hit in the TkrSiClusters
-    TkrCluster* m_cluster[g_nTower][g_nLayer][g_nView];
+    std::vector<TkrCluster*> m_clusters;
     int m_numHits[g_nTower];
 
     //file stream for log output
@@ -180,8 +206,8 @@ private:
       m_version, m_tag, m_dateStamp, m_timeStamp, m_startTime, m_stopTime;
 
     // bad strips analysis related stuff
-    static const int g_nWafer = 4, g_nBad=6;
-    void fillOccupancy();
+    static const int g_nWafer = 4, g_nBad=6, g_nTime=5;
+    void fillOccupancy( int );
     void findBadStrips( int );
     void openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ); 
     void fillBadStrips();
@@ -192,7 +218,7 @@ private:
     std::vector<int> m_deadStrips[g_nTower][g_nLayer][g_nView][g_nBad];
     TH1F* m_nHits[g_nTower][g_nLayer][g_nView][g_nWafer];
     TH1F* m_aPos[g_nWafer];
-    TH1F* m_armsDist, *m_brmsDist[g_nLayer/3], *m_occDist, *m_poissonDist, *m_lrecX, *m_lrecY, *m_lallX, *m_lallY, *m_loccX, *m_loccY;
+    TH1F *m_nTrackDist, *m_armsDist, *m_brmsDist[g_nLayer/3], *m_occDist, *m_poissonDist, *m_lrec, *m_lall, *m_locc, *m_dist;
 
 };
 

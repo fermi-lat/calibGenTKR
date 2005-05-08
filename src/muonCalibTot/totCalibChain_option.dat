@@ -5,18 +5,20 @@
 #
 # top directory for root files
 #
-#/nfs/farm/g/glast/u12/Integration/rootData
-/nfs/farm/g/glast/u14/Integration/rootData
+/nfs/farm/g/glast/u12/Integration/rootData
+#/nfs/farm/g/glast/u14/Integration/rootData
 #/nfs/farm/g/glast/u12/EM2/rootData
 #
 # digi prefix including directory name
 #
-v4r060302p8/grRoot/digitization-v3r1p3
+v4r060302p8/grRoot/digitization-v3r1p2
+#v4r060302p8/grRoot/digitization-v3r1p3
 #grRoot/digitization-EM2-v1r0
 #
 # recon prefix including directory name
 #
-v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3
+v4r060302p8/calib-v1r0/grRoot/recon-v3r1p2
+#v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3
 #calib-v1r0/grRoot/recon-EM2-v1r0
 #
 # top directory for rcReport
@@ -27,13 +29,13 @@ v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3
 #
 #135000933 EOL
 # FMA bad strip data
-#398000279 398000280 398000282 398000283 398000286 398000287 398000289 398000296 398000298 398000303 398000304 398000307 398000308 398000310 1
+398000279 398000280 398000282 398000283 398000286 398000287 398000289 398000296 398000298 398000303 398000304 398000307 398000308 398000310 1
 # FMA MIP calibration data
 #398000571 398000572 398000572 398000573 1
 # FMB bad strip data
 #398000688 398000725 398000726 398000730 398000731 398000732 398000735 398000736 398000739 398000740 398000741 398000742 398000743 398000745 398000746 398000747 398000748 398000749 398000750 1
 # FMB MIP calibration data
-398000730 398000731 398000732 398000735 398000736 1
+#398000730 398000731 398000732 398000735 398000736 1
 #
 # top directory for TOT conversion files. (TE602)
 #
@@ -42,8 +44,8 @@ v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3
 #
 # list of run id for TOT converstion files.  (last entry is ignored for now)
 #
-#398000542 EOL
-398000729 EOL
+398000542 EOL
+#398000729 EOL
 #
 # output Directory
 #
@@ -60,7 +62,7 @@ v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3
 #
 # analysis type
 #
-#badStrips
-MIP calibration
+badStrips
+#MIP calibration
 
 
