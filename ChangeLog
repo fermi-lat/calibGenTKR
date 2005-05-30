@@ -1,4 +1,19 @@
 ------------------------------------------------------------
+User: htajima  Mon May 30 13:17:01 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalib.h 
+Log Message:
+use clusters built from digi strips instead of recon clusters to de independent of TkrRecon.
+Select good clusters that are consistent with a track.
+TOT is associate with digi clusyers.
+Use "track occupancy" as arefernce for the mean value for poisson probability calculation.
+Time dependence of strip occupancy is used to catch intermittently bad strips.
+Exclude bad TOT events from TOT fit. (bad TOT events is mostly due to adjacent strips to disconnected strips and gives low TOT.) Limit the range of the fit to the half of mean value to exclude low TOT entries from the fit.
+
+    *
+------------------------------------------------------------
 User: htajima  Sat May  7 22:56:16 PDT 2005
 calibGenTKR/src/muonCalibTot
 
