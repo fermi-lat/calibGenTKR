@@ -223,7 +223,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.32 $";
+  std::string version = "$Revision: 1.33 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -903,12 +903,14 @@ bool totCalib::parseRcReport( const char* reportFile )
       int tower = atoi( towerId.c_str() );
       if( tower >= 0 && tower < g_nTower ){
 	if( m_towerPtr[ tower ] < 0 ){
-	  m_log << towerId << " " << tower_serial << std::endl;
-	  m_towerPtr[ tower ] = tower;
+	  m_towerPtr[ tower ] = m_towerVar.size();
 	  //towerVar dummy( tower );
 	  m_towerVar.push_back( towerVar( tower, m_badStrips ) );
 	  m_towerVar.back().hwserial = tower_serial;
-	  std::cout << "Tower " << towerId << ": " << tower_serial << std::endl;
+	  std::cout << "Tower " << towerId << ": " << m_towerPtr[ tower ] 
+		    << " " << tower_serial << std::endl;
+	  m_log << "Tower " << towerId << ": " << m_towerPtr[ tower ] 
+		    << " " << tower_serial << std::endl;
 	}
 	else if( m_towerVar[ m_towerPtr[tower] ].hwserial != tower_serial ){
 	  std::cout << "Inconsistent tower serial IDs for tower " << tower
@@ -1609,7 +1611,7 @@ void totCalib::fitTot()
 	ave = chargeHist->GetMean();
 	rms = chargeHist->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
-	if( area<100 || ave==0.0 || rms==0.0 ){ 
+	if( area<200 || ave==0.0 || rms==0.0 ){ 
 	  m_log << "T" << tower << " " << cvw[view] << layer
 		<< " " << iDiv << ", Entries: " << area
 		<< ", Mean: " << ave << ", RMS: " << rms 
@@ -1717,8 +1719,8 @@ bool totCalib::readInputXmlFiles(const std::string dir,
   for(std::vector<std::string>::const_iterator run = runIds.begin();
       run != runIds.end(); ++run) {
     if( m_badStrips ){
-      std::cout << "dead strips xml file: " << *run << std::endl;
-      return true;
+      if( !readBadStripsXmlFile( dir.c_str(), (*run) ) )
+	return false;
     }
     else if( !readTotConvXmlFile( dir.c_str(), (*run).c_str() ) )
       return false;
@@ -1726,6 +1728,112 @@ bool totCalib::readInputXmlFiles(const std::string dir,
   return true;
 }
 
+
+bool totCalib::readBadStripsXmlFile(const char* dir, 
+				    const std::string runid="None" ){
+  string filename;
+  filename = dir;
+  if( runid.size() > 8 ){
+    char fname[] = "/398000364/TkrNoiseAndGain_398000364.xml";
+    sprintf(fname,"/%s/TkrTotGain_%s.xml", runid.c_str(), runid.c_str() );
+    filename += fname;
+  }
+
+  if( ! checkFile( filename ) ){
+    std::cout << "Invalid bad strips xml file path: " << filename << std::endl;
+    m_log << "Invalid bad strips xml file path: " << filename << std::endl;
+    return false;
+  }
+
+  std::cout << "Open xml file: " << filename << std::endl;
+  m_log << "Bad strips xml file: " << filename << std::endl;
+  
+
+#ifdef OLD_RECON
+  //typedef xml xmlBase;
+  using namespace xml;
+#else
+  using namespace xmlBase;
+#endif
+
+  XmlParser* parser = new XmlParser(true);
+  DOMDocument* doc = 0;
+  try {
+    doc = parser->parse(filename.c_str());
+  }
+  catch (ParseException ex) {
+    std::cout << "caught exception with message " << std::endl;
+    std::cout << ex.getMsg() << std::endl;
+    delete parser;
+    return false;
+  }
+  if (doc != 0) {  // successful
+    std::cout << "Document successfully parsed" << std::endl;
+
+    // look up generic attributes
+    DOMElement* docElt = doc->getDocumentElement();
+    DOMElement* attElt = Dom::findFirstChildByName(docElt,"generic");
+    
+    std::string runId, hwserial;
+    try {
+      runId  = Dom::getAttribute(attElt, "runId");
+    }
+    catch (DomException ex) {
+      std::cout << "DomException:  " << ex.getMsg() << std::endl;
+    }
+
+    // look up tower attributes
+    attElt = Dom::findFirstChildByName(docElt,"tower");
+    try {
+      hwserial  = Dom::getAttribute(attElt, "hwserial");
+    }
+    catch (DomException ex) {
+      std::cout << "DomException:  " << ex.getMsg() << std::endl;
+    }
+
+    int towerId=-1;
+    for( unsigned int tw=0; tw<m_towerVar.size(); tw++)
+      if( m_towerVar[tw].hwserial == hwserial ){
+	if( runid.size() > 8 ) m_towerVar[tw].runid = runId;
+	towerId = m_towerVar[tw].towerId;
+      }
+    std::cout << "tower: " << towerId << ", serial: " << hwserial 
+	      << ", runid: " << runId << ", timeStamp: " << m_timeStamp
+	      << std::endl;
+    if( towerId < 0 ) return false;
+
+    XMLCh* xmlchElt = XMLString::transcode("uniplane");
+    DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
+    int len = conList->getLength();   
+
+    for(int i=0; i<len; i++){ //loop each uniplane entry.
+      DOMNode* childNode = conList->item(i);
+      int tray = Dom::getIntAttribute(childNode, "tray");
+      std::string which = Dom::getAttribute(childNode, "which");
+      int howBad = Dom::getIntAttribute(childNode, "howBad");
+      //std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
+     
+      //get first child element
+      DOMElement* elder = Dom::getFirstChildElement(childNode);
+      DOMElement* younger;
+
+      layerId lid( tray, which, towerId );
+      if( lid.uniPlane >= g_nUniPlane || lid.uniPlane < 0 ){
+	std::cout << "Invalid uniPlane id: " << lid.uniPlane << std::endl;
+	m_log << "Invalid uniPlane id: " << lid.uniPlane << std::endl;
+	continue;
+      }
+      /*	
+      while( getBadStrips( elder, lid ) ){
+	younger = Dom::getSiblingElement( elder );
+	elder = younger;
+      }
+      */
+    }
+  }
+  else return false;
+  return true;
+}
 
 bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 {

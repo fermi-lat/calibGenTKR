@@ -250,7 +250,7 @@ class totCalib {
   bool readInputXmlFiles(const std::string, 
 			 const std::vector<std::string>& runIds );
   
-  bool readDeadStripsXmlFile(const char* dir, const char* runid);
+  bool readBadStripsXmlFile(const char* dir, const std::string runid );
   bool readTotConvXmlFile(const char* dir, const char* runid);
   bool readRcReports( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
