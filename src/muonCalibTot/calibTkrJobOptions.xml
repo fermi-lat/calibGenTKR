@@ -1,4 +1,24 @@
 <jobOptions default="test">
+  <jobOption name="Tower-0-1-4-5-tot" type="MIP calibration" >
+    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="135002355 135002358 135002491 135002494"/>
+    <data top="/nfs/farm/g/glast/u14/Integration/rootData"
+          raw="/nfs/farm/g/glast/u14/Integration/rawData/"
+	  digi="v4r060302p23/grRoot/digitization-v3r1p17"
+	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p17"
+	  runIds="135002498 135002499 135002500 135002501 135002502 135002503 135002504 135002505 135002506 135002507 135002508 135002509 135002510 135002511"/>
+
+  </jobOption>
+  <jobOption name="Tower-0-1-4-5-badStrips" type="badStrips" >
+    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds=""/>
+    <data top="/nfs/farm/g/glast/u14/Integration/rootData"
+          raw="/nfs/farm/g/glast/u14/Integration/rawData/"
+	  digi="v4r060302p23/grRoot/digitization-v3r1p17"
+	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p17"
+	  runIds="135002498 135002499 135002500 135002501 135002502 135002503 135002504 135002505 135002506 135002507 135002508 135002509 135002510 135002511"/>
+  </jobOption>
+
   <jobOption name="TkrFM3-tot" type="MIP calibration" >
     <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="398001034"/>
