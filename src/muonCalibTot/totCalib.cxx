@@ -223,7 +223,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.33 $";
+  std::string version = "$Revision: 1.34 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -2139,6 +2139,8 @@ void  totCalib::openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, 
 	 << "<!DOCTYPE chargeScale [" << std::endl;
 
   std::string line;
+  dtd.clear(); // reset status flag. This has to be done before moving pointer.
+  dtd.seekg( 0, std::ios::beg ); // go back to the BOF.
   while( dtd ){
     getline(dtd, line);
     xmlFile << line << std::endl;
@@ -2685,6 +2687,8 @@ void totCalib::openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ){
 	  << "<!DOCTYPE badStrips [" << std::endl;
   
   std::string line;
+  dtd.clear(); // reset status flag. This has to be done before moving pointer.
+  dtd.seekg( 0, std::ios::beg ); // go back to the BOF.
   while( dtd ){
     getline(dtd, line);
     xmlFile << line << std::endl;
