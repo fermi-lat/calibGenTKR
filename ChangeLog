@@ -1,4 +1,20 @@
 ------------------------------------------------------------
+User: htajima  Wed Jun  1 22:13:52 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx totCalib.cxx totCalib.h 
+Added Files:
+	calibTkrJobOptions.xml 
+Log Message:
+Introduce xml file format for input job option file. It allows multiple data set processed by different libraries.
+consolidate large root histograms into struct so that we can avoid resource limit.
+Avoid use of large number of root histograms since it slows down the analysis significantly. Use arrays to store information during data scan and fill histograms later.
+Set g_nTower=16 finally thanks to above mitigations.
+Improved tot fit log.
+
+    *
+------------------------------------------------------------
 User: htajima  Mon May 30 13:17:01 PDT 2005
 calibGenTKR/src/muonCalibTot
 
