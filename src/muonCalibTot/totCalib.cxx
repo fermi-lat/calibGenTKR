@@ -149,7 +149,7 @@ void towerVar::saveHists(){
     rhist->Write(0, TObject::kOverwrite);
     dhist->Write(0, TObject::kOverwrite);
   }
-  for( int unp=0; unp!=bsVar.size(); unp++){
+  for( UInt_t unp=0; unp!=bsVar.size(); unp++){
     layerId lid( unp );
     int layer = lid.layer;
     int view = lid.view;
@@ -209,24 +209,11 @@ void histCol::saveHists(){
 //
 // totCalib implementation 
 //
-totCalib::totCalib( const std::string analysisType = "MIP calibration" ): 
+totCalib::totCalib( const std::string jobXml, const std::string defJob ): 
   m_reconFile(0), m_reconTree(0), 
   m_reconEvent(0), m_digiFile(0), m_digiTree(0),
-  m_digiEvent(0), m_totFile(0)
+  m_digiEvent(0), m_rootFile(0)
 {
-  
-  std::string m_dtdDir = "$(CALIBUTILROOT)/xml/";
-  int status = facilities::Util::expandEnvVar(&m_dtdDir);
-  if(status==-1)
-    {
-      std::cout << m_dtdDir.c_str() << " not found!" << std::endl;
-    }
-  std::cout << "DTD directory: " << m_dtdDir << std::endl;
-
-  std::cout << analysisType << std::endl;
-  if( analysisType == "badStrips" ) m_badStrips = true;
-  else m_badStrips = false;
-
 
   // get version number from CVS string
   std::string tag = "$Name:  $";
@@ -236,7 +223,7 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.31 $";
+  std::string version = "$Revision: 1.32 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -249,6 +236,18 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   m_startTime="01/20 2005, 22:52 GMT";
   m_stopTime="01/20 2005, 22:52 GMT";
 
+  for(int tower = 0; tower != g_nTower; ++tower)
+    m_towerPtr[tower] = -1;
+  //
+  // parse job options xml file
+  //
+  if( !readJobOptions( jobXml, defJob ) ) m_nEvents = -1;
+
+}
+
+
+void totCalib::getTimeStamp(){
+
   // get time 
   time_t rawtime=0;
   time( &rawtime );
@@ -259,7 +258,223 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
   m_dateStamp = nts;
   strftime( nts, ntsmax, "%H%M%S", gmtime( &rawtime ) );
   m_timeStamp = nts;
+}
 
+
+bool totCalib::readJobOptions( const std::string jobXml, const std::string defJob ){
+  
+#ifdef OLD_RECON
+  using namespace xml;
+#else
+  using namespace xmlBase;
+#endif
+  //
+  // start parsing xml file.
+  //
+  std::cout << "Open xml file: " << jobXml << std::endl;
+  XmlParser* parser = new XmlParser(true);
+  DOMDocument* doc = 0;
+  try {
+    doc = parser->parse( jobXml.c_str() );
+  }
+  catch (ParseException ex) {
+    std::cout << "caught exception with message " << std::endl;
+    std::cout << ex.getMsg() << std::endl;
+    delete parser;
+    return false;
+  }
+  if (doc != 0) {  // successful
+    std::cout << "Document successfully parsed" << std::endl;
+    
+    // top level element
+    DOMElement* topElt = doc->getDocumentElement();
+    //
+    // get name of jobOption
+    //
+    std::string jobOption = defJob;
+    if( jobOption == "None" ){
+      try {
+	jobOption = Dom::getAttribute(topElt, "default");
+      }
+      catch (DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	return false;
+      }
+    }
+    
+    //
+    // search for jobOption
+    //
+    std::vector<DOMElement*> jobList;
+    Dom::getChildrenByTagName( topElt, "jobOption", jobList );
+    int len = jobList.size();
+    if( len < 1 ){
+      std::cout << "ERROR: no jobOption tag found in the jobOption xml file." << std::endl;
+      return false;
+    }
+    
+    bool jobFound = false;
+    for(int i=0; i<len; i++){ //each jobOption loop
+      DOMElement* jobElt = jobList[i];
+      std::string name, type;
+      try{
+	name = Dom::getAttribute(jobElt, "name");
+	type = Dom::getAttribute(jobElt, "type");
+      }
+      catch (DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	return false;
+      }
+      
+      if( name != jobOption ) continue;
+      
+      //
+      // jobOption found
+      //
+      jobFound = true;
+      std::cout << "JobOption: " << jobOption << std::endl;
+
+      // analysis type
+      if( type == "badStrips" ){
+	m_badStrips = true;
+	std::cout << type << ", bad strip analysis" << std::endl;
+      }
+      else{
+	m_badStrips = false;
+	std::cout << type << ", tot analysis" << std::endl;
+      }
+      // initialize root histograms
+      initHists();
+      
+      // output
+      std::string outDir;
+      DOMNode* outElt = Dom::findFirstChildByName(jobElt,"output");
+      try{
+	outDir = Dom::getAttribute(outElt, "dir");
+	m_dtdDir = Dom::getAttribute(outElt, "dtdDir");
+      }
+      catch (DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	return false;
+      }
+      if( m_dtdDir.size() < 5 ) // dtd directory is not specified. use default.
+	m_dtdDir = "$(CALIBUTILROOT)/xml/";
+      int status = facilities::Util::expandEnvVar(&m_dtdDir);
+      if(status==-1){
+	std::cout << m_dtdDir << " not found!" << std::endl;
+	return false;
+      }
+      std::cout << "DTD directory: " << m_dtdDir << std::endl;
+      
+      getTimeStamp();
+      if( !setOutputFiles( outDir.c_str() ) ) return false; 
+      
+      //
+      // loop data tag
+      // 
+      TChain* digiChain = new TChain("Digi");
+      TChain* reconChain = new TChain("Recon");
+      std::vector<DOMElement*> dataList;
+      Dom::getChildrenByTagName( jobElt, "data", dataList );
+      int numData = (int) dataList.size();
+      if( numData == 0 ){
+	std::cout << "no data element found." << std::endl;
+	m_log << "no data element found." << std::endl;
+	return false;
+      }
+      std::string top, raw, digi, recon, runids;
+      std::vector<std::string> runIds;
+      for(int idata=0; idata<numData; idata++){ //each xml loop
+	DOMNode* dataElt = dataList[ idata ];
+	try{
+	  top = Dom::getAttribute(dataElt, "top");
+	  raw = Dom::getAttribute(dataElt, "raw");
+	  digi = Dom::getAttribute(dataElt, "digi");
+	  recon = Dom::getAttribute(dataElt, "recon");
+	  runids = Dom::getAttribute(dataElt, "runIds");
+	}
+	catch (DomException ex) {
+	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	  return false;
+	}
+	runIds.clear();
+	parseRunIds( runIds, runids );
+	if( !readRcReports( raw.c_str(), runIds ) ) return false;
+	if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
+			 runIds, digiChain, reconChain ) ) return false;
+      }  
+      m_nEvents =  setInputRootFiles( digiChain, reconChain );
+      if( m_nEvents < 0 ) return false;
+      
+      //
+      // loop xml tag
+      //
+      std::vector<DOMElement*> xmlList;
+      Dom::getChildrenByTagName( jobElt, "xml", xmlList );
+      int numXml = xmlList.size();
+      if( numXml == 0 ){
+	std::cout << "no xml element found." << std::endl;
+	m_log << "no xml element found." << std::endl;
+	return false;
+      }
+      std::string atype, dir;
+      for(int ixml=0; ixml<numXml; ixml++){ //each xml loop
+	DOMNode* xmlElt = xmlList[ ixml ];
+	try{
+	  atype = Dom::getAttribute(xmlElt, "type");
+	  dir = Dom::getAttribute(xmlElt, "dir");
+	  runids = Dom::getAttribute(xmlElt, "runIds");
+	}
+	catch (DomException ex) {
+	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	  return false;
+	}
+	if( atype != type ){
+	  std::cout << " igonore inconsistent xml type: " << atype << "<>" << type << std::endl;
+	  m_log << "ignore inconsistent xml type: " << atype << "<>" << type << std::endl;
+	  continue;
+	}
+	runIds.clear();
+	parseRunIds( runIds, runids );
+	if( !readInputXmlFiles( dir, runIds ) ) return false;
+      }      
+    }
+    if( !jobFound ){
+      std::cout << "Invalid jobOption specified: " << jobOption << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+
+void totCalib::parseRunIds( std::vector<std::string>& runIds, 
+		    const std::string& line) 
+{
+  std::string::size_type pos = 0;
+  std::string run;
+  int runid;
+
+  for( ; ; ) {
+
+    string::size_type i = line.find(' ', pos);
+    if(i != string::npos) run = line.substr(pos, i-pos);
+    else run = line.substr(pos); // end of line
+    runid = atoi( run.c_str() );
+    if( runid < 100000000 || runid > 999999999 ){
+      std::cout << "Invalid run#: " << run << std::endl;
+      m_log << "Invalid run#: " << run << std::endl;
+      exit( EXIT_FAILURE );
+    }
+    runIds.push_back( run );
+    
+    if(i == string::npos) break;
+    pos = i + 1;
+  }
+}
+
+
+void totCalib::initHists(){
   m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
   m_maxHitDist = new TH1F("maxHit", "maxHit", g_nUniPlane, 0, g_nUniPlane);
   m_numClsDist = new TH1F("numCls", "# of cluster per layer", 10, 0, 10 );
@@ -297,9 +512,8 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
     m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
   }
 
+#ifdef FULLHIST
   for(int tower = 0; tower != g_nTower; ++tower) {
-    m_towerPtr[tower] = -1;
-
     for( int unp = 0; unp != g_nUniPlane; ++unp ){
       layerId lid( unp );
       int layer = lid.layer;
@@ -307,7 +521,6 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
       char vw = 'X';
       if( view != 0 ) vw = 'Y';
       if( !m_badStrips ){
-#ifdef FULLHIST
 	char name[] = "var00000";
 	sprintf(name,"var%d%d%d", tower, layer, view);
 	m_totStrip[tower][layer][view] = new TGraphErrors(g_nDiv);
@@ -317,29 +530,28 @@ totCalib::totCalib( const std::string analysisType = "MIP calibration" ):
 	sprintf(temp,"varCorr%d%d%d", tower, layer, view);
 	m_chargeStrip[tower][layer][view] = new TGraphErrors(g_nDiv);
 	m_chargeStrip[tower][layer][view]->SetName(temp);
-#endif
 	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-#ifdef FULLHIST
 	  char name1[] = "totT00X17fe0004";
 	  sprintf(name1,"totT%d%c%dfe%d", tower, vw, layer, iDiv);
 	  m_totHist[tower][layer][view][iDiv] = new TH1F(name1, name1, 100, 0, 200);
-#endif	    
-	  char name2[] = "chargeT00X00fe0000";
-	  sprintf(name2,"chargeT%d%c%dfe%d", tower, vw, layer, iDiv);
-	  m_chargeHist[tower][unp][iDiv] = new TH1F(name2, name2, nTotHistBin, 0, maxTot);
+	  //char name2[] = "chargeT00X00fe0000";
+	  //sprintf(name2,"chargeT%d%c%dfe%d", tower, vw, layer, iDiv);
+	  //m_chargeHist[tower][unp][iDiv] = new TH1F(name2, name2, nTotHistBin, 0, maxTot);
 	}
       }
     }
   }
+#endif	    
 }
+
 
 totCalib::~totCalib() 
 {
-  if(m_totFile == 0) return;
+  if(m_rootFile == 0) return;
 
   std::cout << "save histgrams" << std::endl;
 
-  m_totFile->cd();
+  m_rootFile->cd();
 
   m_nTrackDist->Write(0, TObject::kOverwrite);
   m_maxHitDist->Write(0, TObject::kOverwrite);
@@ -368,6 +580,8 @@ totCalib::~totCalib()
     m_fracBatTot->Write(0, TObject::kOverwrite);
     m_fracErrDist->Write(0, TObject::kOverwrite);
     m_chisqDist->Write(0, TObject::kOverwrite);
+    for( UInt_t i=0; i!=m_chargeHist.size(); i++ )
+      m_chargeHist[i]->Write(0, TObject::kOverwrite);
   }
 
   for( UInt_t tw = 0; tw != m_towerVar.size(); ++tw)
@@ -384,19 +598,20 @@ totCalib::~totCalib()
 #ifdef FULLHIST
 	  m_totHist[tower][layer][view][iDiv]->Write(0, TObject::kOverwrite);
 #endif
-	  m_chargeHist[tower][unp][iDiv]->Write(0, TObject::kOverwrite);
+	  //m_chargeHist[tower][unp][iDiv]->Write(0, TObject::kOverwrite);
 	}
       }
       
     }
   }
 
-  m_totFile->Close();
+  m_rootFile->Close();
 }
 
 bool totCalib::setOutputFiles( const char* outputDir )
 {
   m_outputDir = outputDir;
+
   std::string testId = "TE603";
   if( m_badStrips ) testId = "TE403";
 
@@ -419,8 +634,8 @@ bool totCalib::setOutputFiles( const char* outputDir )
   sprintf( fname, "/%s_%s-%s.root", testId.c_str(), 
 	   m_dateStamp.c_str(), m_timeStamp.c_str() );
   filename += fname;
-  m_totFile = new TFile( filename.c_str(), "RECREATE" );
-  if( m_totFile ){
+  m_rootFile = new TFile( filename.c_str(), "RECREATE" );
+  if( m_rootFile ){
     std::cout << "Open output root file: " << filename << std::endl;
     m_log << "Output root file: " << filename << std::endl;
   }
@@ -439,7 +654,7 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
     m_reconFile = 0;
     std::cout << "recon file " << recon << " does not exist! abort!" <<
       std::endl;
-    exit(1);
+    exit( EXIT_FAILURE );
   }
 
   if(m_reconFile) {
@@ -453,7 +668,7 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
     m_digiFile = 0;
     std::cout << "digi file " << digi << " does not exist! abort!" <<
       std::endl;
-    exit(1);
+    exit( EXIT_FAILURE );
   }
 
   if(m_digiFile) {
@@ -476,7 +691,7 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
 
   if(nDigi != nRecon) {
     std::cout << "No. of events in the digi file is not equal to no. of events in the recon file! abort!" << std::endl;
-    exit(1);
+    exit( EXIT_FAILURE );
   }
 
   return nEvents;
@@ -485,13 +700,25 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
 
 int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
 				 const char* reconPrefix, 
-				 const std::vector<std::string>& runIds )
+				 const std::vector<std::string> &runIds )
 {
-
-  std::string digiFile, reconFile;
-  char fname[] = "135000933/v4r060302p8/calib-v1r0/grRoot/recon-v3r1p2_135000933_recon_RECON_100.root";
   TChain* digiChain = new TChain("Digi");
   TChain* reconChain = new TChain("Recon");
+  
+  if( ! addToChain( rootDir, digiPrefix, reconPrefix, 
+		    runIds, digiChain, reconChain ) ) return -1;
+  
+  return setInputRootFiles( digiChain, reconChain );
+  
+}
+
+bool totCalib::addToChain( const char* rootDir, const char* digiPrefix,
+			   const char* reconPrefix, 
+			   const std::vector<std::string> &runIds,
+			   TChain* digiChain, TChain* reconChain ){
+  
+  std::string digiFile, reconFile;
+  char fname[] = "135000933/v4r060302p8/calib-v1r0/grRoot/recon-v3r1p2_135000933_recon_RECON_100.root";
 
   for(std::vector<std::string>::const_iterator run = runIds.begin();
       run != runIds.end(); ++run) {
@@ -507,7 +734,7 @@ int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
     if( ! checkFile( digiFile ) ){
       std::cout << "digi file does not exist: " << digiFile << std::endl;
       m_log << "digi file does not exist: " << digiFile << std::endl;
-      return -1;
+      return false;
     }
     std::cout << "open digi file: " << digiFile << endl;
     m_log << "digi file: " << digiFile << endl;
@@ -527,7 +754,7 @@ int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
 	if( split == 0 ) {
 	  std::cout << "recon file does not exist: " << reconFile << std::endl;
 	  m_log << "recon file does not exist: " << reconFile << std::endl;
-	  return -1;
+	  return false;
 	}
 	else break;
       }
@@ -538,9 +765,9 @@ int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
     }
 
   }
-  return setInputRootFiles( digiChain, reconChain );
-
+  return true;
 }
+
 
 bool totCalib::checkFile( const std::string fname ){
 
@@ -576,7 +803,7 @@ int totCalib::setInputRootFiles( TChain* digi, TChain* recon )
 
   if(nDigi != nRecon) {
     std::cout << "No. of events in the digi file is not equal to no. of events in the recon file! abort!" << std::endl;
-    exit(1);
+    exit( EXIT_FAILURE );
   }
 
   return nEvents;
@@ -591,6 +818,12 @@ bool totCalib::readRcReports( const char* reportDir,
     std::string reportFile = reportDir;
     reportFile += "/" + *run;
     reportFile += "/rcReport.out";
+    if( ! checkFile( reportFile ) ){
+      std::cout << "Invalid rcReport file path: " << reportFile << std::endl;
+      m_log << "Invalid rcReport file path: " << reportFile << std::endl;
+      return false;
+    }
+
     std::cout << "open rcReport file: " << reportFile << endl;
     m_log << "rcReport file: " << reportFile << endl;
     if( !parseRcReport( reportFile.c_str() ) ) return false;
@@ -675,7 +908,7 @@ bool totCalib::parseRcReport( const char* reportFile )
 	  //towerVar dummy( tower );
 	  m_towerVar.push_back( towerVar( tower, m_badStrips ) );
 	  m_towerVar.back().hwserial = tower_serial;
-	  std::cout << towerId << " " << tower_serial << std::endl;
+	  std::cout << "Tower " << towerId << ": " << tower_serial << std::endl;
 	}
 	else if( m_towerVar[ m_towerPtr[tower] ].hwserial != tower_serial ){
 	  std::cout << "Inconsistent tower serial IDs for tower " << tower
@@ -740,11 +973,15 @@ void totCalib::getDate( const char* str, std::string& sdate )
 
 }
 
-void totCalib::calibChargeScale( int nEvents )
+void totCalib::analyze( int nEvents )
 {
-  //nEvents = 50000;
 
-  analyzeEvent(nEvents);
+  if( m_nEvents <= 0 ) return; // something went wrong.
+  if( nEvents > 0 ) m_nEvents = nEvents;
+  std::cout << "# of Events to analyze: " << m_nEvents << std::endl;
+  m_log << "# of Events to analyze: " << m_nEvents << std::endl;
+
+  analyzeEvents();
 
   if( m_badStrips ){
     findBadStrips();
@@ -756,27 +993,27 @@ void totCalib::calibChargeScale( int nEvents )
   }
 }
 
-void totCalib::analyzeEvent(int nEvents) 
+void totCalib::analyzeEvents() 
 {
-  int mEvent = int( nEvents * 0.01 );
+  int mEvent = int( m_nEvents * 0.01 );
   if( mEvent < 100 ) mEvent = 100;
   time_t startTime, currentTime;
   time( &startTime );
 
-  for(int iEvent = 0; iEvent != nEvents; ++iEvent) {    
+  for(int iEvent = 0; iEvent != m_nEvents; ++iEvent) {    
     if( iEvent >= mEvent ){
       time( &currentTime );
       int elapsedTime = currentTime - startTime;
       if( elapsedTime <= 0 ) elapsedTime = 1;
-      int rEvents = nEvents - iEvent;
-      std::cout << "# of events: " << iEvent << " (" << iEvent*101/nEvents 
+      int rEvents = m_nEvents - iEvent;
+      std::cout << "# of events: " << iEvent << " (" << iEvent*101/m_nEvents 
 		<< "%) in " << elapsedTime << " s, "
 		<< iEvent/elapsedTime << " events/s, "
 		<< rEvents << " events, "
 		<< int(1.0*rEvents*elapsedTime/iEvent)
 		<< " s to go" << std::endl;
-      if( mEvent > nEvents*0.095 ) mEvent += int( nEvents * 0.1 );
-      else mEvent += int( nEvents * 0.01 );
+      if( mEvent > m_nEvents*0.095 ) mEvent += int( m_nEvents * 0.1 );
+      else mEvent += int( m_nEvents * 0.01 );
     }
     if( m_reconEvent ) m_reconEvent->Clear();
     if( m_digiEvent ) m_digiEvent->Clear();
@@ -793,20 +1030,20 @@ void totCalib::analyzeEvent(int nEvents)
     getDigiClusters();
     selectGoodClusters();
 
-    if( m_badStrips ) fillOccupancy( iEvent*g_nTime/nEvents );
+    if( m_badStrips ) fillOccupancy( iEvent*g_nTime/m_nEvents );
     else fillTot();
   }
   std::cout << "Data scan finished." << std::endl;
   time( &currentTime );
   //protection against crash when testing with small number of events
   if(startTime==currentTime) return;
-  std::cout << "total # of events: " << nEvents 
+  std::cout << "total # of events: " << m_nEvents 
 		<< " in " << (currentTime-startTime) << " s, "
-		<< nEvents/(currentTime-startTime) << " events/s"
+		<< m_nEvents/(currentTime-startTime) << " events/s"
 		<< std::endl;
-  m_log << "total # of events: " << nEvents 
+  m_log << "total # of events: " << m_nEvents 
 	<< " in " << (currentTime-startTime) << " s, "
-	<< nEvents/(currentTime-startTime) << " events/s"
+	<< m_nEvents/(currentTime-startTime) << " events/s"
 	<< std::endl;
 
 }
@@ -862,6 +1099,9 @@ layerId totCalib::getLayerId( const TkrCluster* cluster )
 
 void totCalib::getDigiClusters()
 {
+#ifdef PRINT_DEBUG
+  std::cout << "getDigiClusters start" << std::endl;
+#endif
   //
   // clear cluster information.
   for( UInt_t tw=0; tw!=m_towerVar.size(); tw++)
@@ -919,6 +1159,9 @@ void totCalib::getDigiClusters()
       }
     }
   }
+#ifdef PRINT_DEBUG
+  std::cout << "getDigiClusters end" << std::endl;
+#endif
 }
 
 void totCalib::getReconClusters()
@@ -929,6 +1172,12 @@ void totCalib::getReconClusters()
   
   // initialize recon cluster info
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++){
+    int twr = m_towerPtr[ m_towerVar[tw].towerId ];
+    if( twr != int(tw) ) {
+      std::cout << "Invalid tower id: " << twr << " != " << tw << std::endl;
+      m_log << "Invalid tower id: " << twr << " != " << tw << std::endl;
+      exit( EXIT_FAILURE );
+    }
     for( int unp=0; unp<g_nUniPlane; unp++)
       m_towerVar[tw].reconClusters[unp] = 0;
   }
@@ -979,10 +1228,17 @@ void totCalib::getReconClusters()
     }
     m_lrec->Fill( lid.uniPlane );
   }
+#ifdef PRINT_DEBUG
+  std::cout << "getReconClusters end" << std::endl;
+#endif
 }
 
 void totCalib::selectGoodClusters(){
   
+#ifdef PRINT_DEBUG
+  std::cout << "selectGoodClusters start" << std::endl;
+#endif
+
   bool display = false;
   m_clusters.clear();
   //
@@ -1201,6 +1457,7 @@ void totCalib::fillTot()
     layerId lid = getLayerId( cluster );
     int tower = lid.tower;
     int unp = lid.uniPlane;
+    int tw = m_towerPtr[ tower ];
 
     // require only a single strip
     if(cluster->getSize() != 1) continue;
@@ -1211,12 +1468,15 @@ void totCalib::fillTot()
     if( tot == 0 ) continue;
 	
     float charge = calcCharge( lid, iStrip, tot);
-    static int nStripPerGroup = g_nStrip / g_nDiv;
-	
+    int iDiv = iStrip * g_nDiv / g_nStrip;
+    int ibin = int( charge * ( -m_dir.z() ) * nTotHistBin / maxTot );
+
+    if( ibin < nTotHistBin && ibin >=0 )
+      m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin]++;
+    //m_chargeHist[tower][unp][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
 #ifdef FULLHIST
     m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
 #endif
-    m_chargeHist[tower][unp][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
   }
   
 #ifdef PRINT_DEBUG
@@ -1271,6 +1531,7 @@ void totCalib::fitTot()
   TF1 *ffit = new TF1( "langau", langaufun, 0, 30, 4 );
   ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
   std::cout << "Start fit." << std::endl;
+  m_chargeHist.clear();
   
   char cvw[] = "XY";
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
@@ -1290,7 +1551,7 @@ void totCalib::fitTot()
 	  
 #ifdef FULLHIST
 	// fit uncorrected tot for each strip
-	area = m_totHist[tower][layer][view][iDiv]->GetEntries();
+	area = m_totHist[tower][layer][view][iDiv]->Integral();
 	ave = m_totHist[tower][layer][view][iDiv]->GetMean();
 	rms = m_totHist[tower][layer][view][iDiv]->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
@@ -1335,13 +1596,22 @@ void totCalib::fitTot()
 	  << errWidth << endl; */
 #endif	  
 	// fit charge for each strip
-	area = m_chargeHist[tower][unp][iDiv]->GetEntries();
-	ave = m_chargeHist[tower][unp][iDiv]->GetMean();
-	rms = m_chargeHist[tower][unp][iDiv]->GetRMS();
+	char name[] = "chargeT00X00fe0000";
+	sprintf(name,"chargeT%d%c%dfe%d", tower, cvw[view], layer, iDiv);
+	TH1F* chargeHist = new TH1F(name, name, nTotHistBin, 0, maxTot);
+	float binWidth = maxTot / nTotHistBin;
+	for( int ibin=0; ibin!=nTotHistBin; ibin++)
+	  chargeHist->Fill( (ibin+0.5)*binWidth, 
+			    m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin] );
+	m_chargeHist.push_back( chargeHist );
+
+	area = chargeHist->Integral();
+	ave = chargeHist->GetMean();
+	rms = chargeHist->GetRMS();
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  m_log << "Layer: " << cvw[view] << layer
-		<< ", FE: " << iDiv << ", Entries: " << area
+	  m_log << "T" << tower << " " << cvw[view] << layer
+		<< " " << iDiv << ", Entries: " << area
 		<< ", Mean: " << ave << ", RMS: " << rms 
 		<< " skipped." << std::endl;
 	  continue;
@@ -1351,20 +1621,20 @@ void totCalib::fitTot()
 	// check the presence of bad TOT values
 	// try not to include these TOT in the fit.
 	//
-	int bin = int(ave*0.5*nTotHistBin/maxTot) + 1;
-	float fracBadTot = m_chargeHist[tower][unp][iDiv]->Integral(1,bin)
-	  / m_chargeHist[tower][unp][iDiv]->Integral();
+	int bin = int(ave*0.5/binWidth) + 1;
+	float fracBadTot = chargeHist->Integral(1,bin)
+	  / chargeHist->Integral();
 	m_fracBatTot->Fill( fracBadTot );
 
 	float lowLim = ave - 1.5 * rms;
 	if( fracBadTot > 0.05 && lowLim < ave*0.5 ){
 	  lowLim = ave*0.5;
 	  std::cout << "WARNING, large bad TOT fraction: " 
-		    << fracBadTot << ", " << cvw[view] << layer 
-		    << " FE=" << iDiv << std::endl;
+		    << fracBadTot << ", T" << tower << " " << cvw[view] 
+		    << layer << " " << iDiv << std::endl;
 	  m_log << "WARNING, large bad TOT fraction: " 
-		<< fracBadTot << ", " << cvw[view] << layer 
-		<< " FE=" << iDiv << std::endl;
+		<< fracBadTot << ", T" << tower << " " << cvw[view] << layer 
+		<< " " << iDiv << std::endl;
 	}
 
 	ffit->SetParLimits( 0, 0.0, rms );
@@ -1373,7 +1643,7 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 3, 0.0, rms );
 	ffit->SetRange( lowLim, ave+3*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	m_chargeHist[tower][unp][iDiv]->Fit( "langau", "RBQ" );
+	chargeHist->Fit( "langau", "RBQ" );
 	
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	par = ffit->GetParameters();
@@ -1383,7 +1653,7 @@ void totCalib::fitTot()
 	
 	peak = float( *(par+1) );
 	errPeak = float( *(error+1) );
-	if( peak > 0 ) m_fracErrDist->Fill( errPeak/peak );
+	if( peak > 0 ) m_fracErrDist->Fill( errPeak*sqrt(area/1000)/peak );
 	
 	width = float( *(par+3) );
 	errWidth = float( *(error+3) );
@@ -1399,35 +1669,37 @@ void totCalib::fitTot()
 	  float chargeScale = 5.0 / peak;
 	  if( fabs(chargeScale-1) > 0.3 ){
 	    std::cout << "WARNING, Abnormal charge scale: " 
-		      << chargeScale << ", " << cvw[view] << layer 
-		      << " FE=" << iDiv << std::endl;
+		      << chargeScale << ", T" << tower << " " << cvw[view] 
+		      << layer << " " << iDiv << std::endl;
 	    m_log << "WARNING, Abnormal charge scale: "
-		  << chargeScale << ", " << cvw[view] << layer 
-		  << " FE=" << iDiv << std::endl;
+		  << chargeScale << ", T" << tower << " " << cvw[view] 
+		  << layer << " " << iDiv << std::endl;
 	    if( chargeScale > 1.3 ) chargeScale = 1.3;
 	    if( chargeScale < 0.7 ) chargeScale = 0.7;
 	  }
 	  if( chisq/ndf > maxChisq ){ // large chisq/ndf
 	    std::cout << "WARNING, large chisq/ndf: "
-		      << chisq/ndf << ", " << cvw[view] << layer 
-		      << " FE=" << iDiv << std::endl;
+		      << chisq/ndf << ", T" << tower << " " << cvw[view] 
+		      << layer << " " << iDiv << std::endl;
 	    m_log << "WARNING, large chisq/ndf: "
-		  << chisq/ndf << ", " << cvw[view] << layer 
-		  << " FE=" << iDiv << std::endl;
+		  << chisq/ndf << ", T" << tower << " " << cvw[view] << layer 
+		  << " " << iDiv << std::endl;
 	  }
-	  if( errPeak/peak > maxFracErr ){ // large peak fit error
+	  // large peak fit error
+	  if( errPeak*sqrt(area/1000)/peak > maxFracErr ){ 
 	    std::cout << "WARNING, large peak fit error: "
-		      << errPeak/peak << ", " << cvw[view] << layer 
-		      << " FE=" << iDiv << std::endl;
+		      << errPeak*sqrt(area/1000)/peak << ", T" << tower 
+		      << " " << cvw[view] << layer << " " << iDiv << std::endl;
 	    m_log << "WARNING, large peak fit error: "
-		  << errPeak/peak << ", " << cvw[view] << layer 
-		  << " FE=" << iDiv << std::endl;
+		  << errPeak*sqrt(area/1000)/peak << ", T" << tower << " " 
+		  << cvw[view] << layer << " " << iDiv << std::endl;
 	  }
 	  m_towerVar[tw].tcVar[unp].chargeScale[iDiv] = chargeScale;
 	}
 	
-	m_log << "Charge " << cvw[view] << layer << " " << iDiv << ' ';
-	m_log.width(3);
+	m_log << "Fit T" << tower << " " << cvw[view] << layer << " " 
+	      << iDiv << ' ';
+	m_log.precision(3);
 	m_log << area << ' ' << ave << ' ' << rms << ", " << *(par+0) << ' '
 	      << *(par+1) << ' ' << *(par+2) << ' ' << *(par+3) << ", "
 	      << errPeak/peak << " " << int(chisq+0.5) << "/" << ndf
@@ -1439,15 +1711,36 @@ void totCalib::fitTot()
 }
 
 
+bool totCalib::readInputXmlFiles(const std::string dir, 
+				 const std::vector<std::string>& runIds ){
+
+  for(std::vector<std::string>::const_iterator run = runIds.begin();
+      run != runIds.end(); ++run) {
+    if( m_badStrips ){
+      std::cout << "dead strips xml file: " << *run << std::endl;
+      return true;
+    }
+    else if( !readTotConvXmlFile( dir.c_str(), (*run).c_str() ) )
+      return false;
+  }
+  return true;
+}
+
+
 bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 {
-  if( m_badStrips ) return true;
   string filename;
   filename = dir;
   char fname[] = "/398000364/TkrTotGain_398000364.xml";
   sprintf(fname,"/%s/TkrTotGain_%s.xml", runid, runid);
 
   filename += fname;
+  if( ! checkFile( filename ) ){
+    std::cout << "Invalid TOT xml file path: " << filename << std::endl;
+    m_log << "Invalid TOT xml file path: " << filename << std::endl;
+    return false;
+  }
+
   std::cout << "Open xml file: " << filename << std::endl;
   m_log << "TOT xml file: " << filename << std::endl;
   

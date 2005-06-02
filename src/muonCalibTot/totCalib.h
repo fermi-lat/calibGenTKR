@@ -78,7 +78,7 @@ static const int g_nUniPlane = g_nLayer*g_nView;
 
 static const int g_nFecd = 24;
 static const int g_nStrip = 1536;
-static const int g_nTower = 8;
+static const int g_nTower = 16;
 
 // group of strips so that each group has enough statistics
 static const int g_nDiv = 24; //used to be 64;takuya
@@ -170,6 +170,7 @@ struct totCalibVar{
   float totGain[g_nStrip];
   float totOffset[g_nStrip];
   float chargeScale[g_nDiv];
+  int chargeDist[g_nDiv][nTotHistBin];
 };
 
 //
@@ -221,20 +222,35 @@ class poissonFunc{
 class totCalib {
  public:
   
-  totCalib( const std::string );
+  totCalib( const std::string, const std::string );
   ~totCalib();
   
+  void getTimeStamp();
+  void initHists();
+  
+  bool readJobOptions( const std::string, const std::string );
+  void parseRunIds(std::vector<std::string>& runIds, 
+		   const std::string& line);
+
   int setInputRootFiles( const char* digi, const char* recon );
   int setInputRootFiles( const char* rootDir, const char* digiPrefix,
 			 const char* reconPrefix,  
 			 const std::vector<std::string>& runIds );
   int setInputRootFiles( TChain* digi, TChain* recon );
+  bool addToChain( const char* rootDir, const char* digiPrefix,
+		   const char* reconPrefix, 
+		   const std::vector<std::string> &runIds,
+		   TChain* digiChain, TChain* reconChain );
   
   bool setOutputFiles( const char* outputDir );
   void setDtdDir( const std::string &dtdDir ){ m_dtdDir = dtdDir;
   std::cout << "DTD directory: " << m_dtdDir << std::endl;
   };
   
+  bool readInputXmlFiles(const std::string, 
+			 const std::vector<std::string>& runIds );
+  
+  bool readDeadStripsXmlFile(const char* dir, const char* runid);
   bool readTotConvXmlFile(const char* dir, const char* runid);
   bool readRcReports( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
@@ -242,11 +258,11 @@ class totCalib {
   bool parseRcReport( const char* reportFile );
   void totCalib::getDate( const char* str, std::string& date );
   
-  void calibChargeScale( int );
+  void analyze( int );
   
  private:
   
-  void analyzeEvent(int nEvent);
+  void analyzeEvents();
   
   bool passCut();
   
@@ -283,11 +299,12 @@ class totCalib {
   
   TH1F* m_totHist[g_nTower][g_nLayer][g_nView][g_nDiv];
 #endif
-  TH1F* m_chargeHist[g_nTower][g_nUniPlane][g_nDiv];
+  //TH1F* m_chargeHist[g_nTower][g_nUniPlane][g_nDiv];
+  std::vector<TH1F*> m_chargeHist;
   TH1F *m_fracErrDist, *m_chisqDist, *m_fracBatTot;
   //float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
 
-  TNtuple* m_tuple;
+  int m_nEvents;
   
   TFile* m_reconFile;
   TTree* m_reconTree;
@@ -297,7 +314,7 @@ class totCalib {
   TTree* m_digiTree;
   DigiEvent* m_digiEvent;
   
-  TFile* m_totFile; 
+  TFile* m_rootFile; 
  
   // reconstructed track and direction
 #ifdef OLD_RECON
