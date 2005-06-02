@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Thu Jun  2 10:47:56 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+bug fix in rcReport praser where pointer to tower is incorrectly set.
+A first version of bad strip xml parser is added, but not used.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r5, operation: add
 Package: calibGenTKR
