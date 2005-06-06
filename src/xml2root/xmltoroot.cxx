@@ -1,5 +1,5 @@
 /**
-  $Header: /nfs/slac/g/glast/ground/cvs/users/jrb/xmlToRoot/src/xmltoroot.cxx,v 1.2 2005/03/28 20:01:02 jrb Exp $
+  $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/xmltoroot.cxx,v 1.1 2005/03/31 23:13:51 jrb Exp $
  stand-alone reads in a Tracker XML calibration file (e.g. ToT signal)
  and writes out equivalent ROOT file. 
 
@@ -11,6 +11,7 @@
 #include <xercesc/parsers/SAXParser.hpp>
 #include <xercesc/util/OutOfMemoryException.hpp>
 #include "xmlBase/XmlErrorHandler.h"
+#include "facilities/Util.h"
 
 //// #include "SAXPrint.hpp"
 // instead will need something like..
@@ -33,7 +34,6 @@ static SAXParser::ValSchemes    valScheme       = SAXParser::Val_Auto;
 /// Print out usage information
 static void usage()
 {
-  //  XERCES_STD_QUALIFIER cout 
   std::cout 
     << "\nUsage:\n"
     "    xmltoroot <XML input file>   [<ROOT output file>] \n\n"
@@ -42,7 +42,12 @@ static void usage()
     "ROOT output filename is optional. If omitted, defaults to\n"
     "input filename with extension = .root\n"
     <<  std::endl;
-    //    <<  XERCES_STD_QUALIFIER endl;
+
+  std::cout 
+    << "\nIf the output file already exists, xmltoroot \n"
+    "will first make a backup copy, then will append \n"
+    "or replace tower information in the output file.\n"
+    <<  std::endl;
 }
 
 
@@ -89,6 +94,10 @@ int main(int argC, char* argV[])
   xmlFile = argV[1];
   int errorCount = 0;
 
+  std::string xmlFileStr = std::string(xmlFile);
+  facilities::Util::expandEnvVarOS(&xmlFileStr); //look for OS-specific delims
+  facilities::Util::expandEnvVar(&xmlFileStr); // look for $( ... )
+
   if (argC > 2) {
     rootFile = std::string(argV[2]);
   }
@@ -97,7 +106,7 @@ int main(int argC, char* argV[])
     rootFile = std::string(xmlFile);
     unsigned xnameSize = rootFile.size();
     std::string ftype;
-    //    ftype.assign(rootFile, 0, xnameSize-4);
+
     ftype.assign(rootFile, xnameSize-4, 4);
     if (ftype != std::string(".xml")) {  // error
       std::cout << "Specify 2nd arg. for output file or use .xml extension\n";
@@ -105,11 +114,11 @@ int main(int argC, char* argV[])
       return 3;
     }
     else {
-      //      rootFile = rootFile.subString(0, xnameSize - 3) + "root";
       rootFile.resize(xnameSize - 3);
       rootFile += "root";
     }
 
+    facilities::Util::expandEnvVarOS(&rootFile);
   }
   //
   //  Create a SAX parser object. For the time being, maybe forever,
@@ -123,10 +132,7 @@ int main(int argC, char* argV[])
   parser->setDoSchema(doSchema);
   parser->setValidationSchemaFullChecking(schemaFullChecking);
 
-
   //   To be dealt with:
-
-
   //
   //  xmlBase::XmlErrorHandler object should do for error handler
   // Make a specialized handler for content and install.
@@ -141,7 +147,7 @@ int main(int argC, char* argV[])
     xmlBase::XmlErrorHandler  errorHandler;
     parser->setDocumentHandler(&contentHandler);
     parser->setErrorHandler(&errorHandler);
-    parser->parse(xmlFile);
+    parser->parse(xmlFileStr.c_str());
     errorCount = parser->getErrorCount();
   }
   catch (const OutOfMemoryException&)

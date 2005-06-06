@@ -1,4 +1,4 @@
-//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.1 2005/03/31 23:13:51 jrb Exp $
+//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.2 2005/04/14 19:00:16 jrb Exp $
 /**
    @file XmltorootHandler.cxx
 
@@ -6,10 +6,13 @@
 */
 
 #include <iostream>
+#include <cstdlib>                // for system(...)
 #include "TROOT.h"
 #include "TTree.h"
 #include "TFile.h"
 #include "TBranch.h"
+#include "TKey.h"
+#include "TSystem.h"
 #include "XmltorootHandler.h"
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/sax/AttributeList.hpp>
@@ -19,6 +22,7 @@
 #include "calibRootData/Tkr/Tot.h"
 #include "calibRootData/Tkr/ChargeScale.h"
 #include "facilities/Util.h"
+#include "facilities/Timestamp.h"
 
 namespace {
   static XMLCh* totX = 0;
@@ -35,6 +39,8 @@ namespace {
   static XMLCh* gtfeTrgThreshX = 0;
   static XMLCh* gtfeDataThreshX = 0;
   static XMLCh* inputSampleX = 0;
+
+
   void initElementNames() {
     totX = XMLString::transcode("tot");
     thresholdX = XMLString::transcode("threshhold");
@@ -50,24 +56,85 @@ namespace {
     gtfeTrgThreshX = XMLString::transcode("gtfeTrgThresh");
     gtfeDataThreshX = XMLString::transcode("gtfeDataThresh");
     inputSampleX = XMLString::transcode("inputSample");
+
+  }
+  void nowString(std::string& str) {
+    using facilities::Timestamp;
+
+    Timestamp ts = Timestamp();
+    const char* s = (ts.getString()).c_str();
+
+    // Copy all but spaces and : from s to str (i.e., copy digits and - )
+
+    str.clear();
+    while (*s != 0) {
+      if ((*s != ' ') && (*s != ':') ) {
+        str.push_back(*s);
+      }
+      s++;
+    }
+    return;
   }
 }
 
 XmltorootHandler::XmltorootHandler(std::string outname)
   : m_tfile(0), m_treeTower(0), m_totUni(0), m_scaleUni(0), m_uniBranch(0), 
-    m_maxStripId(0), m_maxGtfeId(0), m_stripCount(0), m_gtfeCount(0)
+    m_maxStripId(0), m_maxGtfeId(0), m_stripCount(0), m_gtfeCount(0),
+  m_updateFile(false)    //, m_updateTower(false)
 {
+  guts(outname);
+}
+void XmltorootHandler::guts(std::string outname) {
+  // Need copyCommand in order to make backup file
+#ifdef WIN32
+  static char* copyCommand = "copy ";
+#else
+  static char* copyCommand = "cp ";
+#endif
   m_outname = outname;
 
-  m_tfile = new TFile(outname.c_str(), "RECREATE");
-  if (!m_tfile->IsOpen() ) {
-    std::cout << "Could not open file " << outname
-              << " for writing " << std::endl;
+  /*  
+      Try to open file READ.  If succeed
+           - generate back-up name from name+timestamp
+           - copy existing file
+           - reopen UPDATE
+           - set local "update" variable to true
+      else
+           - open NEW
+           - set local "update" variable to false
+
+  */
+  FILE* oldOut = std::fopen(outname.c_str(), "r");
+  if (!oldOut) { // normally means file didn't exist
+    m_tfile = new TFile(outname.c_str(), "NEW");
+    std::cout << "Writing new file " << outname << std::endl;
   }
-  else {
-    std::cout << "Successfully opened " << outname << " for write"
-              << std::endl;
+  else {  // close; reopen as TFile, mode UPDATE
+    close(oldOut);
+
+    m_updateFile = true;
+
+    std::string now;
+    nowString(now);
+    std::string backupname = outname + std::string("-backup") + now;
+    std::string cmd = std::string(copyCommand) +outname + std::string(" ")
+      + backupname;
+    int ret = std::system(cmd.c_str());
+
+    std::cout << "File " << outname << " already exists." << std::endl;
+    if (!ret) {
+      std::cout << "Copied to " << backupname << std::endl;
+    }
+    else {
+      std::cerr << "Copy to " << backupname << " failed" << std::endl;
+      std::cerr.flush();
+      exit(ret);
+    }
+    delete m_tfile;
+
+    m_tfile = new TFile(outname.c_str(), "UPDATE");
   }
+
   m_tfile->cd();
   if (totX == 0) initElementNames();
 }
@@ -247,6 +314,41 @@ void XmltorootHandler::startTower(AttributeList& attributes) {
 
   XMLString::release(&trans);
 
+  /*
+    If "update" is true, first search for existing tree with name towS
+  */
+  if (m_updateFile) {
+     // Search for key
+    TIter nextTopLevelKey(m_tfile->GetListOfKeys());
+    TKey *keyTopLevel;
+    TTree* t=0; 
+    std::vector<std::string> toDelete;
+
+    while  ( (keyTopLevel=(TKey*)nextTopLevelKey()) ) {
+
+      TString name(keyTopLevel->GetName());
+      TString className(keyTopLevel->GetClassName());
+
+      if ((name.CompareTo(towS.c_str())==0) && 
+          (className.CompareTo("TTree")==0))                 {
+        // Found It -- delete  (all cycles, but there should be only 1)
+        std::string namecycle = towS + ";*";
+        toDelete.push_back(namecycle);
+        m_tfile->Delete(namecycle.c_str());
+
+        // Write out file after deletion, close, then reopen
+        int nBytes = m_tfile->Write(0, TObject::kOverwrite);
+        std::cout << "Deleting old tower " << towS << std::endl;
+
+        m_tfile->Close();
+        
+        delete m_tfile;
+        m_tfile = new TFile(m_outname.c_str(), "UPDATE");
+        break;
+      }
+    }
+
+  }
   // Even if this is not the first tree to be made, we don't have
   // to worry about saving the pointer to the old one.  We're all
   // done with specific references to it.  Deleting the TFile it

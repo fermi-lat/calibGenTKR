@@ -1,6 +1,6 @@
 #ifndef XmltoorootHandler_h
 #define XmltoorootHandler_h
-// $Header: /nfs/slac/g/glast/ground/cvs/users/jrb/xmlToRoot/src/XmltorootHandler.h,v 1.2 2005/03/28 20:01:02 jrb Exp $
+// $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.h,v 1.1 2005/03/31 23:13:51 jrb Exp $
 #include    <xercesc/sax/HandlerBase.hpp>
 #include    <xercesc/sax/AttributeList.hpp>
 #include    <string>
@@ -62,6 +62,8 @@ public:
 
 
 private:
+  void guts(std::string outname);
+
   std::string m_outname;
 
   /// Current TFile  
@@ -94,6 +96,11 @@ private:
   unsigned m_maxGtfeId;
   unsigned m_stripCount;  // how many have we seen so far?
   unsigned m_gtfeCount;  // how many have we seen so far?
+
+  //  Add variables to keep track of update versus new
+  bool m_updateFile; //  true if file has been opened UPDATE rather than NEW
+  //  bool m_updateTower;  true if replacing tower branch rather than appending
+
 
   /// Called from startElement to handle <tower>
   void startTower(AttributeList& attributes);
