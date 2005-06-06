@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: jrb  Mon Jun  6 12:40:41 PDT 2005
+calibGenTKR/src/xml2root
+
+Modified Files:
+	XmltorootHandler.cxx XmltorootHandler.h xmltoroot.cxx 
+Log Message:
+Enhance xml2root to append or replace tower information to/in a
+pre-existing root file.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r5p2, operation: add
 Package: calibGenTKR
