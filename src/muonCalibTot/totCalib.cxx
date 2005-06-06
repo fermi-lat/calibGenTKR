@@ -223,7 +223,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.34 $";
+  std::string version = "$Revision: 1.35 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -268,11 +268,11 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 #else
   using namespace xmlBase;
 #endif
+  std::cout << "Open xml file: " << jobXml << std::endl;
   //
   // start parsing xml file.
   //
-  std::cout << "Open xml file: " << jobXml << std::endl;
-  XmlParser* parser = new XmlParser(true);
+  XmlParser* parser = new XmlParser( true );
   DOMDocument* doc = 0;
   try {
     doc = parser->parse( jobXml.c_str() );
@@ -284,7 +284,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
     return false;
   }
   if (doc != 0) {  // successful
-    std::cout << "Document successfully parsed" << std::endl;
+    //std::cout << "Document successfully parsed" << std::endl;
     
     // top level element
     DOMElement* topElt = doc->getDocumentElement();
@@ -400,6 +400,8 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	runIds.clear();
 	parseRunIds( runIds, runids );
 	if( !readRcReports( raw.c_str(), runIds ) ) return false;
+	if( m_badStrips )
+	  if( !readHotStrips( raw.c_str(), runIds ) ) return false;
 	if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
 			 runIds, digiChain, reconChain ) ) return false;
       }  
@@ -449,30 +451,38 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 
 
 void totCalib::parseRunIds( std::vector<std::string>& runIds, 
-		    const std::string& line) 
-{
-  std::string::size_type pos = 0;
-  std::string run;
+			    const std::string& line ){
+
+  splitWords( runIds, line );
+
   int runid;
+  for( UInt_t i=0; i!=runIds.size(); i++){
+    runid = atoi( runIds[i].c_str() );
+    if( runid < 100000000 || runid > 999999999 ){
+      std::cout << "Invalid run#: " << runid << std::endl;
+      m_log << "Invalid run#: " << runid << std::endl;
+      exit( EXIT_FAILURE );
+    }
+  }
+}
+
+void totCalib::splitWords(  std::vector<std::string>& words, 
+		    const std::string& line ) {
+
+  std::string::size_type pos = 0;
+  std::string word;
 
   for( ; ; ) {
 
     string::size_type i = line.find(' ', pos);
-    if(i != string::npos) run = line.substr(pos, i-pos);
-    else run = line.substr(pos); // end of line
-    runid = atoi( run.c_str() );
-    if( runid < 100000000 || runid > 999999999 ){
-      std::cout << "Invalid run#: " << run << std::endl;
-      m_log << "Invalid run#: " << run << std::endl;
-      exit( EXIT_FAILURE );
-    }
-    runIds.push_back( run );
+    if(i != string::npos) word = line.substr(pos, i-pos);
+    else word = line.substr(pos); // end of line
+    words.push_back( word );
     
     if(i == string::npos) break;
     pos = i + 1;
   }
 }
-
 
 void totCalib::initHists(){
   m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
@@ -827,6 +837,43 @@ bool totCalib::readRcReports( const char* reportDir,
     std::cout << "open rcReport file: " << reportFile << endl;
     m_log << "rcReport file: " << reportFile << endl;
     if( !parseRcReport( reportFile.c_str() ) ) return false;
+  }
+  return true;
+}
+
+bool totCalib::readHotStrips( const char* reportDir, 
+				 const std::vector<std::string>& runIds )
+{
+  int runid=-100;
+  for(std::vector<std::string>::const_iterator run = runIds.begin();
+      run != runIds.end(); ++run) {
+    runid++;
+    if( atoi( (*run).c_str() ) == runid ) continue; // continuous from the previous.
+    for( UInt_t tw=0; tw!=m_towerVar.size(); tw++){
+      std::string xmlFile = reportDir;
+      xmlFile += "/" + *run;
+      xmlFile += "/" + m_towerVar[tw].hwserial;
+      xmlFile += "_HotStrips.xml";
+      //std::cout << xmlFile << std::endl;
+      if( ! checkFile( xmlFile ) ){
+	xmlFile = reportDir;
+	xmlFile += "/" + *run;
+	xmlFile += "/TkrHotStrips_" + m_towerVar[tw].hwserial;
+	xmlFile += ".xml";
+	//std::cout << xmlFile << std::endl;
+	if( ! checkFile( xmlFile ) ) continue;
+      }
+      if( ! readBadStripsXmlFile( xmlFile.c_str() ) ) return false;
+      runid = atoi( (*run).c_str() );
+    }
+    if( runid != atoi((*run).c_str()) ){ // no hot strips xml file found.
+      std::cout << "no hot strip xml files found in " << reportDir 
+		<< "/" << *run << std::endl;
+      m_log << "no hot strip xml files found in " << reportDir 
+	    << "/" << *run << std::endl;
+      exit( EXIT_FAILURE );
+    }
+    
   }
   return true;
 }
@@ -1729,13 +1776,15 @@ bool totCalib::readInputXmlFiles(const std::string dir,
 }
 
 
-bool totCalib::readBadStripsXmlFile(const char* dir, 
-				    const std::string runid="None" ){
+bool totCalib::readBadStripsXmlFile(const char* path, 
+				    const std::string runid ){
+  bool hotStrips = true;
   string filename;
-  filename = dir;
-  if( runid.size() > 8 ){
-    char fname[] = "/398000364/TkrNoiseAndGain_398000364.xml";
-    sprintf(fname,"/%s/TkrTotGain_%s.xml", runid.c_str(), runid.c_str() );
+  filename = path;
+  if( runid != "None" ){
+    hotStrips = false;
+    char fname[] = "/398000364/TkrNoiseAndGain_398000364_dead.xml";
+    sprintf(fname,"/%s/TkrNoiseAndGain_%s_dead.xml", runid.c_str(), runid.c_str() );
     filename += fname;
   }
 
@@ -1748,6 +1797,33 @@ bool totCalib::readBadStripsXmlFile(const char* dir,
   std::cout << "Open xml file: " << filename << std::endl;
   m_log << "Bad strips xml file: " << filename << std::endl;
   
+  int length;
+  char *buffer;
+  std::string line;
+  ifstream is( filename.c_str() );
+  //is.open ( jobXml, ios::binary );
+  while( is ){
+    getline( is, line );
+    if( line.substr(0,2) == "]>" ) break;
+  }
+  length = is.tellg();
+  // get length of file:
+  is.seekg (0, std::ios::end);
+  length = int( is.tellg() ) - length;
+  is.seekg (0, std::ios::beg);
+  // allocate memory:
+  buffer = new char [length];
+  // read data as a block:
+  is.seekg ( -length, std::ios::end );
+  is.read ( buffer, length );
+  is.close();
+  //std::cout << line.substr(0,10) << " " << line.size() << std::endl;
+  ofstream os;
+  filename = "/tmp/temp" + m_timeStamp + ".xml";
+  os.open( filename.c_str() );
+  os.write( buffer, length );
+  os.close();
+  delete buffer;
 
 #ifdef OLD_RECON
   //typedef xml xmlBase;
@@ -1759,7 +1835,7 @@ bool totCalib::readBadStripsXmlFile(const char* dir,
   XmlParser* parser = new XmlParser(true);
   DOMDocument* doc = 0;
   try {
-    doc = parser->parse(filename.c_str());
+    doc = parser->parse( filename.c_str() );
   }
   catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
@@ -1767,8 +1843,12 @@ bool totCalib::readBadStripsXmlFile(const char* dir,
     delete parser;
     return false;
   }
+  os.open( filename.c_str() );
+  os << "dummy";
+  os.close();
+
   if (doc != 0) {  // successful
-    std::cout << "Document successfully parsed" << std::endl;
+    //std::cout << "Document successfully parsed" << std::endl;
 
     // look up generic attributes
     DOMElement* docElt = doc->getDocumentElement();
@@ -1791,14 +1871,16 @@ bool totCalib::readBadStripsXmlFile(const char* dir,
       std::cout << "DomException:  " << ex.getMsg() << std::endl;
     }
 
-    int towerId=-1;
+    int towerId=-1, twr=-1;
+    std::vector<std::string> stripList;
     for( unsigned int tw=0; tw<m_towerVar.size(); tw++)
       if( m_towerVar[tw].hwserial == hwserial ){
-	if( runid.size() > 8 ) m_towerVar[tw].runid = runId;
+	if( !hotStrips ) m_towerVar[tw].runid = runId;
 	towerId = m_towerVar[tw].towerId;
+	twr = tw;
       }
     std::cout << "tower: " << towerId << ", serial: " << hwserial 
-	      << ", runid: " << runId << ", timeStamp: " << m_timeStamp
+	      << ", runid: " << runId
 	      << std::endl;
     if( towerId < 0 ) return false;
 
@@ -1811,24 +1893,44 @@ bool totCalib::readBadStripsXmlFile(const char* dir,
       int tray = Dom::getIntAttribute(childNode, "tray");
       std::string which = Dom::getAttribute(childNode, "which");
       int howBad = Dom::getIntAttribute(childNode, "howBad");
-      //std::cout << "(tray,which)=(" << tray << ", " << which << ") ";
+      if( howBad > 4 ) continue;
+      if( hotStrips && howBad>1 ) continue;
+      if( !hotStrips && howBad<2 ) continue;
+      //std::cout << "(tray,which)=(" << tray << ", " << which << ") howBad=" 
+      //		<< howBad << std::endl;
      
       //get first child element
       DOMElement* elder = Dom::getFirstChildElement(childNode);
       DOMElement* younger;
 
       layerId lid( tray, which, towerId );
-      if( lid.uniPlane >= g_nUniPlane || lid.uniPlane < 0 ){
-	std::cout << "Invalid uniPlane id: " << lid.uniPlane << std::endl;
-	m_log << "Invalid uniPlane id: " << lid.uniPlane << std::endl;
+      int unp = lid.uniPlane;
+      if( unp >= g_nUniPlane || unp < 0 ){
+	std::cout << "Invalid uniPlane id: " << unp << std::endl;
+	m_log << "Invalid uniPlane id: " << unp << std::endl;
 	continue;
       }
-      /*	
-      while( getBadStrips( elder, lid ) ){
+
+      while( elder ){
+	std::string strips = Dom::getAttribute( elder, "strips" );
+	//std::cout << strips << std::endl;
+	stripList.clear();
+	splitWords( stripList, strips );
+	for( UInt_t ist=0; ist!=stripList.size(); ist++){
+	  if( stripList[ist].size() == 0 ) continue;
+	  int strip = atoi( stripList[ist].c_str() );
+	  if( strip < 0 || strip >= g_nStrip ){
+	    std::cout << towerId << " " << tray << " " << which 
+		      << ", invalid strip id: " << strip << std::endl;
+	    continue;
+	  }
+	  // howBad=1; noisy, howbad=2; dead, howBad=4; disconnected.
+	  m_towerVar[twr].bsVar[unp].knownBadStrips[howBad/2].push_back( strip );
+	}
 	younger = Dom::getSiblingElement( elder );
 	elder = younger;
       }
-      */
+
     }
   }
   else return false;
@@ -1872,7 +1974,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     return false;
   }
   if (doc != 0) {  // successful
-    std::cout << "Document successfully parsed" << std::endl;
+    //std::cout << "Document successfully parsed" << std::endl;
 
     // look up generic attributes
     DOMElement* docElt = doc->getDocumentElement();
@@ -2367,6 +2469,7 @@ void totCalib::findBadStrips()
     m_log << "Tower: " << tower << ", ID: " << m_towerVar[tw].hwserial << std::endl;
     for( int uniPlane = g_nUniPlane-1; uniPlane >=0; uniPlane--){
       layerId lid( uniPlane );
+      lid.setTower ( tower );
       int layer = lid.layer;
       int view = lid.view;
 
@@ -2407,9 +2510,8 @@ void totCalib::findBadStrips()
 	if( m_towerVar[tw].bsVar[uniPlane].lHits[strip] == 0 ){ // dead strips
 	  m_log << strip << ": dead." << std::endl;
 	  //categorize as disconnected
-	  m_towerVar[tw].bsVar[uniPlane].badStrips[1].push_back(strip); 
+	  m_towerVar[tw].bsVar[uniPlane].badStrips[2].push_back(strip); 
 	  m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].push_back(strip); 
-	  //m_badStrips[uniPlane][1].push_back(strip); 
 	  continue;
 	}
 
@@ -2519,15 +2621,15 @@ void totCalib::findBadStrips()
 	// partially or intermittently disconnected
 	//if( sumProbW < maxProbSum || sumProbT < maxProbSum ){
 	if( sumProbT < maxProbSum || probFlag || contSum < maxProbT ){
-	  if( numLowProbW == g_nWafer) nBad = 3;
-	  else if( numLowProbW == numZeroOccW ) nBad = 2;
-	  else nBad = 4;
+	  if( numLowProbW == g_nWafer) nBad = 4;
+	  else if( numLowProbW == numZeroOccW ) nBad = 3;
+	  else nBad = 5;
 	  m_log << " =" << nBad;
 	}
 	else if( sum < sumThreshold ){
 	  m_log << "xxx";
 	}
-	if( nBad == 3 ) mBad = 3;
+	if( nBad == 4 ) mBad = 4;
 
 	sum = occW[0];
 	m_log << ",";
@@ -2548,11 +2650,11 @@ void totCalib::findBadStrips()
 	  if( flagBreak ) numDeadStrips++;
 	}
 	if( flagBreak ){
-	  if( occBreak == 0 ) mBad = 2; // partial disconnected
+	  if( occBreak == 0 ) mBad = 3; // partial disconnected
 	  else mBad = 4; // intermittent partial disconnected
 	}
-	else if( nBad == 4 ) numDeadStrips += numLowProbW; 
-	else if( nBad == 3 ) numDeadStrips += g_nWafer;
+	else if( nBad == 5 ) numDeadStrips += numLowProbW; 
+	else if( nBad == 4 ) numDeadStrips += g_nWafer;
 	
 	if( nBad <= 0 ){
 	  m_log << std::endl;
@@ -2560,7 +2662,6 @@ void totCalib::findBadStrips()
 	  numGood++;
 	}
 	else{
-	  //m_badStrips[uniPlane][nBad].push_back(strip); 
 	  m_towerVar[tw].bsVar[uniPlane].badStrips[nBad].push_back(strip);
 	  m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].push_back(strip); 
 	  m_log << " *" << mBad << " "  << std::endl;
@@ -2580,11 +2681,16 @@ void totCalib::findBadStrips()
 	      for(int it=0; it<g_nTime; ++it) fixedDisp( (int)-prob[iw][it] );
 	      m_log << std::endl;
 	    }
-	  }	  
+	  }
 	}
       }
 
       meanRatio /= numGood;
+
+      //
+      // combine with known bad channels
+      //
+      combineBadChannels( lid );
 
       m_log << vw << layer << ", # of bad channels:";
       std::cout << vw << layer << ", # of bad channel:";
@@ -2594,10 +2700,160 @@ void totCalib::findBadStrips()
 	//m_log << " " << m_badStrips[uniPlane][iBad].size();
 	//std::cout << " " << m_badStrips[uniPlane][iBad].size();
       }
-      m_log << ", " << numDeadStrips 
+      m_log << "; " <<  m_towerVar[tw].bsVar[uniPlane].badStrips[0].size()
+	           + m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+	    << ", " << numDeadStrips 
 	    << ", " << meanRatio << std::endl;
-      std::cout << ", " << numDeadStrips
+      std::cout << "; " <<  m_towerVar[tw].bsVar[uniPlane].badStrips[0].size()
+	           + m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+		<< ", " << numDeadStrips 
 		<< ", " << meanRatio << std::endl;
+    }
+  }
+}
+
+
+void totCalib::combineBadChannels( layerId lid ){
+
+  int tw = m_towerPtr[lid.tower];
+  int unp = lid.uniPlane;
+  //
+  // initialize known bad strip flag
+  //
+  bool known[g_nStrip], hot[g_nStrip], found[g_nStrip], debug=false;
+  for( int i=0; i!=g_nStrip; i++){
+    known[i] = false;
+    hot[i] = false;
+    found[i] = false;
+  }
+  //
+  // register bad strips found in this job (iBad=g_nBad-1)
+  //
+  int ist;
+  char cvw[] = "XY";
+  if( m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1].size() != 0 ){
+    for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1].size(); i++){
+      ist = m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1][i];
+      if( found[ist] ){
+	std::cout << "Redundant bad strip: T" << lid.tower << " " 
+		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	m_log << "Redundant bad strip: T" << lid.tower << " " 
+	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+      }
+      found[ist] = true;
+    }
+  }
+  //
+  // register hot and dead strips (iBad=0,1) 
+  // and tag them to be removed from disconnected strips.
+  //
+  for( int iBad=0; iBad!=2; iBad++){
+    debug = false;
+    if( m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size() == 0 ) continue;
+    for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size(); i++){
+      ist = m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i];
+      if( known[ist] ) continue;
+      if( !found[ist] ){
+	std::cout << "Missing known bad strip: T" << lid.tower << " " 
+		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	m_log << "Missing known bad strip: T" << lid.tower << " " 
+	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	debug = true;
+      }
+      known[ist] = true;
+      if( iBad == 0 ) hot[ist] = true;
+      m_towerVar[tw].bsVar[unp].badStrips[iBad].push_back( ist );
+    }
+    //
+    // print debug information when inconsistency is found.
+    //
+    if( debug ){
+      std::cout << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+		<< lid.layer << ", " << iBad << ": ";
+      m_log << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+		<< lid.layer << ", " << iBad << ": ";
+      for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size(); i++){
+ 	std::cout << " " << m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i] 
+		  << " " << known[m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i]];
+ 	m_log << " " << m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i] 
+	      << " " << known[m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i]];
+      }
+      std::cout << ", ";
+      m_log << ", ";
+      for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1].size(); i++){
+ 	std::cout << " " << m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1][i]
+		  << " " << found[m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1][i]];
+	m_log << " " << m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1][i]
+	      << " " << found[m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1][i]];
+      }
+      std::cout << std::endl;
+      m_log << std::endl;
+    }
+
+    sort( m_towerVar[tw].bsVar[unp].badStrips[iBad].begin(),
+	  m_towerVar[tw].bsVar[unp].badStrips[iBad].end() );
+  }
+
+  //
+  // remove hot and dead strips from disconnected strips.
+  //
+  for( int iBad=2; iBad!=g_nBad; iBad++){
+    int numMatch = 0;
+    debug = false;
+    for( UInt_t i=0; i<m_towerVar[tw].bsVar[unp].badStrips[iBad].size(); i++){
+      ist = m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+      if( !found[ist] ){
+	std::cout << "Inconsistent bad strip: T" << lid.tower << " " 
+		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	m_log << "Inconsistent bad strip: T" << lid.tower << " " 
+	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	m_towerVar[tw].bsVar[unp].knownBadStrips[g_nBad-1].push_back( ist );
+	debug = true;
+      }
+      if( (iBad!=g_nBad-1 && known[ist]) || (iBad==g_nBad-1 && hot[ist]) ){
+	m_towerVar[tw].bsVar[unp].badStrips[iBad][i] = g_nStrip;
+	numMatch++;
+      }
+    }
+    //
+    // print debug information when inconsistency is found.
+    //
+    if( debug ){
+      std::cout << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+		<< lid.layer << ", " << iBad << ": ";
+      m_log << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+	    << lid.layer << ", " << iBad << ": ";
+      for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].badStrips[iBad].size(); i++){
+	std::cout << " " << m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+	m_log << " " << m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+      }
+      std::cout << std::endl;
+      m_log << std::endl;
+    }
+
+    if( numMatch > 0 ){ // remove matched strips
+      sort( m_towerVar[tw].bsVar[unp].badStrips[iBad].begin(),
+	    m_towerVar[tw].bsVar[unp].badStrips[iBad].end() );
+      for( int i=0; i!=numMatch; i++){
+	if( m_towerVar[tw].bsVar[unp].badStrips[iBad].back() != g_nStrip ){
+	  std::cout << "Inconsistent matched strip: T" << lid.tower << " " 
+		    << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	  m_log << "Inconsistent matched strip: T" << lid.tower << " " 
+		<< cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	  std::cout << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+		    << lid.layer << ", " << iBad << " " << numMatch << ": ";
+	  m_log << "DEBUG: T" << lid.tower << " " << cvw[lid.view] 
+		<< lid.layer << ", " << iBad << " " << numMatch << ": ";
+	  for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].badStrips[iBad].size(); i++){
+	    std::cout << " " << m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+	    m_log << " " << m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+	  }
+	  std::cout << std::endl;
+	  m_log << std::endl;
+	  exit( EXIT_FAILURE );
+	}
+	m_towerVar[tw].bsVar[unp].badStrips[iBad].pop_back();
+      }
     }
   }
 }
@@ -2722,10 +2978,12 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
   
   //dead, disconnected, partial disconnected, intermittently disconnected, 
   //intermittently partial disconnexcted
-  int howBad[g_nBad] = {2,4,12,20,28,128}; 
-  std::string cBad[g_nBad] = {"dead","disconnected","partially disconnected",
+  int howBad[g_nBad] = {1,2,4,12,20,28,128}; 
+  std::string cBad[g_nBad] = {"hot","dead","disconnected",
+			      "partially disconnected",
 			      "intermittently disconnected",
-			      "intermittently partially connected","all bad"};
+			      "intermittently partially connected",
+			      "all bad (hot excluded)"};
   char cvw[] = "XY";
   
   int tower = m_towerVar[tw].towerId;
@@ -2748,7 +3006,7 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
     xmlFile << std::endl
 	    << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
       
-    for( int iBad=0; iBad!=nBad; iBad++ ){
+    for( int iBad=1; iBad!=nBad; iBad++ ){ // hot strip is not included.
       int itr = m_towerVar[tw].bsVar[uniPlane].badStrips[iBad].size();
       xmlFile << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
 	      << " -->" << std::endl 

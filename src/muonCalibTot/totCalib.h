@@ -83,7 +83,7 @@ static const int g_nTower = 16;
 // group of strips so that each group has enough statistics
 static const int g_nDiv = 24; //used to be 64;takuya
   
-static const int g_nWafer = 4, g_nBad=6, g_nTime=5, g_nMerge=4;
+static const int g_nWafer = 4, g_nBad=7, g_nTime=5, g_nMerge=4;
 
 const float ladderGap = 2.148;
 const float posZ[g_nView][g_nLayer] = { 
@@ -160,6 +160,7 @@ struct badStripVar{
   int lHits[g_nStrip];
   int nHits[g_nStrip][g_nWafer][g_nTime]; 
   std::vector<int> badStrips[g_nBad];
+  std::vector<int> knownBadStrips[g_nBad];
 };
 
 //
@@ -229,8 +230,8 @@ class totCalib {
   void initHists();
   
   bool readJobOptions( const std::string, const std::string );
-  void parseRunIds(std::vector<std::string>& runIds, 
-		   const std::string& line);
+  void parseRunIds(std::vector<std::string>&, const std::string& );
+  void splitWords(std::vector<std::string>&, const std::string& );
 
   int setInputRootFiles( const char* digi, const char* recon );
   int setInputRootFiles( const char* rootDir, const char* digiPrefix,
@@ -250,9 +251,11 @@ class totCalib {
   bool readInputXmlFiles(const std::string, 
 			 const std::vector<std::string>& runIds );
   
-  bool readBadStripsXmlFile(const char* dir, const std::string runid );
+  bool readBadStripsXmlFile(const char* dir, const std::string runid="None" );
   bool readTotConvXmlFile(const char* dir, const char* runid);
   bool readRcReports( const char* reportDir, 
+		      const std::vector<std::string>& runIds );
+  bool readHotStrips( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
   
   bool parseRcReport( const char* reportFile );
@@ -358,6 +361,7 @@ class totCalib {
   void fillBadStrips();
   void fillTowerBadStrips( std::ofstream &xmlFile, const int tower, 
 			   const int nBad=g_nBad-1 );
+  void combineBadChannels( layerId );
   void fixedDisp( int, bool=true );
   
   bool m_badStrips;
