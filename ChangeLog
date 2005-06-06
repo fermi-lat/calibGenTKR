@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Mon Jun  6 14:12:47 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+It now reads hot and dead strips xml files and remove them from disconnected strips.
+Hot strips are read from data directory since they are used to mask hot strips during data taking. Dead strips xml file can be specified via job options.
+
+    *
+------------------------------------------------------------
 User: jrb  Mon Jun  6 12:40:41 PDT 2005
 calibGenTKR/src/xml2root
 
