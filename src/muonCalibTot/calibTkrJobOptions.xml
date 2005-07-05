@@ -1,4 +1,14 @@
-<jobOptions default="TkrFM5-tot">
+<jobOptions default="MC-tot">
+  <jobOption name="MC-tot" type="MIP calibration" >
+    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+    <xml type="MIP calibration" dir="/nfs/slac/work/htajima/rawData/" runIds="999001000 999001001 999001002 999001003 999001004 999001005 999001006 999001007 999001008 999001009 999001010 999001011 999001012 999001013 999001014 999001015"/>
+    <data top="/nfs/slac/work/htajima/rootData"
+          raw="/nfs/slac/work/htajima/rawData"
+	  digi="mc"
+	  recon="mc"
+	  runIds="999002000"/>
+  </jobOption>
+
   <jobOption name="TkrFM5-tot" type="MIP calibration" >
     <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="399002022"/>

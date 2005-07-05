@@ -66,6 +66,8 @@ const float maxFracErr = 0.015;
 const int nTotHistBin = 200;
 const float maxTot = 20.0;
 
+const float peakMIP = 4.92;
+
 static const float stripPitch = 0.228; // strip pitch
 
 static const int g_nLayer = 18;
@@ -304,7 +306,8 @@ class totCalib {
 #endif
   //TH1F* m_chargeHist[g_nTower][g_nUniPlane][g_nDiv];
   std::vector<TH1F*> m_chargeHist;
-  TH1F *m_fracErrDist, *m_chisqDist, *m_fracBatTot;
+  TH1F *m_fracErrDist, *m_chisqDist, *m_chargeScale, *m_fracBatTot, *m_chist[5];
+  TProfile *m_dirProfile;
   //float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
 
   int m_nEvents;
