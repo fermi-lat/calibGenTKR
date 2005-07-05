@@ -1,4 +1,17 @@
 ------------------------------------------------------------
+User: htajima  Mon Jul  4 23:07:47 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+modify tot gain xml reader to accomodate simplified tot gain xml file for mc.
+improve coth(theta) dependence of charge.
+widen angle cut from -0.9 to -0.85.
+use the epxected peak value 0.492 fC from the MC study.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r6, operation: add
 Package: calibGenTKR
