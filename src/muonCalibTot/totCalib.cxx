@@ -149,6 +149,7 @@ void towerVar::saveHists(){
     rhist->Write(0, TObject::kOverwrite);
     dhist->Write(0, TObject::kOverwrite);
   }
+
   for( UInt_t unp=0; unp!=bsVar.size(); unp++){
     layerId lid( unp );
     int layer = lid.layer;
@@ -172,7 +173,6 @@ void towerVar::saveHists(){
 	hist->Write(0, TObject::kOverwrite);
       }
   }
-  std::cout << std::endl;
 }
 
 //
@@ -216,14 +216,14 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 {
 
   // get version number from CVS string
-  std::string tag = "$Name:  $";
+  std::string tag = "$Name: v2r6 $";
   int i = tag.find( " " );
   tag.assign( tag, i+1, tag.size() );
   i = tag.find( " " );
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.35 $";
+  std::string version = "$Revision: 1.36 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -520,6 +520,14 @@ void totCalib::initHists(){
     m_fracBatTot = new TH1F("fracBadTot", "fraction of bad TOT", 50, 0, 0.2 );
     m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
     m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
+    m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
+    m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
+    m_chist[4] = new TH1F("chargeAll", "TOT charge distribution", nTotHistBin, 0, maxTot);
+    m_chist[0] = new TH1F("charge0", "TOT charge distribution (-1<cos<-0.95)", nTotHistBin, 0, maxTot);
+    m_chist[1] = new TH1F("charge1", "TOT charge distribution (-0.95<cos<-0.9)", nTotHistBin, 0, maxTot);
+    m_chist[2] = new TH1F("charge2", "TOT charge distribution (-0.9<cos<-0.85)", nTotHistBin, 0, maxTot);
+    m_chist[3] = new TH1F("charge3", "TOT charge distribution (-0.85<cos<-0.8)", nTotHistBin, 0, maxTot);
+
   }
 
 #ifdef FULLHIST
@@ -590,6 +598,10 @@ totCalib::~totCalib()
     m_fracBatTot->Write(0, TObject::kOverwrite);
     m_fracErrDist->Write(0, TObject::kOverwrite);
     m_chisqDist->Write(0, TObject::kOverwrite);
+    m_chargeScale->Write(0, TObject::kOverwrite);
+    m_dirProfile->Write(0, TObject::kOverwrite);
+    for( int i=0; i!=5; i++)
+      m_chist[i]->Write(0, TObject::kOverwrite);
     for( UInt_t i=0; i!=m_chargeHist.size(); i++ )
       m_chargeHist[i]->Write(0, TObject::kOverwrite);
   }
@@ -1055,12 +1067,13 @@ void totCalib::analyzeEvents()
       int elapsedTime = currentTime - startTime;
       if( elapsedTime <= 0 ) elapsedTime = 1;
       int rEvents = m_nEvents - iEvent;
-      std::cout << "# of events: " << iEvent << " (" << iEvent*101/m_nEvents 
-		<< "%) in " << elapsedTime << " s, "
-		<< iEvent/elapsedTime << " events/s, "
-		<< rEvents << " events, "
-		<< int(1.0*rEvents*elapsedTime/iEvent)
-		<< " s to go" << std::endl;
+      if( elapsedTime > 2 )
+	std::cout << "# of events: " << iEvent << " (" << iEvent*101/m_nEvents 
+		  << "%) in " << elapsedTime << " s, "
+		  << iEvent/elapsedTime << " events/s, "
+		  << rEvents << " events, "
+		  << int(1.0*rEvents*elapsedTime/iEvent)
+		  << " s to go" << std::endl;
       if( mEvent > m_nEvents*0.095 ) mEvent += int( m_nEvents * 0.1 );
       else mEvent += int( m_nEvents * 0.01 );
     }
@@ -1517,8 +1530,14 @@ void totCalib::fillTot()
     if( tot == 0 ) continue;
 	
     float charge = calcCharge( lid, iStrip, tot);
+    charge /= ( 1 + 5.48E-1 * (1+m_dir.z()) ); // emprial correction factor
+    m_chist[4]->Fill( charge );
+    int idirz = int( 20 + m_dir.z()*20 );
+    if( idirz < 4 ) m_chist[idirz]->Fill( charge );
+    m_dirProfile->Fill( m_dir.z(), m_dir.z() );
+
     int iDiv = iStrip * g_nDiv / g_nStrip;
-    int ibin = int( charge * ( -m_dir.z() ) * nTotHistBin / maxTot );
+    int ibin = int( charge * nTotHistBin / maxTot );
 
     if( ibin < nTotHistBin && ibin >=0 )
       m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin]++;
@@ -1567,7 +1586,7 @@ bool totCalib::passCut()
   if( maxHits == 0 ) return false;
   m_maxHitDist->Fill( maxHits );
   m_dirzDist->Fill( m_dir.Z() );
-  float maxDirZ = -0.9;
+  float maxDirZ = -0.85;
   if( m_badStrips ) maxDirZ = -0.7;
   if( m_dir.Z() > maxDirZ ) return false;
   
@@ -1715,7 +1734,8 @@ void totCalib::fitTot()
 	m_chargeStrip[tower][layer][view]->SetPointError(iDiv, errPos, errPeak);
 #endif	  
 	if( peak > 0.0 ){
-	  float chargeScale = 5.0 / peak;
+	  float chargeScale =  peakMIP / peak;
+	  m_chargeScale->Fill( chargeScale );
 	  if( fabs(chargeScale-1) > 0.3 ){
 	    std::cout << "WARNING, Abnormal charge scale: " 
 		      << chargeScale << ", T" << tower << " " << cvw[view] 
@@ -1756,6 +1776,19 @@ void totCalib::fitTot()
 	
       }
     }
+  }
+
+  for( int i=0; i!=5; i++){
+    float area = m_chist[i]->Integral();
+    float ave = m_chist[i]->GetMean();
+    float rms = m_chist[i]->GetRMS();
+    ffit->SetParLimits( 0, 0.0, rms );
+    ffit->SetParLimits( 1, 0.0, ave*2 );
+    ffit->SetParLimits( 2, 0.0, area*0.4 );
+    ffit->SetParLimits( 3, 0.0, rms );
+    ffit->SetRange( ave*0.3, ave+3*rms );
+    ffit->SetParameters( rms*0.5, ave*0.75, area*0.1, rms*0.4 );
+    m_chist[i]->Fit( "langau", "RBQ" );
   }
 }
 
@@ -2010,13 +2043,39 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 	      << std::endl;
     if( towerId < 0 ) return false;
 
+    // look up tower attributes
+    DOMElement* defElt = Dom::findFirstChildByName(attElt,"default");
+    float intercept, slope, quad;
+    if( defElt ){ // default attribute exists.
+      try {
+	intercept  = Dom::getDoubleAttribute(defElt, "intercept");
+	slope  = Dom::getDoubleAttribute(defElt, "slope");
+	quad  = Dom::getDoubleAttribute(defElt, "quad");
+      }
+      catch (DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+      }
+    }
+
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
     int len = conList->getLength();   
     if( len != g_nLayer*g_nView ){
-      std::cout << "ERROR: # of layers in xml is invalid, " << len << std::endl;
-      m_log << "ERROR: # of layers in xml is invalid, " << len << std::endl;
-      return false;
+      if( defElt ){
+	int tw = m_towerPtr[ towerId ];
+	for( int unp=0; unp!=g_nUniPlane; unp++)
+	  for( int stripId =0; stripId!=g_nStrip; stripId++){
+	    m_towerVar[tw].tcVar[unp].totOffset[stripId] = intercept;
+	    m_towerVar[tw].tcVar[unp].totGain[stripId] = slope;
+	    m_towerVar[tw].tcVar[unp].totQuadra[stripId] = quad;
+	  }
+	return true;
+      }
+      else{
+	std::cout << "ERROR: # of layers in xml is invalid, " << len << std::endl;
+	m_log << "ERROR: # of layers in xml is invalid, " << len << std::endl;
+	return false;
+      }
     }
 
     for(int i=0; i<len; i++){//each layers loop
