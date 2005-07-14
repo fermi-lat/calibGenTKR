@@ -139,6 +139,7 @@ class Cluster{
   int firstStrip; // first strip number
   int lastStrip; // last strip number
   int tot;
+  float correctedTot;
   TVector3 pos; // position
 
  public:
@@ -150,6 +151,8 @@ class Cluster{
   inline int getSize(){ return lastStrip-firstStrip+1; };
   inline void setTot( int val ){ tot = val; };
   inline int getRawToT(){ return tot; };
+  inline void setCorrectedTot( float val ){ correctedTot = val; };
+  inline float getCorrectedTot(){ return correctedTot; };
   inline TVector3 getPosition(){ return pos; };
   inline void setXYZ( float x, float y, float z ){ pos.SetXYZ( x, y, z ); };
 };
@@ -306,7 +309,8 @@ class totCalib {
 #endif
   //TH1F* m_chargeHist[g_nTower][g_nUniPlane][g_nDiv];
   std::vector<TH1F*> m_chargeHist;
-  TH1F *m_fracErrDist, *m_chisqDist, *m_chargeScale, *m_fracBatTot, *m_chist[5];
+  TH1F *m_fracErrDist, *m_chisqDist, *m_fracBatTot, *m_chist[5];
+  TH1F *m_chargeScale, *m_langauWidth, *m_langauGSigma;
   TProfile *m_dirProfile;
   //float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
 
@@ -367,7 +371,7 @@ class totCalib {
   void combineBadChannels( layerId );
   void fixedDisp( int, bool=true );
   
-  bool m_badStrips;
+  bool m_badStrips, m_correctedTot;
   TH1F* m_aPos[g_nWafer+1];
   TH1F *m_occDist, *m_poissonDist, *m_lrec, *m_ldigi, *m_lcls, *m_locc, *m_leff, *m_ltrk, *m_dist;
   
