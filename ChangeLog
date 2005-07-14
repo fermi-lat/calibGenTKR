@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Thu Jul 14 16:24:38 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+fix row and col definition of tower. Add several plots to monitor tot fit parameters.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r6p1, operation: add
 Package: calibGenTKR
