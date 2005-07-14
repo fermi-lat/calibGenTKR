@@ -27,6 +27,7 @@ Cluster::Cluster( int strip, int TOT=0 ){
   tower = -1;
   uniPlane = -1;
   tot = TOT;
+  correctedTot = -100.0;
 }
 
 bool Cluster::addStrip( int strip ){
@@ -216,14 +217,14 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 {
 
   // get version number from CVS string
-  std::string tag = "$Name: v2r6 $";
+  std::string tag = "$Name: v2r6p1 $";
   int i = tag.find( " " );
   tag.assign( tag, i+1, tag.size() );
   i = tag.find( " " );
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.36 $";
+  std::string version = "$Revision: 1.37 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -341,7 +342,14 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       }
       else{
 	m_badStrips = false;
-	std::cout << type << ", tot analysis" << std::endl;
+	if( type == "MIP check" ){
+	  m_correctedTot = true;
+	  std::cout << type << ", tot check" << std::endl;
+	}
+	else{
+	  m_correctedTot = false;
+	  std::cout << type << ", tot analysis" << std::endl;
+	}
       }
       // initialize root histograms
       initHists();
@@ -521,6 +529,8 @@ void totCalib::initHists(){
     m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
     m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
     m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
+    m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.2, 0.7);
+    m_langauGSigma = new TH1F("langauGSigma", "Langau GSigma", 50, 0.0, 2.0);
     m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
     m_chist[4] = new TH1F("chargeAll", "TOT charge distribution", nTotHistBin, 0, maxTot);
     m_chist[0] = new TH1F("charge0", "TOT charge distribution (-1<cos<-0.95)", nTotHistBin, 0, maxTot);
@@ -599,6 +609,8 @@ totCalib::~totCalib()
     m_fracErrDist->Write(0, TObject::kOverwrite);
     m_chisqDist->Write(0, TObject::kOverwrite);
     m_chargeScale->Write(0, TObject::kOverwrite);
+    m_langauWidth->Write(0, TObject::kOverwrite);
+    m_langauGSigma->Write(0, TObject::kOverwrite);
     m_dirProfile->Write(0, TObject::kOverwrite);
     for( int i=0; i!=5; i++)
       m_chist[i]->Write(0, TObject::kOverwrite);
@@ -1334,6 +1346,8 @@ void totCalib::selectGoodClusters(){
 	else
 	  cluster->setXYZ( m_towerVar[twr].center[0], pos, zpos );
 	cluster->setId( tower, unp );
+	if( m_towerVar[twr].reconClusters[unp] )
+	  cluster->setCorrectedTot( 5.0 * m_towerVar[twr].reconClusters[unp]->getMips() );
 	
 	// check if this cluster is close to the track position
 	layerId tlid;
@@ -1528,8 +1542,11 @@ void totCalib::fillTot()
     
     int tot = cluster->getRawToT();
     if( tot == 0 ) continue;
-	
-    float charge = calcCharge( lid, iStrip, tot);
+    
+    float charge;
+    if( m_correctedTot ) charge = cluster->getCorrectedTot();
+    else charge  = calcCharge( lid, iStrip, tot);
+    if( charge < 0.0 ) continue;
     charge /= ( 1 + 5.48E-1 * (1+m_dir.z()) ); // emprial correction factor
     m_chist[4]->Fill( charge );
     int idirz = int( 20 + m_dir.z()*20 );
@@ -1736,6 +1753,8 @@ void totCalib::fitTot()
 	if( peak > 0.0 ){
 	  float chargeScale =  peakMIP / peak;
 	  m_chargeScale->Fill( chargeScale );
+	  m_langauWidth->Fill( *(par+0) ); //  width (scale)
+	  m_langauGSigma->Fill( *(par+3) ); // width (sigma)
 	  if( fabs(chargeScale-1) > 0.3 ){
 	    std::cout << "WARNING, Abnormal charge scale: " 
 		      << chargeScale << ", T" << tower << " " << cvw[view] 
@@ -2264,8 +2283,8 @@ void totCalib::fillXml()//takuya
 
 void totCalib::fillTowerChargeScales( std::ofstream &xmlFile, const int tower ){
   TowerId twrId(tower); 
-  int tower_row = twrId.ix();
-  int tower_col = twrId.iy();
+  int tower_row = twrId.iy();
+  int tower_col = twrId.ix();
   int tw = m_towerPtr[ tower ];
   std::string hwserial = m_towerVar[tw].hwserial;
   xmlFile << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
@@ -3047,8 +3066,8 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
   
   int tower = m_towerVar[tw].towerId;
   TowerId twrId( tower ); 
-  int tower_row = twrId.ix();
-  int tower_col = twrId.iy();
+  int tower_row = twrId.iy();
+  int tower_col = twrId.ix();
   std::string hwserial = m_towerVar[tw].hwserial;
   xmlFile << "  <tower row=\"" << tower_row << "\" col=\"" << tower_col 
 	  << "\" hwserial=\"" << hwserial << "\""
