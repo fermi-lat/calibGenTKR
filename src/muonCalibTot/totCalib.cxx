@@ -217,14 +217,14 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 {
 
   // get version number from CVS string
-  std::string tag = "$Name: v2r6p1 $";
+  std::string tag = "$Name:  $";
   int i = tag.find( " " );
   tag.assign( tag, i+1, tag.size() );
   i = tag.find( " " );
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.37 $";
+  std::string version = "$Revision: 1.38 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -2778,12 +2778,12 @@ void totCalib::findBadStrips()
 	//m_log << " " << m_badStrips[uniPlane][iBad].size();
 	//std::cout << " " << m_badStrips[uniPlane][iBad].size();
       }
-      m_log << "; " <<  m_towerVar[tw].bsVar[uniPlane].badStrips[0].size()
-	           + m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+      m_log << ", " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
+	    << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
 	    << ", " << numDeadStrips 
 	    << ", " << meanRatio << std::endl;
-      std::cout << "; " <<  m_towerVar[tw].bsVar[uniPlane].badStrips[0].size()
-	           + m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+      std::cout << ", " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
+		<< "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
 		<< ", " << numDeadStrips 
 		<< ", " << meanRatio << std::endl;
     }
@@ -2798,9 +2798,10 @@ void totCalib::combineBadChannels( layerId lid ){
   //
   // initialize known bad strip flag
   //
-  bool known[g_nStrip], hot[g_nStrip], found[g_nStrip], debug=false;
+  bool known[g_nStrip], dead[g_nStrip], hot[g_nStrip], found[g_nStrip], debug=false;
   for( int i=0; i!=g_nStrip; i++){
     known[i] = false;
+    dead[i] = false;
     hot[i] = false;
     found[i] = false;
   }
@@ -2822,6 +2823,25 @@ void totCalib::combineBadChannels( layerId lid ){
     }
   }
   //
+  // add disconnected strip from online.
+  //
+  for( int iBad=2; iBad!=3; iBad++){
+    if( m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size() == 0 ) continue;
+    for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size(); i++){
+      ist = m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i];
+      if( known[ist] ) continue;
+      if( !found[ist] ){
+	//m_towerVar[tw].bsVar[unp].badStrips[4].push_back( ist );
+	m_towerVar[tw].bsVar[unp].badStrips[g_nBad-1].push_back( ist );
+	std::cout << "Missing known bad strip: T" << lid.tower << " " 
+		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	m_log << "Missing known bad strip: T" << lid.tower << " " 
+	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+      }
+      known[ist] = true;
+    }
+  }
+  //
   // register hot and dead strips (iBad=0,1) 
   // and tag them to be removed from disconnected strips.
   //
@@ -2830,16 +2850,17 @@ void totCalib::combineBadChannels( layerId lid ){
     if( m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size() == 0 ) continue;
     for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size(); i++){
       ist = m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i];
-      if( known[ist] ) continue;
+      if( iBad==0 && hot[ist] ) continue; // avoid duplicates
+      if( iBad==1 && dead[ist] ) continue; // avoid duplicates
       if( !found[ist] ){
-	std::cout << "Missing known bad strip: T" << lid.tower << " " 
+	std::cout << "Missing known dead strip: T" << lid.tower << " " 
 		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
-	m_log << "Missing known bad strip: T" << lid.tower << " " 
+	m_log << "Missing known dead strip: T" << lid.tower << " " 
 	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
 	debug = true;
       }
-      known[ist] = true;
       if( iBad == 0 ) hot[ist] = true;
+      else            dead[ist] = true;
       m_towerVar[tw].bsVar[unp].badStrips[iBad].push_back( ist );
     }
     //
@@ -2880,15 +2901,16 @@ void totCalib::combineBadChannels( layerId lid ){
     debug = false;
     for( UInt_t i=0; i<m_towerVar[tw].bsVar[unp].badStrips[iBad].size(); i++){
       ist = m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+      if( known[ist] ) continue; // leave disconnected strips found online
       if( !found[ist] ){
-	std::cout << "Inconsistent bad strip: T" << lid.tower << " " 
+	std::cout << "Inconsistent dead strip: T" << lid.tower << " " 
 		  << cvw[lid.view] << lid.layer << " " << ist << std::endl;
 	m_log << "Inconsistent bad strip: T" << lid.tower << " " 
 	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
 	m_towerVar[tw].bsVar[unp].knownBadStrips[g_nBad-1].push_back( ist );
 	debug = true;
       }
-      if( (iBad!=g_nBad-1 && known[ist]) || (iBad==g_nBad-1 && hot[ist]) ){
+      if( (iBad!=g_nBad-1 && (dead[ist] || hot[ist])) ){ 
 	m_towerVar[tw].bsVar[unp].badStrips[iBad][i] = g_nStrip;
 	numMatch++;
       }
@@ -3061,7 +3083,7 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
 			      "partially disconnected",
 			      "intermittently disconnected",
 			      "intermittently partially connected",
-			      "all bad (hot excluded)"};
+			      "all bad (hot/online only included)"};
   char cvw[] = "XY";
   
   int tower = m_towerVar[tw].towerId;
@@ -3084,11 +3106,12 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
     xmlFile << std::endl
 	    << "    <!-- layer " << cvw[view] << layer << " -->" << std::endl;
       
-    for( int iBad=1; iBad!=nBad; iBad++ ){ // hot strip is not included.
+    for( int iBad=0; iBad!=nBad; iBad++ ){ 
       int itr = m_towerVar[tw].bsVar[uniPlane].badStrips[iBad].size();
       xmlFile << "    <!-- # of " << cBad[iBad] << " strips: " << itr 
-	      << " -->" << std::endl 
-	      << "    <uniplane tray=\"" << tray << "\" which=\""
+	      << " -->" << std::endl;
+      if( iBad == 0 ) xmlFile << "    <!-- " << std::endl; // hot strip is not included.
+      xmlFile << "    <uniplane tray=\"" << tray << "\" which=\""
 	      << which << "\" nOnbdCalib=\"false\" nOnbdTrig=\"false\""
 	      << " nOnbdData=\"false\" howBad=\"" << howBad[iBad] << "\"";
       
@@ -3100,6 +3123,7 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
 		<< "    </uniplane>" << std::endl;
       }
       else xmlFile << "/>" << std::endl;
+      if( iBad == 0 ) xmlFile << "    --> " << std::endl; // hot strip is not included.
       
     }
   }

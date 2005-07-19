@@ -84,7 +84,7 @@
 
   <jobOption name="TkrFM3-badStrips" type="badStrips" >
     <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
-    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds=""/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="133002255"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
 	  digi="v4r060302p19/grRoot/digitization-v3r1p10"
@@ -92,8 +92,8 @@
 	  runIds="398001036 398001037 398001038 398001039 398001040"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
-	  digi="v4r060302p19/grRoot/digitization-v3r1p12"
-	  recon="v4r060302p19/calib-v1r0/grRoot/recon-v3r1p12"
+	  digi="v4r060302p23/grRoot/digitization-v3r1p12"
+	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p12"
 	  runIds="398000942 398001079 398001080 398001081 398001082 398001084 398001085 398001086 398001087 398001088 398001089 398001090"/>
   </jobOption>
 
