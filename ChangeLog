@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Mon Jul 18 23:00:34 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+include all online bad strips in the bas strip list in howBad=128.
+
+    *
+------------------------------------------------------------
 User: golpa  Fri Jul 15 15:31:23 PDT 2005
 calibGenTKR/cmt
 
