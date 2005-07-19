@@ -83,7 +83,7 @@
   </jobOption>
 
   <jobOption name="TkrFM3-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+    <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/>
     <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="133002255"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"

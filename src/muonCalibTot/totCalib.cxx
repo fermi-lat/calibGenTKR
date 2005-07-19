@@ -224,7 +224,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.38 $";
+  std::string version = "$Revision: 1.39 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -2778,12 +2778,10 @@ void totCalib::findBadStrips()
 	//m_log << " " << m_badStrips[uniPlane][iBad].size();
 	//std::cout << " " << m_badStrips[uniPlane][iBad].size();
       }
-      m_log << ", " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
-	    << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+      m_log << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
 	    << ", " << numDeadStrips 
 	    << ", " << meanRatio << std::endl;
-      std::cout << ", " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
-		<< "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].size()
+      std::cout << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
 		<< ", " << numDeadStrips 
 		<< ", " << meanRatio << std::endl;
     }
