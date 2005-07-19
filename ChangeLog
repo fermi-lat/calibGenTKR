@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Jul 19 08:27:44 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+minor modification on log output of number of bad strips
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r6p3, operation: add
 Package: calibGenTKR
