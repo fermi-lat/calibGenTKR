@@ -224,7 +224,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.39 $";
+  std::string version = "$Revision: 1.40 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -302,7 +302,12 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	return false;
       }
     }
-    
+    //
+    // get default output directory
+    //
+    std::vector<DOMElement*> defOutList;
+    Dom::getChildrenByTagName( topElt, "output", defOutList );
+
     //
     // search for jobOption
     //
@@ -356,7 +361,18 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       
       // output
       std::string outDir;
-      DOMNode* outElt = Dom::findFirstChildByName(jobElt,"output");
+      std::vector<DOMElement*> outList;
+      Dom::getChildrenByTagName( jobElt, "output", outList );
+      DOMNode* outElt;
+      if( outList.size() > 0 )
+	outElt = outList.back();
+      else if( defOutList.size() > 0 )
+	outElt = defOutList.back();
+      else{
+	std::cout << "no output directory specified." << std::endl;
+	return false;
+      }
+
       try{
 	outDir = Dom::getAttribute(outElt, "dir");
 	m_dtdDir = Dom::getAttribute(outElt, "dtdDir");
@@ -1618,6 +1634,7 @@ void totCalib::fitTot()
   std::cout << "Start fit." << std::endl;
   m_chargeHist.clear();
   
+  const float meanChargeScale = 1.1, rangeChargeScale=0.3;
   char cvw[] = "XY";
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
     int tower = m_towerVar[ tw ].towerId;
@@ -1755,15 +1772,17 @@ void totCalib::fitTot()
 	  m_chargeScale->Fill( chargeScale );
 	  m_langauWidth->Fill( *(par+0) ); //  width (scale)
 	  m_langauGSigma->Fill( *(par+3) ); // width (sigma)
-	  if( fabs(chargeScale-1) > 0.3 ){
+	  if( fabs(chargeScale-meanChargeScale) > rangeChargeScale ){
 	    std::cout << "WARNING, Abnormal charge scale: " 
 		      << chargeScale << ", T" << tower << " " << cvw[view] 
 		      << layer << " " << iDiv << std::endl;
 	    m_log << "WARNING, Abnormal charge scale: "
 		  << chargeScale << ", T" << tower << " " << cvw[view] 
 		  << layer << " " << iDiv << std::endl;
-	    if( chargeScale > 1.3 ) chargeScale = 1.3;
-	    if( chargeScale < 0.7 ) chargeScale = 0.7;
+	    if( chargeScale > meanChargeScale ) 
+	      chargeScale = meanChargeScale + rangeChargeScale;
+	    if( chargeScale < meanChargeScale ) 
+	      chargeScale = meanChargeScale - rangeChargeScale;
 	  }
 	  if( chisq/ndf > maxChisq ){ // large chisq/ndf
 	    std::cout << "WARNING, large chisq/ndf: "
