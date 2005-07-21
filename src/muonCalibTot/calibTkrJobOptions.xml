@@ -1,6 +1,9 @@
 <jobOptions default="6-tower-svac">
+  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
+  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
+  <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+
   <jobOption name="MC-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/slac/work/htajima/rawData/" runIds="999001000 999001001 999001002 999001003 999001004 999001005 999001006 999001007 999001008 999001009 999001010 999001011 999001012 999001013 999001014 999001015"/>
     <data top="/nfs/slac/work/htajima/rootData"
           raw="/nfs/slac/work/htajima/rawData"
@@ -10,8 +13,6 @@
   </jobOption>
 
   <jobOption name="6-tower-svac" type="MIP check" >
-    <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP check" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="135003629 135003627 135003650 135003652 135003654 135003656"/>
     <data top="/nfs/farm/g/glast/u16/Integration/rootData"
           raw="/nfs/farm/g/glast/u16/Integration/rawData"
@@ -19,10 +20,16 @@
           recon="v5r0608p1/calib-v1r0/grRoot/recon-v3r1p23"
           runIds="135003739 135003741 135003742 135003745 135003747 135003749 135003751 135003753"/>
   </jobOption>
+  <jobOption name="6-tower-swap" type="MIP check" >
+    <xml type="MIP check" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="135003629 135003627 135003650 135003652 135003654 135003656"/>
+    <data top="/nfs/slac/work/htajima/rootData"
+          raw="/nfs/farm/g/glast/u16/Integration/rawData"
+	  digi="swap"
+	  recon="swap"
+	  runIds="135003745"/>
+  </jobOption>
 
   <jobOption name="6-tower-tot" type="MIP calibration" >
-    <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="135003629 135003627 135003650 135003652 135003654 135003656"/>
     <data top="/nfs/farm/g/glast/u16/Integration/rootData"
           raw="/nfs/farm/g/glast/u16/Integration/rawData"
@@ -32,7 +39,6 @@
   </jobOption>
 
   <jobOption name="TkrFM5-tot" type="MIP calibration" >
-    <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="399002022"/>
     <data top="/nfs/farm/g/glast/u16/Integration/rootData"
           raw="/nfs/farm/g/glast/u16/Integration/rawData/"
@@ -40,9 +46,16 @@
 	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
 	  runIds="399002024 399002025 399002026 399002027 399002028"/>
   </jobOption>
+  <jobOption name="TkrFM5-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="399002011"/>
+    <data top="/nfs/farm/g/glast/u16/Integration/rootData"
+          raw="/nfs/farm/g/glast/u16/Integration/rawData/"
+	  digi="v4r060302p23/grRoot/digitization-v3r1p20"
+	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
+	  runIds="399002024 399002025 399002026 399002027 399002028 399002030 399002031 399002032 399002033 399002034 399002035 399002036 399002037 399002038 399002039 399002040"/>
+  </jobOption>
 
   <jobOption name="TkrFM4-tot" type="MIP calibration" >
-    <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="398001127"/>
     <data top="/nfs/farm/g/glast/u16/Integration/rootData"
           raw="/nfs/farm/g/glast/u16/Integration/rawData/"
@@ -50,10 +63,16 @@
 	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
 	  runIds="398001129 398001130 398001131 398001132 398001133"/>
   </jobOption>
+  <jobOption name="TkrFM4-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="398001116"/>
+    <data top="/nfs/farm/g/glast/u16/Integration/rootData"
+          raw="/nfs/farm/g/glast/u16/Integration/rawData/"
+	  digi="v4r060302p23/grRoot/digitization-v3r1p20"
+	  recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
+	  runIds="398001129 398001130 398001131 398001132 398001133 398001135 398001136 398001137 398001138 398001139 398001140 398001141 398001142 398001143 398001144 398001145"/>
+  </jobOption>
 
   <jobOption name="Tower-0-1-4-5-tot" type="MIP calibration" >
-    <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
-    <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="135002355 135002358 135002491 135002494"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -63,7 +82,6 @@
 
   </jobOption>
   <jobOption name="Tower-0-1-4-5-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds=""/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -73,7 +91,6 @@
   </jobOption>
 
   <jobOption name="TkrFM3-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="398001034"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -83,7 +100,6 @@
   </jobOption>
 
   <jobOption name="TkrFM3-badStrips" type="badStrips" >
-    <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/>
     <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="133002255"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -99,7 +115,6 @@
 
 
   <jobOption name="TkrFM2-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="398000877"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -114,8 +129,7 @@
   </jobOption>
 
   <jobOption name="TkrFM2-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
-    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds=""/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000866"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
 	  digi="v4r060302p18/grRoot/digitization-v3r1p6"
@@ -130,7 +144,6 @@
 
 
   <jobOption name="TkrFM1-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds="398000958"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
@@ -140,8 +153,7 @@
   </jobOption>
 
   <jobOption name="TkrFM1-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
-    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData/" runIds=""/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData"
           raw="/nfs/farm/g/glast/u14/Integration/rawData/"
 	  digi="v4r060302p19/grRoot/digitization-v3r1p10"
@@ -151,7 +163,6 @@
 
 
  <jobOption name="TkrFMB-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="398000729"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData" 
           raw="/nfs/farm/g/glast/u12/EM2/rawData" 
@@ -161,8 +172,7 @@
   </jobOption>
 
   <jobOption name="TkrFMB-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
-    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds=""/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData" 
           raw="/nfs/farm/g/glast/u12/EM2/rawData" 
 	  digi="v4r060302p8/grRoot/digitization-v3r1p3" 
@@ -172,7 +182,6 @@
 
 
   <jobOption name="TkrFMA-tot" type="MIP calibration" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="398000542"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData" 
           raw="/nfs/farm/g/glast/u12/EM2/rawData" 
@@ -182,13 +191,17 @@
   </jobOption>
 
   <jobOption name="TkrFMA-badStrips" type="badStrips" >
-    <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
-    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="398000542"/>
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/>
     <data top="/nfs/farm/g/glast/u12/Integration/rootData" 
           raw="/nfs/farm/g/glast/u12/EM2/rawData" 
 	  digi="v4r060302p8/grRoot/digitization-v3r1p2" 
 	  recon="v4r060302p8/calib-v1r0/grRoot/recon-v3r1p2" 
 	  runIds="398000279 398000280 398000282 398000283 398000286 398000287 398000289 398000296 398000298 398000303 398000304 398000307 398000308 398000310"/>
+    <data top="/nfs/farm/g/glast/u14/Integration/rootData" 
+          raw="/nfs/farm/g/glast/u12/EM2/rawData" 
+	  digi="v4r060302p8/grRoot/digitization-v3r1p3" 
+	  recon="v4r060302p8/calib-v1r0/grRoot/recon-v3r1p3" 
+	  runIds="398000571 398000572 398000573"/>
   </jobOption>
 
 </jobOptions>
