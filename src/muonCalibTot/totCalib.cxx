@@ -224,7 +224,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.40 $";
+  std::string version = "$Revision: 1.41 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -423,6 +423,14 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	}
 	runIds.clear();
 	parseRunIds( runIds, runids );
+	for(std::vector<std::string>::const_iterator run = runIds.begin();
+	    run != runIds.end(); ++run) {
+
+	  int runid = atoi( (*run).c_str() );
+	  if( runid < m_first_run ) m_first_run = runid;
+	  if( runid > m_last_run ) m_last_run = runid;
+	}
+
 	if( !readRcReports( raw.c_str(), runIds ) ) return false;
 	if( m_badStrips )
 	  if( !readHotStrips( raw.c_str(), runIds ) ) return false;
@@ -774,8 +782,6 @@ bool totCalib::addToChain( const char* rootDir, const char* digiPrefix,
       run != runIds.end(); ++run) {
 
     int runid = atoi( (*run).c_str() );
-    if( runid < m_first_run ) m_first_run = runid;
-    if( runid > m_last_run ) m_last_run = runid;
 
     digiFile = rootDir;
     sprintf(fname,"/%d/%s_%d_digi_DIGI.root",
@@ -1022,8 +1028,20 @@ bool totCalib::parseRcReport( const char* reportFile )
 
     int runid = atoi( values[0].c_str() );
     if( runid != m_first_run && runid != m_last_run ) return true;
-    if( runid == m_first_run ) getDate( values[1].c_str(), m_startTime );
-    if( runid == m_last_run ) getDate( values[2].c_str(), m_stopTime );
+    if( runid == m_first_run ){ 
+      getDate( values[1].c_str(), m_startTime );
+      std::cout << "start time: " << m_startTime 
+		<< ", run id: " << runid << std::endl;
+      m_log << "start time: " << m_startTime 
+	    << ", run id: " << runid << std::endl;
+    }
+    if( runid == m_last_run ){
+      getDate( values[2].c_str(), m_stopTime );
+      std::cout << "stop time: " << m_stopTime 
+		<< ", run id: " << runid << std::endl;
+      m_log << "stop time: " << m_stopTime 
+	    << ", run id: " << runid << std::endl;
+    }
     
     return true;
   }
@@ -2077,7 +2095,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 	towerId = m_towerVar[tw].towerId;
       }
     std::cout << "tower: " << towerId << ", serial: " << hwserial 
-	      << ", runid: " << tot_runid << ", timeStamp: " << m_timeStamp
+	      << ", runid: " << tot_runid
 	      << std::endl;
     if( towerId < 0 ) return false;
 
@@ -2569,6 +2587,7 @@ void totCalib::findBadStrips()
       lid.setTower ( tower );
       int layer = lid.layer;
       int view = lid.view;
+      int unp = uniPlane;
 
       float eff = m_leff->GetBinContent( uniPlane+1 );
       char vw = 'X';
@@ -2576,6 +2595,23 @@ void totCalib::findBadStrips()
       int numDeadStrips = 0;
       float meanRatio = 0.0;
 
+      //
+      // initialize known bad strip flag
+      //
+      bool known[g_nStrip];
+      for( int i=0; i!=g_nStrip; i++)
+	known[i] = false;
+      //
+      // flag known bad strip from online.
+      //
+      for( int iBad=0; iBad!=3; iBad++){
+	if( m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size() == 0 ) continue;
+	for( UInt_t i=0; i!=m_towerVar[tw].bsVar[unp].knownBadStrips[iBad].size(); i++){
+	  int ist = m_towerVar[tw].bsVar[unp].knownBadStrips[iBad][i];
+	  if( known[ist] ) continue;
+	  known[ist] = true;
+	}
+      }
       //
       // determine rate fudge factor for this layer
       //
@@ -2605,6 +2641,7 @@ void totCalib::findBadStrips()
 
 	//if( m_lHits[uniPlane][strip] == 0 ){ // dead strips
 	if( m_towerVar[tw].bsVar[uniPlane].lHits[strip] == 0 ){ // dead strips
+	  if( !known[strip] ) m_log << "new ";
 	  m_log << strip << ": dead." << std::endl;
 	  //categorize as disconnected
 	  m_towerVar[tw].bsVar[uniPlane].badStrips[2].push_back(strip); 
@@ -2672,12 +2709,13 @@ void totCalib::findBadStrips()
 	
 	if( probSum > maxProbSum ) probFlag = false;
 
-	if( !occFlag && !probFlag && sum > sumThreshold ){
+	if( !known[strip] && !occFlag && !probFlag && sum > sumThreshold ){
 	  meanRatio += sum/meanOcc;
 	  numGood++;
 	  continue;
 	}
 
+	if( !known[strip] ) m_log << "!";
 	m_log << strip << ": " << sum << "/" << (int)sumThreshold 
 	      << " @" << (int)probSum << ", ";
 	int nBad = 0;
@@ -2753,18 +2791,21 @@ void totCalib::findBadStrips()
 	else if( nBad == 5 ) numDeadStrips += numLowProbW; 
 	else if( nBad == 4 ) numDeadStrips += g_nWafer;
 	
-	if( nBad <= 0 ){
+	if( !known[strip] && nBad <= 0 ){
 	  m_log << std::endl;
 	  meanRatio += sum/meanOcc;
 	  numGood++;
 	}
 	else{
-	  m_towerVar[tw].bsVar[uniPlane].badStrips[nBad].push_back(strip);
-	  m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].push_back(strip); 
-	  m_log << " *" << mBad << " "  << std::endl;
-	  if( probSum > maxProbD ) maxProbD = probSum;
+	  if( nBad > 0 ){
+	    m_towerVar[tw].bsVar[uniPlane].badStrips[nBad].push_back(strip);
+	    m_towerVar[tw].bsVar[uniPlane].badStrips[g_nBad-1].push_back(strip); 
+	    m_log << " *" << mBad << " " << std::endl;
+	    if( probSum > maxProbD ) maxProbD = probSum;
+	  }
+	  else m_log << " *miss*" << std::endl;
 
-	  if( mBad != nBad ){
+	  if( known[strip] || mBad != nBad ){
 	    fixedDisp( (int)meanOcc/(g_nWafer*g_nTime), false );
 	    for(int it=0; it<g_nTime; ++it) fixedDisp( occT[it] );
 	    m_log << ",     ";
@@ -2797,10 +2838,10 @@ void totCalib::findBadStrips()
 	//m_log << " " << m_badStrips[uniPlane][iBad].size();
 	//std::cout << " " << m_badStrips[uniPlane][iBad].size();
       }
-      m_log << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
+      m_log << "; " << m_towerVar[tw].bsVar[uniPlane].knownBadStrips[2].size() 
 	    << ", " << numDeadStrips 
 	    << ", " << meanRatio << std::endl;
-      std::cout << "; " << m_towerVar[tw].bsVar[uniPlane].badStrips[2].size() 
+      std::cout << "; " << m_towerVar[tw].bsVar[uniPlane].knownBadStrips[2].size() 
 		<< ", " << numDeadStrips 
 		<< ", " << meanRatio << std::endl;
     }
