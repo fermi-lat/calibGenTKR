@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Wed Aug  3 16:02:41 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+log detailed occupancy information of missed known bad strips.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r6p4, operation: add
 Package: calibGenTKR
