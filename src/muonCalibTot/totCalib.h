@@ -56,8 +56,8 @@ using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 //static const float occThrPerEvent = 10.0 / 1.6E6;
 static const float poissonThreshold = -5.0;
 static const float minEff = 0.85;
-const float minProb = -5.0;
-static const float maxProb = -2.5, maxProbW = -3.0, maxProbT = -5.0, maxProbSum = -7.0;
+const float maxProbT = -5.0;
+static const float maxProb = -3.5, maxProbW = -3.5, maxContSum = -8.0, maxProbSum = -10.0;
 static const float probThreshold = -5.0;
 
 const float maxChisq = 1.6;
@@ -65,8 +65,6 @@ const float maxFracErr = 0.015;
 
 const int nTotHistBin = 200;
 const float maxTot = 20.0;
-
-const float peakMIP = 4.92;
 
 static const float stripPitch = 0.228; // strip pitch
 
@@ -187,6 +185,7 @@ class towerVar{
  public:
   towerVar( int, bool );
   ~towerVar(){;};
+  void readHists( TFile*, UInt_t, UInt_t );
   void saveHists();
 
   int towerId;
@@ -254,10 +253,14 @@ class totCalib {
   };
   
   bool readInputXmlFiles(const std::string, 
-			 const std::vector<std::string>& runIds );
-  
+			 const std::vector<std::string>& runIds );  
   bool readBadStripsXmlFile(const char* dir, const std::string runid="None" );
   bool readTotConvXmlFile(const char* dir, const char* runid);
+
+  bool readInputHistFiles(const std::string, 
+			 const std::vector<std::string>& );
+  bool readHists( TFile*, UInt_t, UInt_t );
+
   bool readRcReports( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
   bool readHotStrips( const char* reportDir, 
@@ -371,11 +374,15 @@ class totCalib {
   void combineBadChannels( layerId );
   void fixedDisp( int, bool=true );
   
-  bool m_badStrips, m_correctedTot;
+  bool m_badStrips, m_correctedTot, m_histMode;
+  float m_totAngleCF, m_RSigma, m_GFrac, m_maxDirZ, m_peakMIP;
   TH1F* m_aPos[g_nWafer+1];
   TH1F *m_occDist, *m_poissonDist, *m_lrec, *m_ldigi, *m_lcls, *m_locc, *m_leff, *m_ltrk, *m_dist;
   
 };
 
-Double_t langaufun(Double_t *x, Double_t *par);//takuya0122
+// Gaussian convolved Landau function
+Double_t langaufun(Double_t *x, Double_t *par); 
+// Two Gaussian convolved Landau function
+Double_t langau2fun(Double_t *x, Double_t *par); 
 #endif

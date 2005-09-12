@@ -2,6 +2,135 @@
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
   <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+  <totParam maxDirZ="-0.8" totAngleCF="0.729" />
+   
+  <jobOption name="2-tower-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <data top="/nfs/farm/g/glast/u19/Integration/rootData"
+          raw="/nfs/farm/g/glast/u14/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p0"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p0"
+          runIds="135002134 135002135 135002136 135002139 135002140 135002141 135002142 135002143 135002144 135002145 135002146 135002147 135002148 135002149 135002151 135002152 135002153"/>
+  </jobOption>
+
+  <jobOption name="4-tower-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866"/> <!-- TkrFM1, TkrFM2 -->
+    <data top="/nfs/farm/g/glast/u16/Integration/rootData"
+          raw="/nfs/farm/g/glast/u14/Integration/rawData"
+          digi="v4r060302p23/grRoot/digitization-v3r1p20"
+          recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
+          runIds="135002742 135002743 135002744 135002745 135002746"/>
+    <data top="/nfs/farm/g/glast/u16/Integration/rootData"
+          raw="/nfs/farm/g/glast/u16/Integration/rawData"
+          digi="v4r060302p23/grRoot/digitization-v3r1p20"
+          recon="v4r060302p23/calib-v1r0/grRoot/recon-v3r1p20"
+          runIds="135002748 135002749 135002750 135002751 135002752 135002753 135002755 135002756 135002757 135002758 135002759 135002760 135002761 135002762 135002763 135002764 135002765 135002766 135002769 135002770 135002773 135002774 135002775 135002776 135002777 135002778 135002779 135002780"/>
+  </jobOption>
+
+  <jobOption name="6-tower-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866 133002255 399002011"/> 
+   <!-- TkrFM1, TkrFM2 TkrFM3 TkrFM5-->
+    <data top="/nfs/farm/g/glast/u16/Integration/rootData"
+          raw="/nfs/farm/g/glast/u16/Integration/rawData"
+          digi="v5r0608p1/grRoot/digitization-v3r1p23"
+          recon="v5r0608p1/calib-v1r0/grRoot/recon-v3r1p23"
+          runIds="135003739 135003741 135003742 135003745 135003747 135003749 135003751 135003753 135003755 135003756 135003759 135003760 135003766 135003770 135003771 135003772 135003773 135003774 135003775 135003776 135003777 135003778 135003781 135003782 135003783 135003785 135003786 135003788 135003789 135003792 135003794 135003795"/> <!-- incomplete: 135003764, 65, 67, 135003784, 87, 90, 91, 93-->
+  </jobOption>
+
+  <jobOption name="6-tower-badStrips-2" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866 133002255 399002011"/> 
+   <!-- TkrFM1, TkrFM2 TkrFM3 TkrFM5-->
+    <data top="/nfs/farm/g/glast/u19/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p0"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p0"
+          runIds="135004072 135004075 135004077 135004079 135004081 135004083 135004085 135004087 135004089 135004093 135004096 135004097 135004098 135004099 135004100 135004101 135004102 135004103 135004106 135004108 135004109 135004110 135004111 135004112 135004113 135004114 135004115 135004116 135004119 135004120 135004121 135004122 135004123 135004124 135004125 135004126 135004127 135004128 135004129"/>
+  </jobOption>
+ 
+  <jobOption name="8-tower-badStrips1" type="badStrips" mode="hist" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866 133002255 399002011 398001116"/> 
+   <!-- TkrFM1, TkrFM2 TkrFM3 TkrFM5 TkrFM4 -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="398001240"/> <!-- TkrFM6 -->
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004384 135004386 135004388 135004390 135004392 135004394 135004396 135004398 135004400 135004402 135004404 135004408 135004410 135004412 135004414 135004416 135004418"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004464 135004466 135004468 135004470"/>
+  </jobOption>
+
+  <jobOption name="8-tower-badStrips2" type="badStrips" mode="hist" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866 133002255 399002011 398001116"/> 
+   <!-- TkrFM1, TkrFM2 TkrFM3 TkrFM5 TkrFM4 -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="398001240"/> <!-- TkrFM6 -->
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004420 135004425 135004427 135004429 135004431 135004433 135004437 135004439 135004441 135004443 135004445 135004447 135004449 135004451 135004453 135004457 135004459"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004464 135004466 135004468 135004470"/>
+  </jobOption>
+
+  <jobOption name="8-tower-badStrips" type="badStrips" >
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/Integration/rawData" runIds="136000768"/> <!-- TkrFMA -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/> <!-- TkrFMB -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u14/Integration/rawData" runIds="398000950 398000866 133002255 399002011 398001116"/> 
+   <!-- TkrFM1, TkrFM2 TkrFM3 TkrFM5 TkrFM4 -->
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="398001240"/> <!-- TkrFM6 -->
+    <hist dir="/nfs/slac/work/htajima/outputs/"
+          files="TE403_050911-004741.root TE403_050911-004915.root"
+    />
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+	  mode="dummy"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004384 135004386 135004388 135004390 135004392 135004394 135004396 135004398 135004400 135004402 135004404 135004408 135004410 135004412 135004414 135004416 135004418 135004420 135004425 135004427 135004429 135004431 135004433 135004437 135004439 135004441 135004443 135004445 135004447 135004449 135004451 135004453 135004457 135004459"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+	  mode="dummy"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="135004464 135004466 135004468 135004470"/>
+  </jobOption>
+
+  <jobOption name="8-tower-svac" type="MIP check" >
+    <xml type="MIP check" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="136001099 140002193 134001031 139005595 133002730 133002732 134001032 139005596"/>
+    <data top="/nfs/farm/g/glast/u19/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p0"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p0"
+          runIds="135004445"/>
+<!-- 135004447 135004449 135004451 135004453 135004455 135004457"/> -->
+  </jobOption>
+
+  <jobOption name="8-tower-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="136001099 140002193 134001031 139005595 133002730 133002732 134001032 139005596"/>
+    <data top="/nfs/farm/g/glast/u19/Integration/rootData"
+          raw="/nfs/farm/g/glast/u19/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p0"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p0"
+          runIds="135004445 135004447 135004449 135004451 135004453 135004455 135004457"/>
+  </jobOption>
 
   <jobOption name="MC-tot" type="MIP calibration" >
     <xml type="MIP calibration" dir="/nfs/slac/work/htajima/rawData/" runIds="999001000 999001001 999001002 999001003 999001004 999001005 999001006 999001007 999001008 999001009 999001010 999001011 999001012 999001013 999001014 999001015"/>
@@ -40,6 +169,7 @@
           recon="v5r0608p1/calib-v1r0/grRoot/recon-v3r1p23"
           runIds="135003739 135003741 135003742 135003745 135003747 135003749 135003751 135003753"/>
   </jobOption>
+
   <jobOption name="6-tower-swap" type="MIP check" >
     <xml type="MIP check" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="135003629 135003627 135003650 135003652 135003654 135003656"/>
     <data top="/nfs/slac/work/htajima/rootData"
@@ -50,7 +180,7 @@
   </jobOption>
 
   <jobOption name="6-tower-tot" type="MIP calibration" >
-    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u16/Integration/rawData/" runIds="135003629 135003627 135003650 135003652 135003654 135003656"/>
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u19/Integration/rawData/" runIds="136000965 140001954 140001988 134000950 136000999 133002643"/>
     <data top="/nfs/farm/g/glast/u16/Integration/rootData"
           raw="/nfs/farm/g/glast/u16/Integration/rawData"
           digi="v5r0608p1/grRoot/digitization-v3r1p23"

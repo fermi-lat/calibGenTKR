@@ -130,6 +130,49 @@ towerVar::towerVar( int twr, bool badStrips ){
 #endif
 }
 
+void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
+
+  TH1F* hist, *rhist, *dhist, *thist, *lhist;
+  char name[] = "roccT00X17w3t4";
+  char cvw[] = "XY";
+  for( int unp=0; unp!=g_nUniPlane; unp++){
+    layerId lid( unp );
+    int layer = lid.layer;
+    int view = lid.view;
+    sprintf(name,"roccT%d%c%d", towerId, cvw[view], layer);
+    rhist = (TH1F*)hfile->Get( name );
+    sprintf(name,"doccT%d%c%d", towerId, cvw[view], layer);
+    dhist = (TH1F*)hfile->Get( name );
+    for( int strip=0; strip!=g_nStrip; strip++){      
+      rHits[unp][strip] += (int)rhist->GetBinContent( strip+1 );
+      dHits[unp][strip] += (int)dhist->GetBinContent( strip+1 );
+    }
+  }
+
+  for( UInt_t unp=0; unp!=bsVar.size(); unp++){
+    layerId lid( unp );
+    int layer = lid.layer;
+    int view = lid.view;
+    sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
+    thist = (TH1F*)hfile->Get( name );
+    sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
+    lhist = (TH1F*)hfile->Get( name );
+    for( int strip=0; strip!=g_nStrip; strip++){
+      bsVar[unp].lHits[strip] += (int)lhist->GetBinContent( strip+1 );
+      bsVar[unp].tHits[strip] += (int)thist->GetBinContent( strip+1 );
+    }
+    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
+      for( int tDiv = 0; tDiv != g_nTime; tDiv++){
+	sprintf(name,"occT%d%c%dw%dt%d", towerId, cvw[view], layer, iWafer, (tDiv+iRoot*g_nTime)/nRoot);
+	hist = (TH1F*)hfile->Get( name );
+	for( int strip=0; strip!=g_nStrip; strip++)
+	  bsVar[unp].nHits[strip][iWafer][tDiv] 
+	    += (int)hist->GetBinContent( strip+1 );
+      }
+  }
+}
+
+
 void towerVar::saveHists(){
 
   TH1F* hist, *rhist, *dhist, *thist, *lhist;
@@ -224,7 +267,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.41 $";
+  std::string version = "$Revision: 1.42 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -236,6 +279,11 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   m_last_run = 0;
   m_startTime="01/20 2005, 22:52 GMT";
   m_stopTime="01/20 2005, 22:52 GMT";
+  m_totAngleCF = 5.48E-1;
+  m_peakMIP = 4.92;
+  m_RSigma = 4.0;
+  m_GFrac = 0.78;
+  m_maxDirZ = -0.85;
 
   for(int tower = 0; tower != g_nTower; ++tower)
     m_towerPtr[tower] = -1;
@@ -243,7 +291,18 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   // parse job options xml file
   //
   if( !readJobOptions( jobXml, defJob ) ) m_nEvents = -1;
-
+  
+  //
+  std::cout << "totAngleCF: " << m_totAngleCF << ", peakMIP: " << m_peakMIP
+	    << ", RSigma: " << m_RSigma
+	    << ", GFrac: " << m_GFrac 
+	    << ", maxDirZ: " << m_maxDirZ 
+	    << std::endl;
+  m_log << "totAngleCF: " << m_totAngleCF << ", peakMIP: " << m_peakMIP
+	<< ", RSigma: " << m_RSigma
+	<< ", GFrac: " << m_GFrac << ", maxDirZ: " << m_maxDirZ 
+	<< std::endl;
+  
 }
 
 
@@ -309,6 +368,32 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
     Dom::getChildrenByTagName( topElt, "output", defOutList );
 
     //
+    // get tot related parameters
+    //
+    std::vector<DOMElement*> totParamList;
+    Dom::getChildrenByTagName( topElt, "totParam", totParamList );
+    if( totParamList.size() > 0 ){
+      DOMElement* totElt = totParamList.back();
+      std::string value;
+      try{
+	value = Dom::getAttribute(totElt, "totAngleCF" );
+	if( value.size() > 0 ) m_totAngleCF = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "peakMIP" );
+	if( value.size() > 0 ) m_peakMIP = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "RSigma" );
+	if( value.size() > 0 ) m_RSigma = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "GFrac" );
+	if( value.size() > 0 ) m_GFrac = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "maxDirZ" );
+	if( value.size() > 0 ) m_maxDirZ = atof( value.c_str() );
+      }
+      catch (DomException ex) {
+	std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	return false;
+      }
+    }    
+
+    //
     // search for jobOption
     //
     std::vector<DOMElement*> jobList;
@@ -322,10 +407,11 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
     bool jobFound = false;
     for(int i=0; i<len; i++){ //each jobOption loop
       DOMElement* jobElt = jobList[i];
-      std::string name, type;
+      std::string name, type, mode="def";
       try{
 	name = Dom::getAttribute(jobElt, "name");
 	type = Dom::getAttribute(jobElt, "type");
+	mode = Dom::getAttribute(jobElt, "mode");
       }
       catch (DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -356,6 +442,17 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	  std::cout << type << ", tot analysis" << std::endl;
 	}
       }
+
+      // analysis mode
+      if( mode == "hist" ){
+	m_histMode = true;
+	std::cout << "histogram only mode" << std::endl;
+      }
+      else{
+	m_histMode = false;
+	std::cout << "normal analysis mode" << std::endl;
+      }
+
       // initialize root histograms
       initHists();
       
@@ -416,6 +513,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	  digi = Dom::getAttribute(dataElt, "digi");
 	  recon = Dom::getAttribute(dataElt, "recon");
 	  runids = Dom::getAttribute(dataElt, "runIds");
+	  mode = Dom::getAttribute(dataElt, "mode");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -434,11 +532,37 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	if( !readRcReports( raw.c_str(), runIds ) ) return false;
 	if( m_badStrips )
 	  if( !readHotStrips( raw.c_str(), runIds ) ) return false;
-	if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
+	if( mode == "dummy" ){
+	  std::cout << "dummy mode: no digi/recon file used." << std::endl;
+	  m_log << "dummy mode: no digi/recon file used." << std::endl;
+	}
+	else if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
 			 runIds, digiChain, reconChain ) ) return false;
       }  
       m_nEvents =  setInputRootFiles( digiChain, reconChain );
       if( m_nEvents < 0 ) return false;
+
+      //
+      // loop hist tag
+      //
+      std::vector<DOMElement*> histList;
+      Dom::getChildrenByTagName( jobElt, "hist", histList );
+      int numHist = histList.size();
+      for(int ihist=0; ihist<numHist; ihist++){ //each hist loop
+	std::string dir, files;
+	DOMNode* histElt = histList[ ihist ];
+	try{
+	  dir = Dom::getAttribute(histElt, "dir");
+	  files = Dom::getAttribute(histElt, "files");
+	}
+	catch (DomException ex) {
+	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	  return false;
+	}
+	std::vector<std::string> hfiles;
+	splitWords( hfiles, files );
+	if( !readInputHistFiles( dir, hfiles ) ) return false;
+      }
       
       //
       // loop xml tag
@@ -1083,20 +1207,26 @@ void totCalib::getDate( const char* str, std::string& sdate )
 void totCalib::analyze( int nEvents )
 {
 
-  if( m_nEvents <= 0 ) return; // something went wrong.
-  if( nEvents > 0 ) m_nEvents = nEvents;
-  std::cout << "# of Events to analyze: " << m_nEvents << std::endl;
-  m_log << "# of Events to analyze: " << m_nEvents << std::endl;
+  if( m_nEvents < 0 ) return; // something went wrong.
+  else if( m_nEvents > 0 ){
+    if( nEvents > 0 ) m_nEvents = nEvents;
+    std::cout << "# of Events to analyze: " << m_nEvents << std::endl;
+    m_log << "# of Events to analyze: " << m_nEvents << std::endl;
 
-  analyzeEvents();
+    analyzeEvents();
+  }
+  else{
+    std::cout << "no events to analyze, skip root analysis." << std::endl;
+    m_log << "no events to analyze, skip root analysis." << std::endl;
+  }
 
   if( m_badStrips ){
     findBadStrips();
-    fillBadStrips();
+    if( ! m_histMode ) fillBadStrips();
   }
   else{
     fitTot();
-    fillXml();//takuya
+    if( ! m_histMode ) fillXml();//takuya
   }
 }
 
@@ -1581,7 +1711,7 @@ void totCalib::fillTot()
     if( m_correctedTot ) charge = cluster->getCorrectedTot();
     else charge  = calcCharge( lid, iStrip, tot);
     if( charge < 0.0 ) continue;
-    charge /= ( 1 + 5.48E-1 * (1+m_dir.z()) ); // emprial correction factor
+    charge /= ( 1 + m_totAngleCF * (1+m_dir.z()) ); // emprial correction factor
     m_chist[4]->Fill( charge );
     int idirz = int( 20 + m_dir.z()*20 );
     if( idirz < 4 ) m_chist[idirz]->Fill( charge );
@@ -1637,7 +1767,7 @@ bool totCalib::passCut()
   if( maxHits == 0 ) return false;
   m_maxHitDist->Fill( maxHits );
   m_dirzDist->Fill( m_dir.Z() );
-  float maxDirZ = -0.85;
+  float maxDirZ = m_maxDirZ;
   if( m_badStrips ) maxDirZ = -0.7;
   if( m_dir.Z() > maxDirZ ) return false;
   
@@ -1647,8 +1777,8 @@ bool totCalib::passCut()
 void totCalib::fitTot()
 {  
   // define Gaussian convolved Laudau function.
-  TF1 *ffit = new TF1( "langau", langaufun, 0, 30, 4 );
-  ffit->SetParNames( "Width", "MP", "Area", "GSigma" );
+  TF1 *ffit = new TF1( "langau2", langau2fun, 0, 30, 6 );
+  ffit->SetParNames( "Width", "MP", "Area", "GSigma", "RSigma", "GFrac" );
   std::cout << "Start fit." << std::endl;
   m_chargeHist.clear();
   
@@ -1691,9 +1821,13 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 1, 0.0, ave*2 );
 	ffit->SetParLimits( 2, 0.0, area*0.4 );
 	ffit->SetParLimits( 3, 0.0, rms );
-	ffit->SetRange( ave-1.5*rms, ave+3*rms );
+	ffit->SetParLimits( 4, 1.0, 10.0 );
+	ffit->SetParLimits( 5, 0.0, 1.0 );
+	ffit->SetRange( ave-1.25*rms, ave+2*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	//m_totHist[layer][view][iDiv]->Fit( "langau", "RBQ" );
+	ffit->FixParameter( 4, m_RSigma );
+	ffit->FixParameter( 5, m_GFrac );
+	//m_totHist[layer][view][iDiv]->Fit( "langau2", "RBQ" );
 	
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	par = ffit->GetParameters();
@@ -1746,7 +1880,7 @@ void totCalib::fitTot()
 	  / chargeHist->Integral();
 	m_fracBatTot->Fill( fracBadTot );
 
-	float lowLim = ave - 1.5 * rms;
+	float lowLim = ave - 1.25 * rms;
 	if( fracBadTot > 0.05 && lowLim < ave*0.5 ){
 	  lowLim = ave*0.5;
 	  std::cout << "WARNING, large bad TOT fraction: " 
@@ -1761,9 +1895,11 @@ void totCalib::fitTot()
 	ffit->SetParLimits( 1, 0.0, ave*2 );
 	ffit->SetParLimits( 2, 0.0, area*0.4 );
 	ffit->SetParLimits( 3, 0.0, rms );
-	ffit->SetRange( lowLim, ave+3*rms );
+	ffit->SetRange( lowLim, ave+2*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	chargeHist->Fit( "langau", "RBQ" );
+	ffit->FixParameter( 4, m_RSigma );
+	ffit->FixParameter( 5, m_GFrac );
+	chargeHist->Fit( "langau2", "RBQ" );
 	
 	//0:width(scale) 1:peak 2:total area 3:width(sigma)
 	par = ffit->GetParameters();
@@ -1786,7 +1922,7 @@ void totCalib::fitTot()
 	m_chargeStrip[tower][layer][view]->SetPointError(iDiv, errPos, errPeak);
 #endif	  
 	if( peak > 0.0 ){
-	  float chargeScale =  peakMIP / peak;
+	  float chargeScale =  m_peakMIP / peak;
 	  m_chargeScale->Fill( chargeScale );
 	  m_langauWidth->Fill( *(par+0) ); //  width (scale)
 	  m_langauGSigma->Fill( *(par+3) ); // width (sigma)
@@ -1842,12 +1978,107 @@ void totCalib::fitTot()
     ffit->SetParLimits( 1, 0.0, ave*2 );
     ffit->SetParLimits( 2, 0.0, area*0.4 );
     ffit->SetParLimits( 3, 0.0, rms );
-    ffit->SetRange( ave*0.3, ave+3*rms );
-    ffit->SetParameters( rms*0.5, ave*0.75, area*0.1, rms*0.4 );
-    m_chist[i]->Fit( "langau", "RBQ" );
+    ffit->SetRange( ave-1.25*rms, ave+2*rms );
+    ffit->ReleaseParameter( 4 );
+    ffit->ReleaseParameter( 5 );
+    ffit->SetParameters( rms*0.5, ave*0.75, area*0.1, rms*0.4, m_RSigma, m_GFrac );
+    m_chist[i]->Fit( "langau2", "RBQ" );
   }
 }
 
+
+bool totCalib::readInputHistFiles(const std::string dir, 
+				 const std::vector<std::string>& files ){
+
+  for(UInt_t i=0; i!=files.size(); ++i) {
+    string path;
+    path = dir + files[i];
+    m_log << "Open " << path << std::endl;
+    std::cout << "Open " << path << std::endl;
+    TFile* hfile = new TFile( path.c_str() );
+    if( ! hfile ){
+      std::cout << "File open failure: " << path << std::endl;
+      m_log << "File open failure: " << path << std::endl;
+      return false;
+    }
+
+    //
+    // read histograms
+    //
+    if( !readHists( hfile, i, files.size() ) ) return false;
+
+    // close hist file
+    hfile->Close();
+    delete hfile;
+  }
+  return true;
+}
+
+bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
+
+  m_nTrackDist->Add( (TH1F*)hfile->Get( "nTrack" ) );
+  m_maxHitDist->Add( (TH1F*)hfile->Get( "maxHit" ) );
+  m_numClsDist->Add( (TH1F*)hfile->Get( "numCls" ) );
+  m_dirzDist->Add( (TH1F*)hfile->Get( "dirZ" ) );
+  m_armsDist->Add( (TH1F*)hfile->Get( "arms" ) );
+  m_lrec->Add( (TH1F*)hfile->Get( "lrec" ) );
+  m_ldigi->Add( (TH1F*)hfile->Get( "ldigi" ) );
+  m_lcls->Add( (TH1F*)hfile->Get( "lcls" ) );
+  if( m_badStrips ){
+    char hname[]="brms0";
+    for( int i=0; i<g_nLayer/3; i++){ 
+      sprintf( hname, "brms%d", i );
+      m_brmsDist[i]->Add( (TH1F*)hfile->Get( hname ) );
+    }
+    m_locc->Add( (TH1F*)hfile->Get( "locc" ) );
+    m_leff->Add( (TH1F*)hfile->Get( "leff" ) );
+    m_ltrk->Add( (TH1F*)hfile->Get( "ltrk" ) );
+    m_dist->Add( (TH1F*)hfile->Get( "dist" ) );
+    m_occDist->Add( (TH1F*)hfile->Get( "occDist" ) );
+    m_poissonDist->Add( (TH1F*)hfile->Get( "poissonDist" ) );
+    m_aPos[0]->Add( (TH1F*)hfile->Get( "apos0" ) );
+    m_aPos[1]->Add( (TH1F*)hfile->Get( "apos1" ) );
+    m_aPos[2]->Add( (TH1F*)hfile->Get( "apos2" ) );
+    m_aPos[3]->Add( (TH1F*)hfile->Get( "apos3" ) );
+    m_aPos[4]->Add( (TH1F*)hfile->Get( "apos4" ) );
+
+    for( UInt_t tw = 0; tw != m_towerVar.size(); ++tw)
+      m_towerVar[tw].readHists( hfile, iRoot, nRoot );
+  }
+  else{
+    m_fracBatTot->Add( (TH1F*)hfile->Get( "fracBadTot" ) );
+    m_fracErrDist->Add( (TH1F*)hfile->Get( "fracErrDist" ) );
+    m_chisqDist->Add( (TH1F*)hfile->Get( "chisqDist" ) );
+    m_chargeScale->Add( (TH1F*)hfile->Get( "chargeScale" ) );
+    m_langauWidth->Add( (TH1F*)hfile->Get( "langauWidth" ) );
+    m_langauGSigma->Add( (TH1F*)hfile->Get( "langauSigma" ) );
+    m_dirProfile->Add( (TH1F*)hfile->Get( "dirProfile" ) );
+    for( int i=4; i!=-1; i--){
+      char hname[]="chargeAll";
+      if( i<4 ) sprintf( hname, "charge%d", i );
+      m_chist[i]->Add( (TH1F*)hfile->Get( hname ) );
+    }
+    char cvw[] = "XY";
+    for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
+      int tower = m_towerVar[ tw ].towerId;
+      for(int unp = 0; unp != g_nUniPlane; ++unp) {
+	layerId lid( unp );
+	int layer = lid.layer;
+	int view = lid.view;
+	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
+	  char name[] = "chargeT00X00fe0000";
+	  sprintf(name,"chargeT%d%c%dfe%d", tower, cvw[view], layer, iDiv);
+	  TH1F* hist = (TH1F*)hfile->Get( name );
+	  for( int ibin=0; ibin!=nTotHistBin; ibin++)
+	    m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin] 
+	      += (int)hist->GetBinContent( ibin+1 );
+	}
+      }
+    }
+  }
+
+  return true;
+}
 
 bool totCalib::readInputXmlFiles(const std::string dir, 
 				 const std::vector<std::string>& runIds ){
@@ -2669,7 +2900,36 @@ void totCalib::findBadStrips()
         occThreshold = expOcc - 2*sqrt(expOcc);
         if( occThreshold < 1.1 ) occThreshold = 1.1;
 
-	float sum = 0.0;
+	//
+	// check if mean occupancy is correct.
+	//
+	float sum = 0.0, total=0.0, num=0;
+	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+	  for( int iTime = 0; iTime != g_nTime; ++iTime ){
+	    occupancy = m_towerVar[tw].bsVar[uniPlane].nHits[strip][iWafer][iTime];
+	    total += occupancy;
+	    if( occupancy < occThreshold ) continue;
+	    num++;
+	    sum += occupancy;
+	  }
+	}
+	//m_log << strip << " " << sum << " " << num << " " << total 
+	//      << "/" << meanOcc << "=" << total/meanOcc << std::endl;
+	if( num > g_nWafer*g_nTime*0.4 || total > 0.5*meanOcc ){ 
+	  float mean;
+	  if( num > 0 ) mean = sum / num;
+	  else mean = total / (g_nTime*g_nWafer);
+	  if( mean<expOcc && mean>0.6*expOcc ){ // expected occupancy too large
+	    expOcc = mean;
+	    meanOcc = expOcc * (g_nTime*g_nWafer);
+	    sumThreshold = meanOcc - 5*sqrt(meanOcc);
+	    if( sumThreshold < 2.0 ) sumThreshold = 2.0;
+	    occThreshold = expOcc - 2*sqrt(expOcc);
+	    if( occThreshold < 1.1 ) occThreshold = 1.1;
+	  }
+	}
+
+	sum = 0.0;
 	bool occFlag = false, probFlag=false;
 	int occ[g_nWafer][g_nTime], occW[g_nWafer], occT[g_nTime];
 	float prob[g_nWafer][g_nTime], probW[g_nWafer], probT[g_nTime], 
@@ -2746,16 +3006,16 @@ void totCalib::findBadStrips()
 	for(int iTime = 0; iTime != g_nTime; ++iTime){
 	  m_log << " " << (int)-probT[iTime];
 	  sumProbT += probT[iTime];
-	  if( probT[iTime] < maxProb ) contSum += probT[iTime];
+	  if( probT[iTime] < maxProbT ) contSum += probT[iTime];
 	  else{ // not continuous
-	    if( contSum < maxProbT ) probFlag = true; // evaluate current sum
+	    if( contSum < maxContSum ) probFlag = true; // evaluate current sum
 	    contSum = 0.0;
 	  }
 	}
 
 	// partially or intermittently disconnected
 	//if( sumProbW < maxProbSum || sumProbT < maxProbSum ){
-	if( sumProbT < maxProbSum || probFlag || contSum < maxProbT ){
+	if( sumProbT < maxProbSum || probFlag || contSum < maxContSum ){
 	  if( numLowProbW == g_nWafer) nBad = 4;
 	  else if( numLowProbW == numZeroOccW ) nBad = 3;
 	  else nBad = 5;
@@ -3062,7 +3322,6 @@ void totCalib::fillBadStrips()
   }
 
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
-    int tower = m_towerVar[tw].towerId;
     filename = m_outputDir;
     sprintf( fname, "/%s_DeadStrips_%s-%s.xml", 
 	     m_towerVar[tw].hwserial.c_str(), 
@@ -3080,8 +3339,8 @@ void totCalib::fillBadStrips()
     }
 
     openBadStripsXml( fmxml, dtd );
-    fillTowerBadStrips( fmxml, tower, g_nBad ); // add all bad sttrips field
-    if( m_towerVar.size() > 1 ) fillTowerBadStrips( latxml, tower );
+    fillTowerBadStrips( fmxml, tw, g_nBad ); // add all bad sttrips field
+    if( m_towerVar.size() > 1 ) fillTowerBadStrips( latxml, tw );
 
     fmxml << "</badStrips>" << std::endl;
     fmxml.close();
@@ -3345,4 +3604,80 @@ Double_t langaufun(Double_t *x, Double_t *par) {
   sum2 *= step/width;
   
   return (par[2] * (sum+sum2) * invsq2pi / sigma);
+}
+
+//
+// Two Gaussian convolved Lanbdau function
+// it also employs variable integration step.
+//
+Double_t langau2fun(Double_t *x, Double_t *par) {
+
+   //Fit parameters:
+   //par[0]=Width (scale) parameter of Landau density
+   //par[1]=Most Probable (MP, location) parameter of Landau density
+   //par[2]=Total area (integral -inf to inf, normalization constant)
+   //par[3]=Width (sigma) of convoluted Gaussian function
+   //par[4]=Width2/Width of convoluted Gaussian function
+   //par[5]=fraction of narrow Gaussian function
+   //
+   //In the Landau distribution (represented by the CERNLIB approximation),
+   //the maximum is located at x=-0.22278298 with the location parameter=0.
+   //This shift is corrected within this function, so that the actual
+   //maximum is identical to the MP parameter.
+
+  // Numeric constants
+  Double_t invsq2pi = 0.3989422804014;   // (2 pi)^(-1/2)
+  Double_t mpshift  = -0.22278298;       // Landau maximum location
+  
+  // Control constants
+  // variable interation step
+  // integration step increases as points move to outside.
+  Double_t np = 20.0;   // number of convolution steps in a region
+  Double_t sc =  1.0;   // convolution extends to +-sc Gaussian sigmas
+  Double_t sc2 =  4.0;  // convolution extends to +-sc Gaussian sigmas
+  
+  // Variables
+  Double_t xx;
+  Double_t mpc;
+  Double_t fland, fgauss;
+  Double_t sum = 0.0;
+  Double_t xm, dx;
+  Double_t step;
+  Double_t sigma = par[3];
+  Double_t sigma2 = par[4]*sigma;
+  Double_t frac = par[5];
+  Double_t width = par[0];
+  if( sigma<=0.0 || width<=0.0 ) return 0.0;
+
+  // MP shift correction
+  mpc = par[1] - mpshift * width;
+  if( mpc < 0.0 ) return 0.0;
+  
+  // Convolution integral parameters
+  xm = x[0];
+  Double_t dxmax = sc * sigma;
+  step = dxmax * 2 / np;
+  Double_t dxmax2 = sc2 * sigma2;
+  
+  // Convolution integral of Landau and Gaussian by sum
+  for(dx=0.5*step; dx<=dxmax2; dx+=step) {
+    fgauss = step * ( frac * TMath::Gaus(0.0,dx,sigma) / sigma
+                      + (1-frac) * TMath::Gaus(0.0,dx,sigma2) / sigma2 );
+    
+    xx = xm + dx;
+    fland = TMath::Landau( xx, mpc, width );
+    sum += fland * fgauss;
+    
+    xx = xm - dx;
+    fland = TMath::Landau( xx, mpc, width );
+    sum += fland * fgauss;
+
+    if( dx >= dxmax ){ // getting out of the curent region, change step
+      dxmax *= 2;
+      step *= 2;
+    }
+  }
+  sum /= width;
+  
+  return ( par[2] * sum * invsq2pi );
 }
