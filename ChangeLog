@@ -1,4 +1,16 @@
 ------------------------------------------------------------
+User: htajima  Sun Sep 11 22:25:58 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+Bug fix for fillBadStripXmlFile.
+Add ability to combine the histograms in previous analysis. (use hist tag to read root files. use mode="dummy" attribute to avoid analyzing digi/recon files.)
+Improved intermittent strip algorithm. Recalculate expected occupancy when overall occupancy is smaller than the expected occupancy.
+
+    *
+------------------------------------------------------------
 User: htajima  Wed Aug  3 16:02:41 PDT 2005
 calibGenTKR/src/muonCalibTot
 
