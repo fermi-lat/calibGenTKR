@@ -60,8 +60,9 @@ const float maxProbT = -5.0;
 static const float maxProb = -3.5, maxProbW = -3.5, maxContSum = -8.0, maxProbSum = -10.0;
 static const float probThreshold = -5.0;
 
-const float maxChisq = 1.6;
+const float maxChisq = 1.75;
 const float maxFracErr = 0.015;
+const float minFracErr = 0.005;
 
 const int nTotHistBin = 200;
 const float maxTot = 20.0;
@@ -159,6 +160,7 @@ class Cluster{
 // bad strips variables
 //
 struct badStripVar{
+  int eHits[g_nStrip];
   int tHits[g_nStrip];
   int lHits[g_nStrip];
   int nHits[g_nStrip][g_nWafer][g_nTime]; 
@@ -301,7 +303,7 @@ class totCalib {
   
   float calcCharge( layerId lid, int iStrip, int tot) const;
   
-  TH1F *m_nTrackDist, *m_maxHitDist, *m_numClsDist, *m_dirzDist, 
+  TH1F *m_nTrackDist, *m_maxHitDist, *m_trkRMS, *m_numClsDist, *m_dirzDist, 
     *m_armsDist, *m_brmsDist[g_nLayer/3];
   
 #ifdef FULLHIST
@@ -373,6 +375,7 @@ class totCalib {
 			   const int nBad=g_nBad-1 );
   void combineBadChannels( layerId );
   void fixedDisp( int, bool=true );
+  void calculateEfficiency();
   
   bool m_badStrips, m_correctedTot, m_histMode;
   float m_totAngleCF, m_RSigma, m_GFrac, m_maxDirZ, m_peakMIP;

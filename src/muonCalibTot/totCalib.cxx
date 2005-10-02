@@ -115,6 +115,7 @@ towerVar::towerVar( int twr, bool badStrips ){
       rHits[unp][strip] = 0;
       dHits[unp][strip] = 0;
       if( badStrips ){
+	bsv.eHits[strip] = 0;
 	bsv.tHits[strip] = 0;
 	bsv.lHits[strip] = 0;
 	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
@@ -132,7 +133,7 @@ towerVar::towerVar( int twr, bool badStrips ){
 
 void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
-  TH1F* hist, *rhist, *dhist, *thist, *lhist;
+  TH1F* hist, *rhist, *dhist, *ehist, *thist, *lhist;
   char name[] = "roccT00X17w3t4";
   char cvw[] = "XY";
   for( int unp=0; unp!=g_nUniPlane; unp++){
@@ -153,13 +154,16 @@ void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     layerId lid( unp );
     int layer = lid.layer;
     int view = lid.view;
+    sprintf(name,"eoccT%d%c%d", towerId, cvw[view], layer);
+    ehist = (TH1F*)hfile->Get( name );
     sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
     thist = (TH1F*)hfile->Get( name );
     sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
     lhist = (TH1F*)hfile->Get( name );
     for( int strip=0; strip!=g_nStrip; strip++){
-      bsVar[unp].lHits[strip] += (int)lhist->GetBinContent( strip+1 );
+      bsVar[unp].eHits[strip] += (int)ehist->GetBinContent( strip+1 );
       bsVar[unp].tHits[strip] += (int)thist->GetBinContent( strip+1 );
+      bsVar[unp].lHits[strip] += (int)lhist->GetBinContent( strip+1 );
     }
     for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
       for( int tDiv = 0; tDiv != g_nTime; tDiv++){
@@ -175,7 +179,7 @@ void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
 void towerVar::saveHists(){
 
-  TH1F* hist, *rhist, *dhist, *thist, *lhist;
+  TH1F* hist, *rhist, *dhist, *ehist, *thist, *lhist;
   char name[] = "roccT00X17w3t4";
   char cvw[] = "XY";
   for( int unp=0; unp!=g_nUniPlane; unp++){
@@ -198,14 +202,18 @@ void towerVar::saveHists(){
     layerId lid( unp );
     int layer = lid.layer;
     int view = lid.view;
+    sprintf(name,"eoccT%d%c%d", towerId, cvw[view], layer);
+    ehist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
     sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
     thist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
     sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
     lhist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
     for( int strip=0; strip!=g_nStrip; strip++){
-      lhist->Fill( strip+0.1, bsVar[unp].lHits[strip] );
+      ehist->Fill( strip+0.1, bsVar[unp].eHits[strip] );
       thist->Fill( strip+0.1, bsVar[unp].tHits[strip] );
+      lhist->Fill( strip+0.1, bsVar[unp].lHits[strip] );
     }
+    ehist->Write(0, TObject::kOverwrite);
     thist->Write(0, TObject::kOverwrite);
     lhist->Write(0, TObject::kOverwrite);
     for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
@@ -267,7 +275,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.42 $";
+  std::string version = "$Revision: 1.43 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -643,6 +651,7 @@ void totCalib::splitWords(  std::vector<std::string>& words,
 void totCalib::initHists(){
   m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
   m_maxHitDist = new TH1F("maxHit", "maxHit", g_nUniPlane, 0, g_nUniPlane);
+  m_trkRMS = new TH1F("trkRMS", "trkRMS", 100, 0, 0.002);
   m_numClsDist = new TH1F("numCls", "# of cluster per layer", 10, 0, 10 );
   m_dirzDist = new TH1F("dirZ", "dirZ", 100, -1, 1);
   m_armsDist = new TH1F("arms", "arms", 100, -5, 5);
@@ -677,7 +686,7 @@ void totCalib::initHists(){
     m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
     m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
     m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
-    m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.2, 0.7);
+    m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.1, 0.6);
     m_langauGSigma = new TH1F("langauGSigma", "Langau GSigma", 50, 0.0, 2.0);
     m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
     m_chist[4] = new TH1F("chargeAll", "TOT charge distribution", nTotHistBin, 0, maxTot);
@@ -731,6 +740,7 @@ totCalib::~totCalib()
 
   m_nTrackDist->Write(0, TObject::kOverwrite);
   m_maxHitDist->Write(0, TObject::kOverwrite);
+  m_trkRMS->Write(0, TObject::kOverwrite);
   m_numClsDist->Write(0, TObject::kOverwrite);
   m_dirzDist->Write(0, TObject::kOverwrite);
   m_armsDist->Write(0, TObject::kOverwrite);
@@ -1223,6 +1233,7 @@ void totCalib::analyze( int nEvents )
   if( m_badStrips ){
     findBadStrips();
     if( ! m_histMode ) fillBadStrips();
+    //calculateEfficiency();
   }
   else{
     fitTot();
@@ -1477,7 +1488,7 @@ void totCalib::selectGoodClusters(){
   std::cout << "selectGoodClusters start" << std::endl;
 #endif
 
-  bool display = false;
+  bool display = true;
   m_clusters.clear();
   //
   // register new raw clusters if it is close to the track position
@@ -1564,7 +1575,7 @@ void totCalib::selectGoodClusters(){
 	
 	if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
 	m_armsDist->Fill( delta );
-	if( fabs(delta) > 2.0 ){
+	if( fabs(delta) > 3.0 ){
 	  if( display ) std::cout << " **************" << std::endl;
 	  continue;
 	}
@@ -1659,7 +1670,7 @@ bool totCalib::closeToTrack( const TkrCluster* cluster, TkrCluster* clusters[g_n
   
   if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
   m_armsDist->Fill( delta );
-  if( fabs(delta) > 2.0 ){
+  if( fabs(delta) > 3.0 ){
     if( display ) std::cout << " **************" << std::endl;
     return false;
   }
@@ -1764,12 +1775,14 @@ bool totCalib::passCut()
       }
     }
   }
-  if( maxHits == 0 ) return false;
   m_maxHitDist->Fill( maxHits );
+  if( maxHits < 6 ) return false;
+  m_trkRMS->Fill( m_track->getScatter() );
   m_dirzDist->Fill( m_dir.Z() );
   float maxDirZ = m_maxDirZ;
   if( m_badStrips ) maxDirZ = -0.7;
   if( m_dir.Z() > maxDirZ ) return false;
+  if( m_track->getScatter() > 2.0E-4 ) return false;
   
   return true;
 }
@@ -1782,7 +1795,7 @@ void totCalib::fitTot()
   std::cout << "Start fit." << std::endl;
   m_chargeHist.clear();
   
-  const float meanChargeScale = 1.1, rangeChargeScale=0.3;
+  const float meanChargeScale = 1.05, rangeChargeScale=0.3;
   char cvw[] = "XY";
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
     int tower = m_towerVar[ tw ].towerId;
@@ -1880,7 +1893,7 @@ void totCalib::fitTot()
 	  / chargeHist->Integral();
 	m_fracBatTot->Fill( fracBadTot );
 
-	float lowLim = ave - 1.25 * rms;
+	float lowLim = ave - 1.4 * rms;
 	if( fracBadTot > 0.05 && lowLim < ave*0.5 ){
 	  lowLim = ave*0.5;
 	  std::cout << "WARNING, large bad TOT fraction: " 
@@ -1891,11 +1904,11 @@ void totCalib::fitTot()
 		<< " " << iDiv << std::endl;
 	}
 
-	ffit->SetParLimits( 0, 0.0, rms );
+	ffit->SetParLimits( 0, 0.15, 0.5 );
 	ffit->SetParLimits( 1, 0.0, ave*2 );
 	ffit->SetParLimits( 2, 0.0, area*0.4 );
-	ffit->SetParLimits( 3, 0.0, rms );
-	ffit->SetRange( lowLim, ave+2*rms );
+	ffit->SetParLimits( 3, 0.35, 0.85 );
+	ffit->SetRange( lowLim, ave+2.5*rms );
 	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
 	ffit->FixParameter( 4, m_RSigma );
 	ffit->FixParameter( 5, m_GFrac );
@@ -1947,15 +1960,24 @@ void totCalib::fitTot()
 		  << " " << iDiv << std::endl;
 	  }
 	  // large peak fit error
-	  if( errPeak*sqrt(area/1000)/peak > maxFracErr ){ 
-	    std::cout << "WARNING, large peak fit error: "
+	  if( errPeak*sqrt(area/1000)/peak > maxFracErr 
+	      || errPeak*sqrt(area/1000)/peak < minFracErr ){ 
+	    std::cout << "WARNING, abnormal peak fit error: "
 		      << errPeak*sqrt(area/1000)/peak << ", T" << tower 
 		      << " " << cvw[view] << layer << " " << iDiv << std::endl;
-	    m_log << "WARNING, large peak fit error: "
+	    m_log << "WARNING, abnormal peak fit error: "
 		  << errPeak*sqrt(area/1000)/peak << ", T" << tower << " " 
 		  << cvw[view] << layer << " " << iDiv << std::endl;
 	  }
 	  m_towerVar[tw].tcVar[unp].chargeScale[iDiv] = chargeScale;
+	}
+	else{
+	  std::cout << "WARNING, negative peak value: "
+		    << peak << ", T" << tower << " " << cvw[view] 
+		    << layer << " " << iDiv << std::endl;
+	  m_log << "WARNING, negative peak value: "
+		<< peak << ", T" << tower << " " << cvw[view] << layer 
+		<< " " << iDiv << std::endl;
 	}
 	
 	m_log << "Fit T" << tower << " " << cvw[view] << layer << " " 
@@ -2018,6 +2040,7 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
   m_nTrackDist->Add( (TH1F*)hfile->Get( "nTrack" ) );
   m_maxHitDist->Add( (TH1F*)hfile->Get( "maxHit" ) );
+  m_trkRMS->Add( (TH1F*)hfile->Get( "trkRMS" ) );
   m_numClsDist->Add( (TH1F*)hfile->Get( "numCls" ) );
   m_dirzDist->Add( (TH1F*)hfile->Get( "dirZ" ) );
   m_armsDist->Add( (TH1F*)hfile->Get( "arms" ) );
@@ -2034,8 +2057,8 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     m_leff->Add( (TH1F*)hfile->Get( "leff" ) );
     m_ltrk->Add( (TH1F*)hfile->Get( "ltrk" ) );
     m_dist->Add( (TH1F*)hfile->Get( "dist" ) );
-    m_occDist->Add( (TH1F*)hfile->Get( "occDist" ) );
-    m_poissonDist->Add( (TH1F*)hfile->Get( "poissonDist" ) );
+    //m_occDist->Add( (TH1F*)hfile->Get( "occDist" ) );
+    //m_poissonDist->Add( (TH1F*)hfile->Get( "poissonDist" ) );
     m_aPos[0]->Add( (TH1F*)hfile->Get( "apos0" ) );
     m_aPos[1]->Add( (TH1F*)hfile->Get( "apos1" ) );
     m_aPos[2]->Add( (TH1F*)hfile->Get( "apos2" ) );
@@ -2046,12 +2069,12 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
       m_towerVar[tw].readHists( hfile, iRoot, nRoot );
   }
   else{
-    m_fracBatTot->Add( (TH1F*)hfile->Get( "fracBadTot" ) );
-    m_fracErrDist->Add( (TH1F*)hfile->Get( "fracErrDist" ) );
-    m_chisqDist->Add( (TH1F*)hfile->Get( "chisqDist" ) );
-    m_chargeScale->Add( (TH1F*)hfile->Get( "chargeScale" ) );
-    m_langauWidth->Add( (TH1F*)hfile->Get( "langauWidth" ) );
-    m_langauGSigma->Add( (TH1F*)hfile->Get( "langauSigma" ) );
+    //m_fracBatTot->Add( (TH1F*)hfile->Get( "fracBadTot" ) );
+    //m_fracErrDist->Add( (TH1F*)hfile->Get( "fracErrDist" ) );
+    //m_chisqDist->Add( (TH1F*)hfile->Get( "chisqDist" ) );
+    //m_chargeScale->Add( (TH1F*)hfile->Get( "chargeScale" ) );
+    //m_langauWidth->Add( (TH1F*)hfile->Get( "langauWidth" ) );
+    //m_langauGSigma->Add( (TH1F*)hfile->Get( "langauSigma" ) );
     m_dirProfile->Add( (TH1F*)hfile->Get( "dirProfile" ) );
     for( int i=4; i!=-1; i--){
       char hname[]="chargeAll";
@@ -2631,7 +2654,11 @@ void totCalib::fillOccupancy( int tDiv )
   // first loop to register hits and get tower offset
   //
   int hitLayers[g_nLayer];
-  for( int layer=0; layer!=g_nLayer; layer++) hitLayers[layer]=0;
+  int hitPlanes[g_nLayer][g_nView];
+  for( int layer=0; layer!=g_nLayer; layer++){
+    hitLayers[layer]=0;
+    for( int vw=0; vw!=g_nView; vw++) hitPlanes[layer][vw]=0;
+  }
   
   for( unsigned int cls=0; cls<m_clusters.size(); cls++){
     Cluster* cluster = m_clusters[cls];
@@ -2647,7 +2674,7 @@ void totCalib::fillOccupancy( int tDiv )
     }
     
     hitLayers[layer]++;
-    
+    hitPlanes[layer][view]++;
   }
   
   //
@@ -2658,7 +2685,7 @@ void totCalib::fillOccupancy( int tDiv )
   float dirX=m_dir.X()/m_dir.Z(), dirY=m_dir.Y()/m_dir.Z(), 
     preX=m_pos.X(), preY=m_pos.Y(), preXZ=m_pos.Z(), preYZ=m_pos.Z();
   int aview, preLayer=g_nLayer;
-  int lastTower=-1, nTowers, towers[2];
+  int lastTower=-1, nTowers, towers[2], strips[g_nView];
 
   int numCls = m_clusters.size();
   for( int cls=0; cls<numCls; cls++){
@@ -2675,6 +2702,7 @@ void totCalib::fillOccupancy( int tDiv )
     if( cls == numCls-1 ) elyr = 0;
     for( int lyr=preLayer-1; lyr>= elyr; lyr--){ 
       // layers where hits are expected.
+      // hit in the same layer or hits in both layers below and above.
       if( hitLayers[lyr] != 0
 	  || ( lyr!=0 && lyr!=g_nLayer-1 
 	       && hitLayers[lyr+1]>0 && hitLayers[lyr-1]>0 ) ){
@@ -2698,19 +2726,31 @@ void totCalib::fillOccupancy( int tDiv )
 	    lastTower = -1;
 	  }
 	}
-	for( int tw=0; tw<nTowers; tw++){
+	for( int tw=0; tw<nTowers; tw++){ // check both tower
 	  int twr = towers[tw];
 	  int vtw = m_towerPtr[twr];
+	  int numActive=0;
 	  for( int vw=0; vw!=g_nView; vw++){
+	    strips[vw]=-1;
 	    lpos = tpos[vw] - m_towerVar[vtw].center[vw];
 	    for( int iw=0; iw!=g_nWafer; ++iw){
 	      float stp = ( lpos-ladderGap*(iw-1.5) ) / stripPitch 
 		+ g_nStrip/2;
 	      if( stp>=iw*g_nStrip/4 && stp < (iw+1)*g_nStrip/4 ){
-		layerId lid( lyr, vw );
-		m_towerVar[vtw].bsVar[lid.uniPlane].tHits[int(stp)]++;
-		m_ltrk->Fill( lid.uniPlane );
+		strips[vw] = int(stp);
 	      }
+	    }
+	    if( strips[vw] > 0 ) numActive++;
+	  }
+	  // check if track go thorugh active region in all views
+	  if( numActive == g_nView ){
+	    for( int vw=0; vw!=g_nView; vw++){
+	      layerId lid( lyr, vw );
+	      m_towerVar[vtw].bsVar[lid.uniPlane].tHits[strips[vw]]++;
+	      // layer with associated hits
+	      if( hitPlanes[layer][vw]>0 )
+		m_towerVar[vtw].bsVar[lid.uniPlane].eHits[strips[vw]]++;
+	      m_ltrk->Fill( lid.uniPlane );
 	    }
 	  }
 	} // tower loop
