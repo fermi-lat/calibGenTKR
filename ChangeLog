@@ -1,4 +1,16 @@
 ------------------------------------------------------------
+User: htajima  Sun Oct  2 14:38:08 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+expand fit range to stabilize the fit.
+change warning criteria for abnormal fit conditions.
+some implementaion of efficiency calculation. It still had large systematic inefficiency of 1%.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r7, operation: add
 Package: calibGenTKR
