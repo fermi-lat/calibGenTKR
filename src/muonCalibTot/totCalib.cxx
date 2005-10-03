@@ -275,7 +275,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.43 $";
+  std::string version = "$Revision: 1.44 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -1488,7 +1488,7 @@ void totCalib::selectGoodClusters(){
   std::cout << "selectGoodClusters start" << std::endl;
 #endif
 
-  bool display = true;
+  bool display = false;
   m_clusters.clear();
   //
   // register new raw clusters if it is close to the track position
