@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sun Oct  2 19:35:39 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx 
+Log Message:
+turn off bebug print statements
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r7p1, operation: add
 Package: calibGenTKR
