@@ -315,7 +315,7 @@ class totCalib {
   //TH1F* m_chargeHist[g_nTower][g_nUniPlane][g_nDiv];
   std::vector<TH1F*> m_chargeHist;
   TH1F *m_fracErrDist, *m_chisqDist, *m_fracBatTot, *m_chist[5];
-  TH1F *m_chargeScale, *m_langauWidth, *m_langauGSigma;
+  TH1F *m_chargeScale, *m_entries, *m_langauWidth, *m_langauGSigma;
   TProfile *m_dirProfile;
   //float m_chargeScale[g_nTower][g_nLayer][g_nView][g_nDiv];
 
