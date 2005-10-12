@@ -275,7 +275,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.44 $";
+  std::string version = "$Revision: 1.45 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -686,6 +686,7 @@ void totCalib::initHists(){
     m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
     m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
     m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
+    m_entries = new TH1F("entries", "Entries", 200, 0, 2000);
     m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.1, 0.6);
     m_langauGSigma = new TH1F("langauGSigma", "Langau GSigma", 50, 0.0, 2.0);
     m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
@@ -767,6 +768,7 @@ totCalib::~totCalib()
     m_fracErrDist->Write(0, TObject::kOverwrite);
     m_chisqDist->Write(0, TObject::kOverwrite);
     m_chargeScale->Write(0, TObject::kOverwrite);
+    m_entries->Write(0, TObject::kOverwrite);
     m_langauWidth->Write(0, TObject::kOverwrite);
     m_langauGSigma->Write(0, TObject::kOverwrite);
     m_dirProfile->Write(0, TObject::kOverwrite);
@@ -1795,7 +1797,7 @@ void totCalib::fitTot()
   std::cout << "Start fit." << std::endl;
   m_chargeHist.clear();
   
-  const float meanChargeScale = 1.05, rangeChargeScale=0.3;
+  const float meanChargeScale = 1.12, rangeChargeScale=0.3;
   char cvw[] = "XY";
   for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
     int tower = m_towerVar[ tw ].towerId;
@@ -1806,7 +1808,7 @@ void totCalib::fitTot()
       std::cout << "Tower " << tower << ": ";
       std::cout << cvw[view] << layer << std::endl;
       for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
-	m_towerVar[tw].tcVar[unp].chargeScale[iDiv] = 1.0;
+	m_towerVar[tw].tcVar[unp].chargeScale[iDiv] = meanChargeScale;
 	
 	float area, ave, rms;
 	Double_t *par, *error;
@@ -1875,6 +1877,7 @@ void totCalib::fitTot()
 	area = chargeHist->Integral();
 	ave = chargeHist->GetMean();
 	rms = chargeHist->GetRMS();
+	m_entries->Fill( area );
 	//std::cout << area << " " << ave << " " << rms << std::endl;
 	if( area<200 || ave==0.0 || rms==0.0 ){ 
 	  m_log << "T" << tower << " " << cvw[view] << layer
@@ -1904,7 +1907,7 @@ void totCalib::fitTot()
 		<< " " << iDiv << std::endl;
 	}
 
-	ffit->SetParLimits( 0, 0.15, 0.5 );
+	ffit->SetParLimits( 0, 0.10, 0.5 );
 	ffit->SetParLimits( 1, 0.0, ave*2 );
 	ffit->SetParLimits( 2, 0.0, area*0.4 );
 	ffit->SetParLimits( 3, 0.35, 0.85 );
