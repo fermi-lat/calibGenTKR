@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Wed Oct 12 11:50:08 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+change default charge scale to 1.12. Add histogram to keep track of charge entries for each GTFE.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r7p2, operation: add
 Package: calibGenTKR
