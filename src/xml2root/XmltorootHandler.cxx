@@ -1,4 +1,4 @@
-//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.2 2005/04/14 19:00:16 jrb Exp $
+//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.3 2005/06/06 19:40:41 jrb Exp $
 /**
    @file XmltorootHandler.cxx
 
@@ -110,7 +110,7 @@ void XmltorootHandler::guts(std::string outname) {
     std::cout << "Writing new file " << outname << std::endl;
   }
   else {  // close; reopen as TFile, mode UPDATE
-    close(oldOut);
+    fclose(oldOut);
 
     m_updateFile = true;
 
