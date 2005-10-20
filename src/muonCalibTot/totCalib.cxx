@@ -275,7 +275,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.45 $";
+  std::string version = "$Revision: 1.46 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -3503,7 +3503,7 @@ poissonFunc::poissonFunc(){
   for(int k=1;k!=200;k++){
     fac*=k;
     factorial[k] = fac;
-    lfac += log(k);
+    lfac += log(float(k));
     logFactorial[k] = lfac;
   }
 }
@@ -3532,7 +3532,7 @@ float poissonFunc::getLogIntProb( double mean, int value ){
     double prob=0;
     for( int i=0; i!=value+1; i++ )
       prob += pow(mean,i)/factorial[i];
-    return log10( prob ) - mean*log10( exp(1) );
+    return log10( prob ) - mean*log10( exp(1.) );
   }
   // Gaussian probability
   else return - (value-mean)*(value-mean) / (2*mean);
