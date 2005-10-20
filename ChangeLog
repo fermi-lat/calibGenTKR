@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: jrb  Thu Oct 20 16:22:42 PDT 2005
+calibGenTKR/src/xml2root
+
+Modified Files:
+	XmltorootHandler.cxx 
+Log Message:
+Change 'close' to 'fclose' since the former doesn't exist on Windows
+
+    *
+------------------------------------------------------------
 User: cohen  Thu Oct 20 15:49:01 PDT 2005
 calibGenTKR/src/muonCalibTot
 
