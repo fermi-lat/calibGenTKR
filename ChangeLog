@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Thu Oct 20 15:49:01 PDT 2005
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx 
+Log Message:
+windows compilation fix
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r7p3, operation: add
 Package: calibGenTKR
