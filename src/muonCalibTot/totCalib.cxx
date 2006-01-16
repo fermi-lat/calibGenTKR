@@ -141,9 +141,9 @@ void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     int layer = lid.layer;
     int view = lid.view;
     sprintf(name,"roccT%d%c%d", towerId, cvw[view], layer);
-    rhist = (TH1F*)hfile->Get( name );
+    rhist = (TH1F*)hfile->FindObjectAny( name );
     sprintf(name,"doccT%d%c%d", towerId, cvw[view], layer);
-    dhist = (TH1F*)hfile->Get( name );
+    dhist = (TH1F*)hfile->FindObjectAny( name );
     for( int strip=0; strip!=g_nStrip; strip++){      
       rHits[unp][strip] += (int)rhist->GetBinContent( strip+1 );
       dHits[unp][strip] += (int)dhist->GetBinContent( strip+1 );
@@ -155,24 +155,35 @@ void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     int layer = lid.layer;
     int view = lid.view;
     sprintf(name,"eoccT%d%c%d", towerId, cvw[view], layer);
-    ehist = (TH1F*)hfile->Get( name );
+    ehist = (TH1F*)hfile->FindObjectAny( name );
     sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
-    thist = (TH1F*)hfile->Get( name );
+    thist = (TH1F*)hfile->FindObjectAny( name );
     sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
-    lhist = (TH1F*)hfile->Get( name );
+    lhist = (TH1F*)hfile->FindObjectAny( name );
     for( int strip=0; strip!=g_nStrip; strip++){
       bsVar[unp].eHits[strip] += (int)ehist->GetBinContent( strip+1 );
       bsVar[unp].tHits[strip] += (int)thist->GetBinContent( strip+1 );
       bsVar[unp].lHits[strip] += (int)lhist->GetBinContent( strip+1 );
     }
-    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
-      for( int tDiv = 0; tDiv != g_nTime; tDiv++){
-	sprintf(name,"occT%d%c%dw%dt%d", towerId, cvw[view], layer, iWafer, (tDiv+iRoot*g_nTime)/nRoot);
-	hist = (TH1F*)hfile->Get( name );
+    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
+      sprintf(name,"occT%d%c%dw%d", towerId, cvw[view], layer, iWafer );
+      hist = (TH1F*)hfile->FindObjectAny( name );
+      if( hist ){ // check if simple version exist
+	int tdiv = (iRoot*g_nTime)/nRoot;
 	for( int strip=0; strip!=g_nStrip; strip++)
-	  bsVar[unp].nHits[strip][iWafer][tDiv] 
+	  bsVar[unp].nHits[strip][iWafer][tdiv] 
+	    += (int)hist->GetBinContent( strip+1 );
+	continue; // no need to get time dependent histograms
+      }
+      for( int tDiv = 0; tDiv != g_nTime; tDiv++){
+	sprintf(name,"occT%d%c%dw%dt%d", towerId, cvw[view], layer, iWafer, tDiv );
+	hist = (TH1F*)hfile->FindObjectAny( name );
+	int tdiv = (tDiv+iRoot*g_nTime)/nRoot;
+	for( int strip=0; strip!=g_nStrip; strip++)
+	  bsVar[unp].nHits[strip][iWafer][tdiv] 
 	    += (int)hist->GetBinContent( strip+1 );
       }
+    }
   }
 }
 
@@ -275,7 +286,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag = tag;
 
-  std::string version = "$Revision: 1.46 $";
+  std::string version = "$Revision: 1.47 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -292,6 +303,8 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   m_RSigma = 4.0;
   m_GFrac = 0.78;
   m_maxDirZ = -0.85;
+  m_maxTrackRMS = 0.3;
+  m_maxDelta = 3.0;
 
   for(int tower = 0; tower != g_nTower; ++tower)
     m_towerPtr[tower] = -1;
@@ -305,10 +318,14 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 	    << ", RSigma: " << m_RSigma
 	    << ", GFrac: " << m_GFrac 
 	    << ", maxDirZ: " << m_maxDirZ 
+	    << ", maxTrackRMS: " << m_maxTrackRMS 
+	    << ", maxDelta: " << m_maxDelta 
 	    << std::endl;
   m_log << "totAngleCF: " << m_totAngleCF << ", peakMIP: " << m_peakMIP
 	<< ", RSigma: " << m_RSigma
 	<< ", GFrac: " << m_GFrac << ", maxDirZ: " << m_maxDirZ 
+	<< ", maxTrackRMS: " << m_maxTrackRMS 
+	<< ", maxDelta: " << m_maxDelta 
 	<< std::endl;
   
 }
@@ -348,7 +365,6 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
   catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
-    delete parser;
     return false;
   }
   if (doc != 0) {  // successful
@@ -497,7 +513,6 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       
       getTimeStamp();
       if( !setOutputFiles( outDir.c_str() ) ) return false; 
-      
       //
       // loop data tag
       // 
@@ -511,7 +526,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	m_log << "no data element found." << std::endl;
 	return false;
       }
-      std::string top, raw, digi, recon, runids;
+      std::string top, raw, digi, svac, recon, runids;
       std::vector<std::string> runIds;
       for(int idata=0; idata<numData; idata++){ //each xml loop
 	DOMNode* dataElt = dataList[ idata ];
@@ -522,6 +537,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	  recon = Dom::getAttribute(dataElt, "recon");
 	  runids = Dom::getAttribute(dataElt, "runIds");
 	  mode = Dom::getAttribute(dataElt, "mode");
+	  svac = Dom::getAttribute(dataElt, "svac");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -543,6 +559,9 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	if( mode == "dummy" ){
 	  std::cout << "dummy mode: no digi/recon file used." << std::endl;
 	  m_log << "dummy mode: no digi/recon file used." << std::endl;
+	}
+	else if( mode == "svac" ){ // read TKR histograms from svac root files.
+	  if( !readInputHistFiles( top, svac, runIds ) ) return false;
 	}
 	else if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
 			 runIds, digiChain, reconChain ) ) return false;
@@ -610,6 +629,8 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       return false;
     }
   }
+  delete parser;
+  delete doc;
   return true;
 }
 
@@ -651,13 +672,14 @@ void totCalib::splitWords(  std::vector<std::string>& words,
 void totCalib::initHists(){
   m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
   m_maxHitDist = new TH1F("maxHit", "maxHit", g_nUniPlane, 0, g_nUniPlane);
-  m_trkRMS = new TH1F("trkRMS", "trkRMS", 100, 0, 0.002);
+  m_trkRMS = new TH1F("trkRMS", "trkRMS", 100, 0, 4.0);
   m_numClsDist = new TH1F("numCls", "# of cluster per layer", 10, 0, 10 );
   m_dirzDist = new TH1F("dirZ", "dirZ", 100, -1, 1);
   m_armsDist = new TH1F("arms", "arms", 100, -5, 5);
   m_lrec = new TH1F("lrec", "lrec", g_nUniPlane, 0, g_nUniPlane);
   m_ldigi = new TH1F("ldigi", "ldigi", g_nUniPlane, 0, g_nUniPlane);
   m_lcls = new TH1F("lcls", "lcls", g_nUniPlane, 0, g_nUniPlane);
+  m_htwr = new TH1F("htwr", "htwr", g_nTower, 0, g_nTower);
   if( m_badStrips ){
     m_locc = new TH1F("locc", "locc", g_nUniPlane, 0, g_nUniPlane);
     m_leff = new TH1F("leff", "leff", g_nUniPlane, 0, g_nUniPlane);
@@ -748,6 +770,7 @@ totCalib::~totCalib()
   m_lrec->Write(0, TObject::kOverwrite);
   m_ldigi->Write(0, TObject::kOverwrite);
   m_lcls->Write(0, TObject::kOverwrite);
+  m_htwr->Write(0, TObject::kOverwrite);
   if( m_badStrips ){
     for( int i=0; i<g_nLayer/3; i++) 
       m_brmsDist[i]->Write(0, TObject::kOverwrite);
@@ -1077,7 +1100,6 @@ bool totCalib::parseRcReport( const char* reportFile )
   catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
-    delete parsercReport;
     return false;
   }
 
@@ -1163,7 +1185,11 @@ bool totCalib::parseRcReport( const char* reportFile )
     }
 
     int runid = atoi( values[0].c_str() );
-    if( runid != m_first_run && runid != m_last_run ) return true;
+    if( runid != m_first_run && runid != m_last_run ){
+      delete docrcReport;
+      delete parsercReport;
+      return true;
+    }
     if( runid == m_first_run ){ 
       getDate( values[1].c_str(), m_startTime );
       std::cout << "start time: " << m_startTime 
@@ -1179,6 +1205,8 @@ bool totCalib::parseRcReport( const char* reportFile )
 	    << ", run id: " << runid << std::endl;
     }
     
+    delete docrcReport;
+    delete parsercReport;
     return true;
   }
   return false;
@@ -1403,6 +1431,7 @@ void totCalib::getDigiClusters()
       
       if( newCls ){
 	m_ldigi->Fill( uniPlane );
+	m_htwr->Fill( tower );
 	if( strips[i] <= lastRC0Strip )
 	  m_towerVar[tw].digiClusters[uniPlane].push_back( Cluster( strips[i], totl ) );
 	else
@@ -1577,7 +1606,7 @@ void totCalib::selectGoodClusters(){
 	
 	if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
 	m_armsDist->Fill( delta );
-	if( fabs(delta) > 3.0 ){
+	if( fabs(delta) > m_maxDelta ){
 	  if( display ) std::cout << " **************" << std::endl;
 	  continue;
 	}
@@ -1672,7 +1701,7 @@ bool totCalib::closeToTrack( const TkrCluster* cluster, TkrCluster* clusters[g_n
   
   if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
   m_armsDist->Fill( delta );
-  if( fabs(delta) > 3.0 ){
+  if( fabs(delta) > m_maxDelta ){
     if( display ) std::cout << " **************" << std::endl;
     return false;
   }
@@ -1761,7 +1790,6 @@ bool totCalib::passCut()
   // find a track with maximum number of hits.
   int maxHits = 0, nHits;
   for( int tk=0; tk!=numTracks; tk++){
-    
 #ifdef OLD_RECON
     TkrKalFitTrack* track = dynamic_cast<TkrKalFitTrack*>(tracks->At(tk));
 #else
@@ -1779,14 +1807,100 @@ bool totCalib::passCut()
   }
   m_maxHitDist->Fill( maxHits );
   if( maxHits < 6 ) return false;
-  m_trkRMS->Fill( m_track->getScatter() );
+
+  m_trackRMS = -1.0; // reset
+  //m_trkRMS->Fill( m_track->getScatter() );
+  m_trkRMS->Fill( getTrackRMS() );
+  //std::cout << m_trackRMS << " " << m_track->getScatter()/m_trackRMS << std::endl;
   m_dirzDist->Fill( m_dir.Z() );
   float maxDirZ = m_maxDirZ;
   if( m_badStrips ) maxDirZ = -0.7;
   if( m_dir.Z() > maxDirZ ) return false;
-  if( m_track->getScatter() > 2.0E-4 ) return false;
+  if( m_trackRMS > m_maxTrackRMS ) return false;
   
   return true;
+}
+
+float totCalib::getTrackRMS(){
+  if( m_trackRMS >= 0.0 ) return m_trackRMS;
+
+  //
+  // register hits and perform linear fit
+  //
+  std::vector<Double_t> vx, vzx, vy, vzy;
+  TkrTrack* tkrTrack = m_track;
+  TIter trk1HitsItr(tkrTrack);
+  TkrTrackHit* pTrk1Hit = 0;
+  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {    
+    const TkrCluster* cluster = (pTrk1Hit->getClusterPtr());
+    if(!cluster) continue;
+    layerId lid = getLayerId( cluster );
+    Double_t z = (cluster->getPosition()).Z();
+    if( lid.view == 0 ){
+      vx.push_back( (cluster->getPosition()).X() );
+      vzx.push_back( z );
+    }
+    else{
+      vy.push_back( (cluster->getPosition()).Y() );
+      vzy.push_back( z );
+    }
+  }
+  Double_t x0=-1.0, dxdz=-1.0, y0, dydz;
+  // fit xz and yz
+  leastSquareLinearFit( vx, vzx, x0, dxdz );
+  leastSquareLinearFit( vy, vzy, y0, dydz );
+
+  // reset mpos
+  Double_t z = m_pos.Z();
+  m_pos.SetXYZ( x0 + dxdz*z, y0 + dydz*z, z );
+  // reset dir
+  Double_t dirz = -1 / sqrt( dxdz*dxdz + dydz*dydz + 1.0 );
+  m_dir.SetXYZ( dxdz*dirz, dydz*dirz, dirz );
+
+  // calculare combined rms in both x and y
+  float sum=0.0, sumsq=0.0;
+  for( UInt_t i=0; i<vx.size(); i++){
+    float del = vx[i] - ( x0+dxdz*vzx[i] );
+    //std::cout << del << " = " << vx[i] << " -  " << x0+dxdz*vzx[i] << " =" 
+    //      << x0 << "+" << dxdz << "*" << vzx[i] << std::endl;
+    sum += del;
+    sumsq += del*del;
+  }
+  for( UInt_t i=0; i<vy.size(); i++){
+    float del = vy[i] - ( y0+dydz*vzy[i] );
+    sum += del;
+    sumsq += del*del;
+  }
+  int num = ( vx.size()+vy.size() );
+  float mean = sum / num;
+  float rmsq = sumsq / num - mean*mean;
+  if( rmsq > 0.0 ) m_trackRMS = sqrt( rmsq );
+  else m_trackRMS = 0.0;
+  return m_trackRMS;
+
+}
+
+Double_t totCalib::leastSquareLinearFit( std::vector<Double_t> &vy, 
+				     std::vector<Double_t> &vx, 
+				     Double_t &y0, Double_t &dydx ){
+
+  Double_t sumX=0.0, sumXX=0.0, sumXY=0.0, sumY=0.0, sumYY=0.0;
+  UInt_t num = vy.size();
+  for( UInt_t i=0; i<num; i++){
+    sumX += vx[i];
+    sumXX += vx[i]*vx[i];
+    sumXY += vx[i]*vy[i];
+    sumYY += vy[i]*vy[i];
+    sumY += vy[i];
+  }
+  dydx = ( sumXY*num - sumX*sumY ) / ( sumXX*num - sumX*sumX );
+  y0 = ( sumY - dydx*sumX ) / num;
+  Double_t rms = sumYY - 2*dydx*sumXY - 2*y0*sumY 
+    + dydx*dydx*sumXX + 2*dydx*y0*sumX + y0*y0*num;
+  if( rms > 0.0 ) rms = sqrt( rms / num );
+  else rms = 0.0;
+  //std::cout << rms << std::endl;
+  return rms;
 }
 
 void totCalib::fitTot()
@@ -2039,50 +2153,86 @@ bool totCalib::readInputHistFiles(const std::string dir,
   return true;
 }
 
+bool totCalib::readInputHistFiles( const std::string dir, 
+				   const std::string prefix, 
+				   const std::vector<std::string> &runIds ){
+  
+  std::string path;
+  char fname[] = "135005345/v5r0703p6/calib-v1r0/svacTuple/emRootv0r0/svacTuple-v3r4p4_135005345_svac_svac.root";
+
+  for(UInt_t i=0; i!=runIds.size(); ++i) {
+    int runid = atoi( runIds[i].c_str() );
+    path = dir;
+    sprintf(fname,"/%d/%s_%d_svac_svac.root",
+	    runid, prefix.c_str(), runid);
+    path += fname;
+    m_log << "Open " << path << std::endl;
+    std::cout << "Open " << path << std::endl;
+    TFile* hfile = new TFile( path.c_str() );
+    if( ! hfile ){
+      std::cout << "File open failure: " << path << std::endl;
+      m_log << "File open failure: " << path << std::endl;
+      return false;
+    }
+    hfile->cd( "TkrCalib" );
+    //
+    // read histograms
+    //
+    if( !readHists( hfile, i, runIds.size() ) ) return false;
+
+    // close hist file
+    hfile->Close();
+    delete hfile;
+  }
+  return true;
+}
+
+
 bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
-  m_nTrackDist->Add( (TH1F*)hfile->Get( "nTrack" ) );
-  m_maxHitDist->Add( (TH1F*)hfile->Get( "maxHit" ) );
-  m_trkRMS->Add( (TH1F*)hfile->Get( "trkRMS" ) );
-  m_numClsDist->Add( (TH1F*)hfile->Get( "numCls" ) );
-  m_dirzDist->Add( (TH1F*)hfile->Get( "dirZ" ) );
-  m_armsDist->Add( (TH1F*)hfile->Get( "arms" ) );
-  m_lrec->Add( (TH1F*)hfile->Get( "lrec" ) );
-  m_ldigi->Add( (TH1F*)hfile->Get( "ldigi" ) );
-  m_lcls->Add( (TH1F*)hfile->Get( "lcls" ) );
+  m_nTrackDist->Add( (TH1F*)hfile->FindObjectAny( "nTrack" ) );
+  m_maxHitDist->Add( (TH1F*)hfile->FindObjectAny( "maxHit" ) );
+  m_trkRMS->Add( (TH1F*)hfile->FindObjectAny( "trkRMS" ) );
+  m_numClsDist->Add( (TH1F*)hfile->FindObjectAny( "numCls" ) );
+  m_dirzDist->Add( (TH1F*)hfile->FindObjectAny( "dirZ" ) );
+  m_armsDist->Add( (TH1F*)hfile->FindObjectAny( "arms" ) );
+  m_lrec->Add( (TH1F*)hfile->FindObjectAny( "lrec" ) );
+  m_ldigi->Add( (TH1F*)hfile->FindObjectAny( "ldigi" ) );
+  m_lcls->Add( (TH1F*)hfile->FindObjectAny( "lcls" ) );
+  histAdd( m_htwr, hfile, "htwr" );
   if( m_badStrips ){
     char hname[]="brms0";
     for( int i=0; i<g_nLayer/3; i++){ 
       sprintf( hname, "brms%d", i );
-      m_brmsDist[i]->Add( (TH1F*)hfile->Get( hname ) );
+      m_brmsDist[i]->Add( (TH1F*)hfile->FindObjectAny( hname ) );
     }
-    m_locc->Add( (TH1F*)hfile->Get( "locc" ) );
-    m_leff->Add( (TH1F*)hfile->Get( "leff" ) );
-    m_ltrk->Add( (TH1F*)hfile->Get( "ltrk" ) );
-    m_dist->Add( (TH1F*)hfile->Get( "dist" ) );
-    //m_occDist->Add( (TH1F*)hfile->Get( "occDist" ) );
-    //m_poissonDist->Add( (TH1F*)hfile->Get( "poissonDist" ) );
-    m_aPos[0]->Add( (TH1F*)hfile->Get( "apos0" ) );
-    m_aPos[1]->Add( (TH1F*)hfile->Get( "apos1" ) );
-    m_aPos[2]->Add( (TH1F*)hfile->Get( "apos2" ) );
-    m_aPos[3]->Add( (TH1F*)hfile->Get( "apos3" ) );
-    m_aPos[4]->Add( (TH1F*)hfile->Get( "apos4" ) );
+    m_locc->Add( (TH1F*)hfile->FindObjectAny( "locc" ) );
+    m_leff->Add( (TH1F*)hfile->FindObjectAny( "leff" ) );
+    m_ltrk->Add( (TH1F*)hfile->FindObjectAny( "ltrk" ) );
+    m_dist->Add( (TH1F*)hfile->FindObjectAny( "dist" ) );
+    //m_occDist->Add( (TH1F*)hfile->FindObjectAny( "occDist" ) );
+    //m_poissonDist->Add( (TH1F*)hfile->FindObjectAny( "poissonDist" ) );
+    m_aPos[0]->Add( (TH1F*)hfile->FindObjectAny( "apos0" ) );
+    m_aPos[1]->Add( (TH1F*)hfile->FindObjectAny( "apos1" ) );
+    m_aPos[2]->Add( (TH1F*)hfile->FindObjectAny( "apos2" ) );
+    m_aPos[3]->Add( (TH1F*)hfile->FindObjectAny( "apos3" ) );
+    m_aPos[4]->Add( (TH1F*)hfile->FindObjectAny( "apos4" ) );
 
     for( UInt_t tw = 0; tw != m_towerVar.size(); ++tw)
       m_towerVar[tw].readHists( hfile, iRoot, nRoot );
   }
   else{
-    //m_fracBatTot->Add( (TH1F*)hfile->Get( "fracBadTot" ) );
-    //m_fracErrDist->Add( (TH1F*)hfile->Get( "fracErrDist" ) );
-    //m_chisqDist->Add( (TH1F*)hfile->Get( "chisqDist" ) );
-    //m_chargeScale->Add( (TH1F*)hfile->Get( "chargeScale" ) );
-    //m_langauWidth->Add( (TH1F*)hfile->Get( "langauWidth" ) );
-    //m_langauGSigma->Add( (TH1F*)hfile->Get( "langauSigma" ) );
-    m_dirProfile->Add( (TH1F*)hfile->Get( "dirProfile" ) );
+    //m_fracBatTot->Add( (TH1F*)hfile->FindObjectAny( "fracBadTot" ) );
+    //m_fracErrDist->Add( (TH1F*)hfile->FindObjectAny( "fracErrDist" ) );
+    //m_chisqDist->Add( (TH1F*)hfile->FindObjectAny( "chisqDist" ) );
+    //m_chargeScale->Add( (TH1F*)hfile->FindObjectAny( "chargeScale" ) );
+    //m_langauWidth->Add( (TH1F*)hfile->FindObjectAny( "langauWidth" ) );
+    //m_langauGSigma->Add( (TH1F*)hfile->FindObjectAny( "langauSigma" ) );
+    m_dirProfile->Add( (TH1F*)hfile->FindObjectAny( "dirProfile" ) );
     for( int i=4; i!=-1; i--){
       char hname[]="chargeAll";
       if( i<4 ) sprintf( hname, "charge%d", i );
-      m_chist[i]->Add( (TH1F*)hfile->Get( hname ) );
+      m_chist[i]->Add( (TH1F*)hfile->FindObjectAny( hname ) );
     }
     char cvw[] = "XY";
     for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
@@ -2094,7 +2244,7 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv){
 	  char name[] = "chargeT00X00fe0000";
 	  sprintf(name,"chargeT%d%c%dfe%d", tower, cvw[view], layer, iDiv);
-	  TH1F* hist = (TH1F*)hfile->Get( name );
+	  TH1F* hist = (TH1F*)hfile->FindObjectAny( name );
 	  for( int ibin=0; ibin!=nTotHistBin; ibin++)
 	    m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin] 
 	      += (int)hist->GetBinContent( ibin+1 );
@@ -2186,7 +2336,6 @@ bool totCalib::readBadStripsXmlFile(const char* path,
   catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
-    delete parser;
     return false;
   }
   os.open( filename.c_str() );
@@ -2280,6 +2429,8 @@ bool totCalib::readBadStripsXmlFile(const char* path,
     }
   }
   else return false;
+  delete doc;
+  delete parser;
   return true;
 }
 
@@ -2316,7 +2467,6 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   catch (ParseException ex) {
     std::cout << "caught exception with message " << std::endl;
     std::cout << ex.getMsg() << std::endl;
-    delete parser;
     return false;
   }
   if (doc != 0) {  // successful
@@ -2373,25 +2523,34 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
     XMLCh* xmlchElt = XMLString::transcode("uniplane");
     DOMNodeList* conList = doc->getElementsByTagName(xmlchElt);
     int len = conList->getLength();   
+    if( defElt ){
+      std::cout << "INFO: default TOT parameters exist, which are used INSTEAD of those for individual channels." << std::endl;
+      m_log << "INFO: default TOT parameters exist, which are used INSTEAD of those for individual channels." << std::endl;
+      int tw = m_towerPtr[ towerId ];
+      for( int unp=0; unp!=g_nUniPlane; unp++)
+	for( int stripId =0; stripId!=g_nStrip; stripId++){
+	  m_towerVar[tw].tcVar[unp].totOffset[stripId] = intercept;
+	  m_towerVar[tw].tcVar[unp].totGain[stripId] = slope;
+	  m_towerVar[tw].tcVar[unp].totQuadra[stripId] = quad;
+	}
+      delete doc;
+      delete parser;
+      return true;
+    }
     if( len != g_nLayer*g_nView ){
-      if( defElt ){
-	int tw = m_towerPtr[ towerId ];
-	for( int unp=0; unp!=g_nUniPlane; unp++)
-	  for( int stripId =0; stripId!=g_nStrip; stripId++){
-	    m_towerVar[tw].tcVar[unp].totOffset[stripId] = intercept;
-	    m_towerVar[tw].tcVar[unp].totGain[stripId] = slope;
-	    m_towerVar[tw].tcVar[unp].totQuadra[stripId] = quad;
-	  }
-	return true;
-      }
-      else{
-	std::cout << "ERROR: # of layers in xml is invalid, " << len << std::endl;
-	m_log << "ERROR: # of layers in xml is invalid, " << len << std::endl;
-	return false;
-      }
+      std::cout << "WARNING: # of layers in xml is not what expected, proceed with care. " << len << std::endl;
+      m_log << "WARNING: # of layers in xml is not what expected, proceed with care. " << len << std::endl;
+      //return false;
     }
 
-    for(int i=0; i<len; i++){//each layers loop
+    std::vector<std::string> keywords;
+    keywords.push_back( "intercept" );
+    keywords.push_back( "slope" );
+    keywords.push_back( "quad" );
+
+    int numChannels = 0;
+    int numWarn = 0;
+    for(int i=0; i<len; i++){ // loop for each uniplane entry
       DOMNode* childNode = conList->item(i);
       int tray = Dom::getIntAttribute(childNode, "tray");
       std::string which = Dom::getAttribute(childNode, "which");
@@ -2409,25 +2568,42 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       }
 	
       int numStrip = 0;
-      while( getParam( elder, lid ) ){
+      while( getParam( elder, lid, keywords ) ){
 	younger = Dom::getSiblingElement( elder );
 	elder = younger;
 	numStrip++;
+	numChannels++;
       }
-      if( numStrip != g_nStrip ){
-	std::cout << "ERROR: # of strips in xml is invalid, " 
+      if( numStrip != g_nStrip && numWarn < 5 ){
+	std::cout << "WARN: # of strips in uniplane is not what expected, " 
 		  << numStrip << std::endl;
-	m_log << "ERROR: # of strips in xml is invalid, " 
+	m_log << "WARN: # of strips in uniplane is not what expected, " 
 	      << numStrip << std::endl;
-	return false;
+	numWarn++;
+	if( numWarn == 5 ){
+	  std::cout << "WARN: this is the last warning, further warnings are suppressed." << std::endl;
+	  m_log << "WARN: this is the last warning, further warnings are suppressed." << std::endl;
+	}
+	//return false;
       }
     }
+    if( numChannels != g_nLayer*g_nView*g_nStrip ){
+	std::cout << "ERROR: # of strips in xml is invalid, " 
+		  << numChannels << std::endl;
+	m_log << "ERROR: # of strips in xml is invalid, " 
+	      << numChannels << std::endl;
+	return false;
+    }
+
   }
   else return false;
+
+  delete parser;
+  delete doc;
   return true;
 }
 
-bool totCalib::getParam(const DOMElement* totElement, layerId lid ){  
+bool totCalib::getParam(const DOMElement* totElement, layerId lid, std::vector<std::string> keywords ){  
 #ifdef OLD_RECON
   //typdef xml xmlBase;
   using namespace xml;
@@ -2441,11 +2617,7 @@ bool totCalib::getParam(const DOMElement* totElement, layerId lid ){
   int view = lid.view;
 
   int stripId;
-  std::vector<std::string> keywords;
   std::vector<float> values;
-  keywords.push_back( "intercept" );
-  keywords.push_back( "slope" );
-  keywords.push_back( "quad" );
 
   try{
     stripId = Dom::getIntAttribute( totElement, "id" ); 
@@ -2790,7 +2962,7 @@ void totCalib::fillOccupancy( int tDiv )
     //if( layer==4 && view==0 ) m_brmsDist[layer/3]->Fill( delta );
     
     // select good clusters
-    if( fabs(delta) > 3.0  ) continue;
+    if( fabs(delta) > m_maxDelta ) continue;
     
     if( view == 0 ){
       aview = 1;
