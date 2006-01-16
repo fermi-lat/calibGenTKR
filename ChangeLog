@@ -1,4 +1,20 @@
 ------------------------------------------------------------
+User: htajima  Mon Jan 16 13:08:06 PST 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+replace getScatter() from TkrTrack class with rms from straight line fit.
+modify histogram reader to accomodate svac root files.
+use FindObjectAny() method instead of Get() to retrieve objects from subdirectories.
+correct the bug to read time divided occupancy plots.
+modify tot xml reader to accomodate one strip per uniplane.
+correct memory leak in xml reader. (delelte minidom document at the end.)
+move hard coded cut value to class member variable and set in the constructor.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r7p4, operation: add
 Package: calibGenTKR
