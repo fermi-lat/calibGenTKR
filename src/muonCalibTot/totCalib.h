@@ -261,7 +261,14 @@ class totCalib {
 
   bool readInputHistFiles(const std::string, 
 			 const std::vector<std::string>& );
+  bool readInputHistFiles( const std::string dir, 
+			   const std::string prefix, 
+			   const std::vector<std::string> &runIds );
   bool readHists( TFile*, UInt_t, UInt_t );
+  inline void histAdd( TH1F* hist, TFile* hfile, const char* name ){
+    TH1F* h1f = (TH1F*)hfile->FindObjectAny( name );
+    if( h1f ) hist->Add( h1f );
+  };
 
   bool readRcReports( const char* reportDir, 
 		      const std::vector<std::string>& runIds );
@@ -291,14 +298,17 @@ class totCalib {
   layerId getLayerId( const TkrCluster* );
   layerId getLayerId( Cluster* );
   bool closeToTrack( const TkrCluster*, TkrCluster*[g_nTower][g_nUniPlane] );
-  
+  float getTrackRMS();
+  Double_t leastSquareLinearFit( std::vector<Double_t> &vy, 
+			     std::vector<Double_t> &vx, 
+			     Double_t &y0, Double_t &dydx );
   void fillXml();//takuya
   void fillTowerChargeScales( std::ofstream &xmlFile, const int tower );
   void openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, const std::string tot_runid );
   
   int findTot(int tower,int planeId, int view, int stripId);
   
-  bool getParam(const DOMElement* totElement, layerId lid );
+  bool getParam(const DOMElement* totElement, layerId lid, std::vector<std::string> keywords );
   bool checkFile( const std::string );
   
   float calcCharge( layerId lid, int iStrip, int tot) const;
@@ -338,6 +348,7 @@ class totCalib {
   TkrTrack* m_track;
 #endif
   TVector3 m_pos, m_dir;
+  float m_trackRMS;
   
   std::vector<Cluster*> m_clusters;
 
@@ -378,12 +389,11 @@ class totCalib {
   void calculateEfficiency();
   
   bool m_badStrips, m_correctedTot, m_histMode;
-  float m_totAngleCF, m_RSigma, m_GFrac, m_maxDirZ, m_peakMIP;
+  float m_totAngleCF, m_RSigma, m_GFrac, m_maxDirZ, m_maxTrackRMS, m_maxDelta, m_peakMIP;
   TH1F* m_aPos[g_nWafer+1];
-  TH1F *m_occDist, *m_poissonDist, *m_lrec, *m_ldigi, *m_lcls, *m_locc, *m_leff, *m_ltrk, *m_dist;
+  TH1F *m_occDist, *m_poissonDist, *m_lrec, *m_ldigi, *m_lcls, *m_htwr, *m_locc, *m_leff, *m_ltrk, *m_dist;
   
 };
-
 // Gaussian convolved Landau function
 Double_t langaufun(Double_t *x, Double_t *par); 
 // Two Gaussian convolved Landau function
