@@ -5,10 +5,9 @@
 
 #include "totCalib.h"
 #include "facilities/Util.h"
-#ifndef OLD_RECON
-#include "commonRootData/idents/TkrId.h"
-#endif
 #include "commonRootData/idents/TowerId.h"
+
+#include "TkrHits.cxx"
 
 using std::string;
 using std::cout;
@@ -19,279 +18,25 @@ XERCES_CPP_NAMESPACE_USE
 //#define PRINT_DEBUG 1
 
 //
-// Cluster class implementation
-//
-Cluster::Cluster( int strip, int TOT=0 ){
-  firstStrip = strip;
-  lastStrip = strip;
-  tower = -1;
-  uniPlane = -1;
-  tot = TOT;
-  correctedTot = -100.0;
-}
-
-bool Cluster::addStrip( int strip ){
-
-  if( strip == lastStrip+1 ){ // assume strip number is sorted.
-    lastStrip = strip;
-    return true;
-  }
-  else return false;
-
-}
-
-//
-// layerId class implementation
-//
-inline layerId::layerId( int lyr, int vw, int twr ){ 
-  setLayer( lyr, vw, twr ); }
-inline layerId::layerId( int tr, std::string wh, int twr ){ 
-  setTray( tr, wh, twr ); }
-inline layerId::layerId( int unp ){ setUniPlane( unp ); }
-
-inline void layerId::setLayer( int lyr, int vw, int twr ){
-  layer = lyr; view = vw; tower = twr;
-  layerToTray();
-  trayToUniPlane();
-}
-
-inline void layerId::setUniPlane( int unp, int twr ){
-  uniPlane = unp; tower = twr;
-  uniPlaneToTray();
-  trayToLayer();
-}
-
-inline void layerId::setTray( int tr, std::string wh, int twr ){
-  tray = tr; which=wh; tower=twr;
-  trayToUniPlane();
-  trayToLayer();
-}
-
-inline void layerId::trayToUniPlane(){
-  uniPlane = tray * 2;
-  if( which == "bot" ) uniPlane--;
-}
-
-inline void layerId::trayToLayer(){
-  view = (tray+1) % 2;
-  layer = tray;
-  if( which == "bot" ) layer--;
-}
-
-void layerId::layerToTray(){
-  if(view==0){
-    tray = 2 * ( layer/2 ) + 1;
-    if(layer%2==0) which = "bot";
-    else which = "top";
-  }
-  else{
-    tray = 2 * ( (layer+1)/2 );
-    if(layer%2==0) which = "top";
-    else which = "bot";
-  }
-}
-
-
-inline void layerId::uniPlaneToTray(){
-  tray = (uniPlane+1) / 2;
-  if( uniPlane%2 == 0 ) which ="top";
-  else which = "bot";
-}
-
-//
-// towerVar class implementation
-//
-towerVar::towerVar( int twr, bool badStrips ){
-  towerId = twr;
-  hwserial = "None";
-  runid = "-1";
-  bsVar.clear();
-  tcVar.clear();
-
-  for( int unp=0; unp!=g_nUniPlane; unp++){
-    badStripVar bsv;
-    totCalibVar tcv;
-    for( int strip=0; strip!=g_nStrip; strip++){
-      rHits[unp][strip] = 0;
-      dHits[unp][strip] = 0;
-      if( badStrips ){
-	bsv.eHits[strip] = 0;
-	bsv.tHits[strip] = 0;
-	bsv.lHits[strip] = 0;
-	for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
-	  for( int tDiv = 0; tDiv != g_nTime; tDiv++)
-	    bsv.nHits[strip][iWafer][tDiv] = 0;
-      }
-    }
-    if( badStrips ) bsVar.push_back( bsv );
-    else tcVar.push_back( tcv );
-  }
-#ifdef PRINT_DEBUG
-  std::cout << "towerVar constructer " << twr << std::endl;
-#endif
-}
-
-void towerVar::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
-
-  TH1F* hist, *rhist, *dhist, *ehist, *thist, *lhist;
-  char name[] = "roccT00X17w3t4";
-  char cvw[] = "XY";
-  for( int unp=0; unp!=g_nUniPlane; unp++){
-    layerId lid( unp );
-    int layer = lid.layer;
-    int view = lid.view;
-    sprintf(name,"roccT%d%c%d", towerId, cvw[view], layer);
-    rhist = (TH1F*)hfile->FindObjectAny( name );
-    sprintf(name,"doccT%d%c%d", towerId, cvw[view], layer);
-    dhist = (TH1F*)hfile->FindObjectAny( name );
-    for( int strip=0; strip!=g_nStrip; strip++){      
-      rHits[unp][strip] += (int)rhist->GetBinContent( strip+1 );
-      dHits[unp][strip] += (int)dhist->GetBinContent( strip+1 );
-    }
-  }
-
-  for( UInt_t unp=0; unp!=bsVar.size(); unp++){
-    layerId lid( unp );
-    int layer = lid.layer;
-    int view = lid.view;
-    sprintf(name,"eoccT%d%c%d", towerId, cvw[view], layer);
-    ehist = (TH1F*)hfile->FindObjectAny( name );
-    sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
-    thist = (TH1F*)hfile->FindObjectAny( name );
-    sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
-    lhist = (TH1F*)hfile->FindObjectAny( name );
-    for( int strip=0; strip!=g_nStrip; strip++){
-      bsVar[unp].eHits[strip] += (int)ehist->GetBinContent( strip+1 );
-      bsVar[unp].tHits[strip] += (int)thist->GetBinContent( strip+1 );
-      bsVar[unp].lHits[strip] += (int)lhist->GetBinContent( strip+1 );
-    }
-    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer){
-      sprintf(name,"occT%d%c%dw%d", towerId, cvw[view], layer, iWafer );
-      hist = (TH1F*)hfile->FindObjectAny( name );
-      if( hist ){ // check if simple version exist
-	int tdiv = (iRoot*g_nTime)/nRoot;
-	for( int strip=0; strip!=g_nStrip; strip++)
-	  bsVar[unp].nHits[strip][iWafer][tdiv] 
-	    += (int)hist->GetBinContent( strip+1 );
-	continue; // no need to get time dependent histograms
-      }
-      for( int tDiv = 0; tDiv != g_nTime; tDiv++){
-	sprintf(name,"occT%d%c%dw%dt%d", towerId, cvw[view], layer, iWafer, tDiv );
-	hist = (TH1F*)hfile->FindObjectAny( name );
-	int tdiv = (tDiv+iRoot*g_nTime)/nRoot;
-	for( int strip=0; strip!=g_nStrip; strip++)
-	  bsVar[unp].nHits[strip][iWafer][tdiv] 
-	    += (int)hist->GetBinContent( strip+1 );
-      }
-    }
-  }
-}
-
-
-void towerVar::saveHists(){
-
-  TH1F* hist, *rhist, *dhist, *ehist, *thist, *lhist;
-  char name[] = "roccT00X17w3t4";
-  char cvw[] = "XY";
-  for( int unp=0; unp!=g_nUniPlane; unp++){
-    layerId lid( unp );
-    int layer = lid.layer;
-    int view = lid.view;
-    sprintf(name,"roccT%d%c%d", towerId, cvw[view], layer);
-    rhist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-    sprintf(name,"doccT%d%c%d", towerId, cvw[view], layer);
-    dhist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-    for( int strip=0; strip!=g_nStrip; strip++){
-      rhist->Fill( strip+0.1, rHits[unp][strip] );
-      dhist->Fill( strip+0.1, dHits[unp][strip] );
-    }
-    rhist->Write(0, TObject::kOverwrite);
-    dhist->Write(0, TObject::kOverwrite);
-  }
-
-  for( UInt_t unp=0; unp!=bsVar.size(); unp++){
-    layerId lid( unp );
-    int layer = lid.layer;
-    int view = lid.view;
-    sprintf(name,"eoccT%d%c%d", towerId, cvw[view], layer);
-    ehist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-    sprintf(name,"toccT%d%c%d", towerId, cvw[view], layer);
-    thist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-    sprintf(name,"loccT%d%c%d", towerId, cvw[view], layer);
-    lhist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-    for( int strip=0; strip!=g_nStrip; strip++){
-      ehist->Fill( strip+0.1, bsVar[unp].eHits[strip] );
-      thist->Fill( strip+0.1, bsVar[unp].tHits[strip] );
-      lhist->Fill( strip+0.1, bsVar[unp].lHits[strip] );
-    }
-    ehist->Write(0, TObject::kOverwrite);
-    thist->Write(0, TObject::kOverwrite);
-    lhist->Write(0, TObject::kOverwrite);
-    for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
-      for( int tDiv = 0; tDiv != g_nTime; tDiv++){
-	sprintf(name,"occT%d%c%dw%dt%d", towerId, cvw[view], layer, iWafer, tDiv);
-	hist = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-	for( int strip=0; strip!=g_nStrip; strip++)
-	  hist->Fill( strip+0.1, bsVar[unp].nHits[strip][iWafer][tDiv] );
-	hist->Write(0, TObject::kOverwrite);
-      }
-  }
-}
-
-//
-//
-//
-/*
-histCol::histCol( int towerId ){
-  std::cout << "histCol constructer " << towerId << std::endl;
-
-  char name[] = "roccT00X17w3t4";
-  char cvw[] = "XY";
-  for( int layer=0; layer!=g_nLayer; layer++)
-    for( int view=0; view!=g_nView; view++){
-      for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
-	for( int tDiv = 0; tDiv != g_nTime; tDiv++){
-	  sprintf(name,"occT%d%c%dw%dt%d", 
-		  towerId, cvw[view], layer, iWafer, tDiv);
-	  nHits[layer][view][iWafer][tDiv] 
-	    = new TH1F(name, name, g_nStrip, 0, g_nStrip);
-	}
-    }
-}
-
-void histCol::saveHists(){
-  for( int layer=0; layer!=g_nLayer; layer++)
-    for( int view=0; view!=g_nView; view++){
-      for(int iWafer = 0; iWafer != g_nWafer; ++iWafer)
-	for( int tDiv = 0; tDiv != g_nTime; tDiv++)
-	  nHits[layer][view][iWafer][tDiv]->Write(0, TObject::kOverwrite);
-    }
-}
-*/
-
-//
 // totCalib implementation 
 //
 totCalib::totCalib( const std::string jobXml, const std::string defJob ): 
-  m_reconFile(0), m_reconTree(0), 
-  m_reconEvent(0), m_digiFile(0), m_digiTree(0),
-  m_digiEvent(0), m_rootFile(0)
+  m_reconFile(0), m_reconTree(0), m_digiFile(0), m_digiTree(0)
 {
-
   // get version number from CVS string
   std::string tag = "$Name:  $";
   int i = tag.find( " " );
   tag.assign( tag, i+1, tag.size() );
   i = tag.find( " " );
   tag.assign( tag, 0, i ) ;
-  m_tag = tag;
+  m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.47 $";
+  std::string version = "$Revision: 1.48 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
   version.assign( version, 0, i ) ;
-  m_version = version;
+  m_version += ":" + version;
   std::cout << "Tag: " << m_tag << ", version: " << m_version << std::endl;
 
   m_first_run = 999999999;
@@ -302,12 +47,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   m_peakMIP = 4.92;
   m_RSigma = 4.0;
   m_GFrac = 0.78;
-  m_maxDirZ = -0.85;
-  m_maxTrackRMS = 0.3;
-  m_maxDelta = 3.0;
 
-  for(int tower = 0; tower != g_nTower; ++tower)
-    m_towerPtr[tower] = -1;
   //
   // parse job options xml file
   //
@@ -348,11 +88,7 @@ void totCalib::getTimeStamp(){
 
 bool totCalib::readJobOptions( const std::string jobXml, const std::string defJob ){
   
-#ifdef OLD_RECON
-  using namespace xml;
-#else
   using namespace xmlBase;
-#endif
   std::cout << "Open xml file: " << jobXml << std::endl;
   //
   // start parsing xml file.
@@ -478,8 +214,10 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       }
 
       // initialize root histograms
-      initHists();
-      
+      initCommonHists();
+      if( m_badStrips ) initOccHists();
+      else initTotHists();
+
       // output
       std::string outDir;
       std::vector<DOMElement*> outList;
@@ -588,6 +326,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	}
 	std::vector<std::string> hfiles;
 	splitWords( hfiles, files );
+
 	if( !readInputHistFiles( dir, hfiles ) ) return false;
       }
       
@@ -669,87 +408,21 @@ void totCalib::splitWords(  std::vector<std::string>& words,
   }
 }
 
-void totCalib::initHists(){
-  m_nTrackDist = new TH1F("nTrack", "nTrack", 10, 0, 10);
-  m_maxHitDist = new TH1F("maxHit", "maxHit", g_nUniPlane, 0, g_nUniPlane);
-  m_trkRMS = new TH1F("trkRMS", "trkRMS", 100, 0, 4.0);
-  m_numClsDist = new TH1F("numCls", "# of cluster per layer", 10, 0, 10 );
-  m_dirzDist = new TH1F("dirZ", "dirZ", 100, -1, 1);
-  m_armsDist = new TH1F("arms", "arms", 100, -5, 5);
-  m_lrec = new TH1F("lrec", "lrec", g_nUniPlane, 0, g_nUniPlane);
-  m_ldigi = new TH1F("ldigi", "ldigi", g_nUniPlane, 0, g_nUniPlane);
-  m_lcls = new TH1F("lcls", "lcls", g_nUniPlane, 0, g_nUniPlane);
-  m_htwr = new TH1F("htwr", "htwr", g_nTower, 0, g_nTower);
-  if( m_badStrips ){
-    m_locc = new TH1F("locc", "locc", g_nUniPlane, 0, g_nUniPlane);
-    m_leff = new TH1F("leff", "leff", g_nUniPlane, 0, g_nUniPlane);
-    m_ltrk = new TH1F("ltrk", "ltrk", g_nUniPlane, 0, g_nUniPlane);
-    m_dist = new TH1F("dist", "distance", 50, 0, 200);
-    m_brmsDist[0] = new TH1F("brms0", "brms 0-2", 100, -5, 5);
-    m_brmsDist[1] = new TH1F("brms1", "brms 3-5", 100, -5, 5);
-    m_brmsDist[2] = new TH1F("brms2", "brms 6-8", 100, -5, 5);
-    m_brmsDist[3] = new TH1F("brms3", "brms 9-11", 100, -5, 5);
-    m_brmsDist[4] = new TH1F("brms4", "brms 12-14", 100, -5, 5);
-    m_brmsDist[5] = new TH1F("brms5", "brms 15-17", 100, -5, 5);
-    m_occDist = new TH1F("occDist", "occDist", 200, 0, 200);
-    m_poissonDist = new TH1F("poissonDist", "poissonDist", 40, -20, 0);
-    m_aPos[0] = new TH1F("apos0", "apos0", 100, -250, 250);
-    m_aPos[1] = new TH1F("apos1", "apos1", 100, -250, 250);
-    m_aPos[2] = new TH1F("apos2", "apos2", 100, -250, 250);
-    m_aPos[3] = new TH1F("apos3", "apos3", 100, -250, 250);
-    m_aPos[4] = new TH1F("apos4", "apos4", 100, -250, 250);
-    //m_aPos[0] = new TH1F("apos0", "apos0", 100, -50, 50);
-    //m_aPos[1] = new TH1F("apos1", "apos1", 100, -50, 50);
-    //m_aPos[2] = new TH1F("apos2", "apos2", 100, -50, 50);
-    //m_aPos[3] = new TH1F("apos3", "apos3", 100, -50, 50);
-  }
-  else{
-    m_fracBatTot = new TH1F("fracBadTot", "fraction of bad TOT", 50, 0, 0.2 );
-    m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
-    m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
-    m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
-    m_entries = new TH1F("entries", "Entries", 200, 0, 2000);
-    m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.1, 0.6);
-    m_langauGSigma = new TH1F("langauGSigma", "Langau GSigma", 50, 0.0, 2.0);
-    m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
-    m_chist[4] = new TH1F("chargeAll", "TOT charge distribution", nTotHistBin, 0, maxTot);
-    m_chist[0] = new TH1F("charge0", "TOT charge distribution (-1<cos<-0.95)", nTotHistBin, 0, maxTot);
-    m_chist[1] = new TH1F("charge1", "TOT charge distribution (-0.95<cos<-0.9)", nTotHistBin, 0, maxTot);
-    m_chist[2] = new TH1F("charge2", "TOT charge distribution (-0.9<cos<-0.85)", nTotHistBin, 0, maxTot);
-    m_chist[3] = new TH1F("charge3", "TOT charge distribution (-0.85<cos<-0.8)", nTotHistBin, 0, maxTot);
-
-  }
-
-#ifdef FULLHIST
-  for(int tower = 0; tower != g_nTower; ++tower) {
-    for( int unp = 0; unp != g_nUniPlane; ++unp ){
-      layerId lid( unp );
-      int layer = lid.layer;
-      int view = lid.view;
-      char vw = 'X';
-      if( view != 0 ) vw = 'Y';
-      if( !m_badStrips ){
-	char name[] = "var00000";
-	sprintf(name,"var%d%d%d", tower, layer, view);
-	m_totStrip[tower][layer][view] = new TGraphErrors(g_nDiv);
-	m_totStrip[tower][layer][view]->SetName(name);
-	
-	char temp[] = "varCorr00000";
-	sprintf(temp,"varCorr%d%d%d", tower, layer, view);
-	m_chargeStrip[tower][layer][view] = new TGraphErrors(g_nDiv);
-	m_chargeStrip[tower][layer][view]->SetName(temp);
-	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-	  char name1[] = "totT00X17fe0004";
-	  sprintf(name1,"totT%d%c%dfe%d", tower, vw, layer, iDiv);
-	  m_totHist[tower][layer][view][iDiv] = new TH1F(name1, name1, 100, 0, 200);
-	  //char name2[] = "chargeT00X00fe0000";
-	  //sprintf(name2,"chargeT%d%c%dfe%d", tower, vw, layer, iDiv);
-	  //m_chargeHist[tower][unp][iDiv] = new TH1F(name2, name2, nTotHistBin, 0, maxTot);
-	}
-      }
-    }
-  }
-#endif	    
+void totCalib::initTotHists(){
+  std::cout << "initialize TOT hisograms." << std::endl;
+  m_fracBatTot = new TH1F("fracBadTot", "fraction of bad TOT", 50, 0, 0.2 );
+  m_fracErrDist = new TH1F("fracErrDist", "Peak error", 100, 0, 0.1);
+  m_chisqDist = new TH1F("chisqDist", "TOT fit chisq/ndf", 60, 0, 3);
+  m_chargeScale = new TH1F("chargeScale", "Charge Scale", 50, 0.5, 1.5);
+  m_entries = new TH1F("entries", "Entries", 200, 0, 2000);
+  m_langauWidth = new TH1F("langauWidth", "Langau Width", 50, 0.1, 0.6);
+  m_langauGSigma = new TH1F("langauGSigma", "Langau GSigma", 50, 0.0, 2.0);
+  m_dirProfile = new TProfile("dirProfile", "cons(theta) profile", 10, -1, -0.5);
+  m_chist[4] = new TH1F("chargeAll", "TOT charge distribution", nTotHistBin, 0, maxTot);
+  m_chist[0] = new TH1F("charge0", "TOT charge distribution (-1<cos<-0.95)", nTotHistBin, 0, maxTot);
+  m_chist[1] = new TH1F("charge1", "TOT charge distribution (-0.95<cos<-0.9)", nTotHistBin, 0, maxTot);
+  m_chist[2] = new TH1F("charge2", "TOT charge distribution (-0.9<cos<-0.85)", nTotHistBin, 0, maxTot);
+  m_chist[3] = new TH1F("charge3", "TOT charge distribution (-0.85<cos<-0.8)", nTotHistBin, 0, maxTot);
 }
 
 
@@ -757,36 +430,10 @@ totCalib::~totCalib()
 {
   if(m_rootFile == 0) return;
 
-  std::cout << "save histgrams" << std::endl;
-
   m_rootFile->cd();
+  saveAllHist( true );
 
-  m_nTrackDist->Write(0, TObject::kOverwrite);
-  m_maxHitDist->Write(0, TObject::kOverwrite);
-  m_trkRMS->Write(0, TObject::kOverwrite);
-  m_numClsDist->Write(0, TObject::kOverwrite);
-  m_dirzDist->Write(0, TObject::kOverwrite);
-  m_armsDist->Write(0, TObject::kOverwrite);
-  m_lrec->Write(0, TObject::kOverwrite);
-  m_ldigi->Write(0, TObject::kOverwrite);
-  m_lcls->Write(0, TObject::kOverwrite);
-  m_htwr->Write(0, TObject::kOverwrite);
-  if( m_badStrips ){
-    for( int i=0; i<g_nLayer/3; i++) 
-      m_brmsDist[i]->Write(0, TObject::kOverwrite);
-    m_locc->Write(0, TObject::kOverwrite);
-    m_leff->Write(0, TObject::kOverwrite);
-    m_ltrk->Write(0, TObject::kOverwrite);
-    m_dist->Write(0, TObject::kOverwrite);
-    m_occDist->Write(0, TObject::kOverwrite);
-    m_poissonDist->Write(0, TObject::kOverwrite);
-    m_aPos[0]->Write(0, TObject::kOverwrite);
-    m_aPos[1]->Write(0, TObject::kOverwrite);
-    m_aPos[2]->Write(0, TObject::kOverwrite);
-    m_aPos[3]->Write(0, TObject::kOverwrite);
-    m_aPos[4]->Write(0, TObject::kOverwrite);
-  }
-  else{
+  if( !m_badStrips ){
     m_fracBatTot->Write(0, TObject::kOverwrite);
     m_fracErrDist->Write(0, TObject::kOverwrite);
     m_chisqDist->Write(0, TObject::kOverwrite);
@@ -799,27 +446,6 @@ totCalib::~totCalib()
       m_chist[i]->Write(0, TObject::kOverwrite);
     for( UInt_t i=0; i!=m_chargeHist.size(); i++ )
       m_chargeHist[i]->Write(0, TObject::kOverwrite);
-  }
-
-  for( UInt_t tw = 0; tw != m_towerVar.size(); ++tw)
-    m_towerVar[tw].saveHists();
-
-  if( !m_badStrips ){
-    for(int tower = 0; tower != g_nTower; ++tower) {
-      for( int unp = 0; unp != g_nUniPlane; ++unp ){
-#ifdef FULLHIST
-	m_totStrip[tower][layer][view]->Write(0, TObject::kOverwrite);
-	m_chargeStrip[tower][layer][view]->Write(0, TObject::kOverwrite);
-#endif
-	for(int iDiv = 0; iDiv != g_nDiv; ++iDiv) {
-#ifdef FULLHIST
-	  m_totHist[tower][layer][view][iDiv]->Write(0, TObject::kOverwrite);
-#endif
-	  //m_chargeHist[tower][unp][iDiv]->Write(0, TObject::kOverwrite);
-	}
-      }
-      
-    }
   }
 
   m_rootFile->Close();
@@ -840,7 +466,7 @@ bool totCalib::setOutputFiles( const char* outputDir )
 	   m_dateStamp.c_str(), m_timeStamp.c_str() );
   filename += fname;
   m_log.open( filename.c_str() );
-  if( m_log )
+  if( m_log.is_open() )
     std::cout << "Open log file: " << filename << std::endl;
   else{
     std::cout << filename << " cannot be opened." << std::endl;
@@ -1052,8 +678,10 @@ bool totCalib::readHotStrips( const char* reportDir,
   int runid=-100;
   for(std::vector<std::string>::const_iterator run = runIds.begin();
       run != runIds.end(); ++run) {
-    runid++;
-    if( atoi( (*run).c_str() ) == runid ) continue; // continuous from the previous.
+    if( abs(atoi( (*run).c_str() )-runid)<3 ){
+      runid = atoi( (*run).c_str() );
+      continue; // continuous from the previous.
+    }
     for( UInt_t tw=0; tw!=m_towerVar.size(); tw++){
       std::string xmlFile = reportDir;
       xmlFile += "/" + *run;
@@ -1086,11 +714,7 @@ bool totCalib::readHotStrips( const char* reportDir,
 
 bool totCalib::parseRcReport( const char* reportFile )
 {
-#ifdef OLD_RECON
-  using namespace xml;
-#else
   using namespace xmlBase;
-#endif
 
   XmlParser* parsercReport = new XmlParser(true);
   DOMDocument* docrcReport = 0;
@@ -1249,7 +873,7 @@ void totCalib::analyze( int nEvents )
 
   if( m_nEvents < 0 ) return; // something went wrong.
   else if( m_nEvents > 0 ){
-    if( nEvents > 0 ) m_nEvents = nEvents;
+    if( nEvents > 0 && nEvents < m_nEvents ) m_nEvents = nEvents;
     std::cout << "# of Events to analyze: " << m_nEvents << std::endl;
     m_log << "# of Events to analyze: " << m_nEvents << std::endl;
 
@@ -1261,8 +885,10 @@ void totCalib::analyze( int nEvents )
   }
 
   if( m_badStrips ){
-    findBadStrips();
-    if( ! m_histMode ) fillBadStrips();
+    if( ! m_histMode ){ 
+      findBadStrips();
+      fillBadStrips();
+    }
     //calculateEfficiency();
   }
   else{
@@ -1302,6 +928,8 @@ void totCalib::analyzeEvents()
 
     assert(m_reconEvent != 0);
     assert(m_digiEvent != 0);
+
+    monitorTKR();
 
     if(! passCut()) continue;
 
@@ -1346,370 +974,6 @@ void totCalib::getTot()
   } 
 }
 
-layerId totCalib::getLayerId( Cluster* cluster ){
-
-  int tower = cluster->getTowerId();
-  int unp = cluster->getUniPlane();
-
-  layerId lid( unp );
-  lid.setTower ( tower );
-  return lid;
-}
-
-
-layerId totCalib::getLayerId( const TkrCluster* cluster )
-{
-#ifdef OLD_RECON
-  int planeId = cluster->getPlane();
-  TkrCluster::view viewId = cluster->getView();
-  int tower = cluster->getTower();
-  int layer = g_nLayer - planeId - 1;
-  int view = (viewId == TkrCluster::X) ? 0 : 1;
-#else
-  commonRootData::TkrId id = cluster->getTkrId();
-  int tower = TowerId( id.getTowerX(), id.getTowerY() ).id();
-  int view = id.getView();
-  int layer = cluster->getLayer();
-#endif
-  layerId lid( layer, view, tower);
-  return lid;
-}
-
-
-void totCalib::getDigiClusters()
-{
-#ifdef PRINT_DEBUG
-  std::cout << "getDigiClusters start" << std::endl;
-#endif
-  //
-  // clear cluster information.
-  for( UInt_t tw=0; tw!=m_towerVar.size(); tw++)
-    for( int unp=0; unp!=g_nUniPlane; unp++)
-      m_towerVar[tw].digiClusters[unp].clear();
-  
-  // The full collection of TkrDigis for this event
-  const TObjArray* tkrDigiCol = m_digiEvent->getTkrDigiCol();
-  if (!tkrDigiCol) return;
-  
-  std::vector<int> strips;
-  // Loop over all TkrDigis
-  TIter tkrIter(tkrDigiCol);
-  TkrDigi *tkrDigi = 0;
-  while ( ( tkrDigi = (TkrDigi*)tkrIter.Next() ) ) {
-    // Identify the tower and layer
-    Int_t tower = tkrDigi->getTower().id();
-    Int_t tw = m_towerPtr[ tower ];
-    Int_t totl = tkrDigi->getToT(0);
-    Int_t toth = tkrDigi->getToT(1);
-    Int_t lastRC0Strip = tkrDigi->getLastController0Strip();
-
-    Int_t layer = tkrDigi->getBilayer();
-  
-    // Returns the orientation of the strips
-    GlastAxis::axis viewId = tkrDigi->getView();
-    int view = (viewId == GlastAxis::X) ? 0 : 1;
-
-    layerId lid( layer, view );
-    int uniPlane = lid.uniPlane;
-    
-    strips.clear();
-    UInt_t numHits = tkrDigi->getNumHits();
-    // Loop through collection of hit strips for this TkrDigi
-    UInt_t ihit;
-    for (ihit = 0; ihit < numHits; ihit++) {
-      // Retrieve the strip number
-      Int_t iStrip = tkrDigi->getStrip(ihit);
-      strips.push_back( iStrip );
-      m_towerVar[tw].dHits[uniPlane][iStrip]++;      
-    }
-    std::sort( strips.begin(), strips.end() ); // sort strip# for clustering.
-    for( UInt_t i=0; i!=strips.size(); i++){
-      bool newCls = false;
-      if( m_towerVar[tw].digiClusters[uniPlane].empty() ) newCls = true;
-      else if( !m_towerVar[tw].digiClusters[uniPlane].back().addStrip( strips[i] ) )
-	newCls = true;
-      
-      if( newCls ){
-	m_ldigi->Fill( uniPlane );
-	m_htwr->Fill( tower );
-	if( strips[i] <= lastRC0Strip )
-	  m_towerVar[tw].digiClusters[uniPlane].push_back( Cluster( strips[i], totl ) );
-	else
-	  m_towerVar[tw].digiClusters[uniPlane].push_back( Cluster( strips[i], toth ) );
-      }
-    }
-  }
-#ifdef PRINT_DEBUG
-  std::cout << "getDigiClusters end" << std::endl;
-#endif
-}
-
-void totCalib::getReconClusters()
-{
-#ifdef PRINT_DEBUG
-  std::cout << "getReconClusters start" << std::endl;
-#endif
-  
-  // initialize recon cluster info
-  for( unsigned int tw=0; tw<m_towerVar.size(); tw++){
-    int twr = m_towerPtr[ m_towerVar[tw].towerId ];
-    if( twr != int(tw) ) {
-      std::cout << "Invalid tower id: " << twr << " != " << tw << std::endl;
-      m_log << "Invalid tower id: " << twr << " != " << tw << std::endl;
-      exit( EXIT_FAILURE );
-    }
-    for( int unp=0; unp<g_nUniPlane; unp++)
-      m_towerVar[tw].reconClusters[unp] = 0;
-  }
-  m_trackTowerList.clear();
-  
-  TkrRecon* tkrRecon = m_reconEvent->getTkrRecon();
-  assert(tkrRecon != 0);
-  
-  int lastTower = -1;
-  int numRecCls = 0;
-  
-#ifdef OLD_RECON
-  std::map<int, TkrCluster*> clsMap;
-  TObjArray* siClusterCol = tkrRecon->getClusterCol();
-  int noOfTkrClusters = siClusterCol->GetLast()+1;
-  for(int i = 0; i != noOfTkrClusters; ++i) {
-    TkrCluster* cluster = dynamic_cast<TkrCluster*>(siClusterCol->At(i));
-    clsMap[cluster->getId()] = cluster;
-  }
-  
-  TkrKalFitTrack* tkrTrack = m_track;
-  int nHitPlane = tkrTrack->getNumHits();
-  for(int iPlane = 0; iPlane != nHitPlane; ++iPlane) {
-    const TkrHitPlane* plane = tkrTrack->getHitPlane(iPlane);
-    std::map<int, TkrCluster*>::const_iterator itr = clsMap.find(plane->getIdHit());
-    assert(itr != clsMap.end());
-    TkrCluster* cluster = itr->second;
-#else
-  TkrTrack* tkrTrack = m_track;
-  TIter trk1HitsItr(tkrTrack);
-  TkrTrackHit* pTrk1Hit = 0;
-  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {    
-    const TkrCluster* cluster = (pTrk1Hit->getClusterPtr());
-    if(!cluster) continue;
-#endif
-    numRecCls++;
-    layerId lid = getLayerId( cluster );
-    //std::cout << lid.tower << " " << lid.uniPlane << " " << lid.layer << " " << lid.view << std::endl;
-    int tw = m_towerPtr[ lid.tower ];
-    m_towerVar[tw].reconClusters[lid.uniPlane] = cluster;
-    if( lid.tower != lastTower ){
-      lastTower = lid.tower;
-      m_trackTowerList.push_back( lastTower );
-      if( lid.view == 0 )
-	m_towerVar[tw].center[1] = (cluster->getPosition()).Y();
-      else
-	m_towerVar[tw].center[0] = (cluster->getPosition()).X();
-    }
-    m_lrec->Fill( lid.uniPlane );
-  }
-#ifdef PRINT_DEBUG
-  std::cout << "getReconClusters end" << std::endl;
-#endif
-}
-
-void totCalib::selectGoodClusters(){
-  
-#ifdef PRINT_DEBUG
-  std::cout << "selectGoodClusters start" << std::endl;
-#endif
-
-  bool display = false;
-  m_clusters.clear();
-  //
-  // register new raw clusters if it is close to the track position
-  //
-  Cluster* cluster;
-  for( UInt_t tw=0; tw<m_trackTowerList.size(); tw++ ){
-    int tower = m_trackTowerList[tw]; // order of towers for a track
-    int twr = m_towerPtr[tower];
-    for (int unp=g_nUniPlane-1; unp>=0; unp--){
-      layerId lid( unp ); 
-      int layer = lid.layer;
-      int view = lid.view;
-      float zpos = posZ[view][layer];
-      //std::cout << layer << " " << view << " " 
-      //	<< m_towerVar[twr].digiClusters[unp].size() << std::endl;
-
-      int numCls = 0;
-      for( UInt_t i=0; i!= m_towerVar[twr].digiClusters[unp].size(); i++){
-	cluster = &( m_towerVar[twr].digiClusters[unp].at(i) );
-	
-	// calculate position
-	float pos = ( cluster->getLastStrip() + cluster->getFirstStrip() )/2;
-	int ladder = int( pos * 4 / g_nStrip );
-	pos = pos - g_nStrip * 0.5 + 0.5;
-	pos = pos * stripPitch + ladderGap * (ladder - 1.5 ) + m_towerVar[twr].center[view];
-	//std::cout <<  cluster->getLastStrip() << " " 
-	//<< cluster->getFirstStrip() << " " << pos << std::endl;
-	if( view == 0 )
-	  cluster->setXYZ( pos, m_towerVar[twr].center[1], zpos );
-	else
-	  cluster->setXYZ( m_towerVar[twr].center[0], pos, zpos );
-	cluster->setId( tower, unp );
-	if( m_towerVar[twr].reconClusters[unp] )
-	  cluster->setCorrectedTot( 5.0 * m_towerVar[twr].reconClusters[unp]->getMips() );
-	
-	// check if this cluster is close to the track position
-	layerId tlid;
-
-	// find closest recon clusters
-	float dzmin=10000, dzmin2=10000, dz;
-	int numSkip=0, umin, umin2, tl, tunp;
-	const TkrCluster* tcls;
-	for( int dl=1; dl<g_nLayer; dl++){
-	  for( int dir=-1; dir<2; dir+=2){
-	    tl = layer + dl*dir;
-	    if( tl < g_nLayer && tl >=0 ){
-	      tlid.setLayer( tl, view );
-	      tunp = tlid.uniPlane;
-	      tcls = m_towerVar[twr].reconClusters[tunp];
-	      if( tcls ){
-		dz = fabs( zpos - tcls->getPosition().Z() );
-		if( dz < dzmin ){
-		  dzmin2 = dzmin;
-		  umin2 = umin;
-		  dzmin = dz;
-		  umin = tunp;
-		}
-		else if( dz < dzmin2 ){
-		  dzmin2 = dz;
-		  umin2 = tunp;	
-		}
-		else numSkip++;
-	      }
-	    }
-	    if( numSkip > 1 ) break;
-	  }
-	  if( numSkip > 1 ) break;
-	}
-
-	if( dzmin2>1000 || dzmin>1000 ) continue;
-
-	TVector3 pos1 = m_towerVar[twr].reconClusters[umin]->getPosition();
-	TVector3 pos2 = m_towerVar[twr].reconClusters[umin2]->getPosition();
-
-	float delta;
-	if( lid.view == 0 ){
-	  pos = pos1.X() + ( pos2.X()-pos1.X() ) * ( zpos-pos1.Z() ) / ( pos2.Z() - pos1.Z() );
-	  delta = cluster->getPosition().X() - pos;
-	}
-	else{
-	  pos = pos1.Y() + ( pos2.Y()-pos1.Y() ) * ( zpos-pos1.Z() ) / ( pos2.Z() - pos1.Z() );
-	  delta = cluster->getPosition().Y() - pos;
-	}
-	
-	if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
-	m_armsDist->Fill( delta );
-	if( fabs(delta) > m_maxDelta ){
-	  if( display ) std::cout << " **************" << std::endl;
-	  continue;
-	}
-	if( display ) std::cout << std::endl;
-	
-	//
-	// good cluster, multiple cluster per layer allowed.
-	//
-	numCls++;
-	m_clusters.push_back( cluster ); 
-	for(int iStrip = cluster->getFirstStrip(); 
-	    iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-	  m_towerVar[twr].rHits[unp][iStrip]++;
-	  m_lcls->Fill( unp );
-	}
-      }
-      m_numClsDist->Fill( numCls );
-      //std::cout << tower << " " << uniPlane << std::endl;
-    }
-  }
-
-#ifdef PRINT_DEBUG
-  std::cout << "selectGoodClusters end" << std::endl;
-#endif
-
-}
-
-bool totCalib::closeToTrack( const TkrCluster* cluster, TkrCluster* clusters[g_nTower][g_nUniPlane] )
-{
-  layerId lid = getLayerId( cluster ), tlid;
-  int tower = lid.tower;
-  int layer = lid.layer;
-  int view = lid.view;
-  float zpos = cluster->getPosition().Z();
-
-  bool display = false;
-  //if( layer == 4 && view == 0 ) display = true;
-  if( display ) std::cout << "X4 ";
-
-  // find closest hits
-  float dzmin=10000, dzmin2=10000, dz;
-  int numSkip=0, umin, umin2, tl, tunp;
-  TkrCluster* tcls;
-  for( int dl=1; dl<g_nLayer; dl++){
-    for( int dir=-1; dir<2; dir+=2){
-      tl = layer + dl*dir;
-      if( tl < g_nLayer && tl >=0 ){
-	tlid.setLayer( tl, view );
-	tunp = tlid.uniPlane;
-	tcls = clusters[tower][tunp];
-	if( tcls ){
-	  dz = fabs( zpos - tcls->getPosition().Z() );
-	  if( dz < dzmin ){
-	    dzmin2 = dzmin;
-	    umin2 = umin;
-	    dzmin = dz;
-	    umin = tunp;
-	  }
-	  else if( dz < dzmin2 ){
-	    dzmin2 = dz;
-	    umin2 = tunp;	
-	  }
-	  else numSkip++;
-	}
-      }
-      if( numSkip > 1 ) break;
-    }
-    if( numSkip > 1 ) break;
-  }
-
-  if( display ) std::cout << numSkip << " " << lid.uniPlane << " " 
-			  << umin << " " << dzmin << " " 
-			  << umin2 << " " << dzmin2 << ", ";
-  
-  if( dzmin2>1000 || dzmin>1000 ){
-    if( display ) std::cout << std::endl;
-    return false;
-  }
-
-  TVector3 pos1 = clusters[tower][umin]->getPosition();
-  TVector3 pos2 = clusters[tower][umin2]->getPosition();
-
-  float delta, pos;
-  if( lid.view == 0 ){
-    pos = pos1.X() + ( pos2.X()-pos1.X() ) * ( zpos-pos1.Z() ) / ( pos2.Z() - pos1.Z() );
-    delta = cluster->getPosition().X() - pos;
-  }
-  else{
-    pos = pos1.Y() + ( pos2.Y()-pos1.Y() ) * ( zpos-pos1.Z() ) / ( pos2.Z() - pos1.Z() );
-    delta = cluster->getPosition().Y() - pos;
-  }
-  
-  if( display ) std::cout << tower << " " << lid.layer << " " << lid.view << ", " << delta << " " << " " << pos << " " << zpos;
-  m_armsDist->Fill( delta );
-  if( fabs(delta) > m_maxDelta ){
-    if( display ) std::cout << " **************" << std::endl;
-    return false;
-  }
-  if( display ) std::cout << std::endl;
-
-  return true;
-
-}
 
 int totCalib::findTot(int towerId, int layerId, int view , int stripId)
 {
@@ -1765,9 +1029,6 @@ void totCalib::fillTot()
     if( ibin < nTotHistBin && ibin >=0 )
       m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin]++;
     //m_chargeHist[tower][unp][iStrip/nStripPerGroup]->Fill(charge*(-m_dir.z()));
-#ifdef FULLHIST
-    m_totHist[tower][layer][view][iStrip/nStripPerGroup]->Fill(tot*(-m_dir.z())); 
-#endif
   }
   
 #ifdef PRINT_DEBUG
@@ -1775,133 +1036,6 @@ void totCalib::fillTot()
 #endif
 }
 
-bool totCalib::passCut() 
-{
-  TkrRecon* tkrRecon = m_reconEvent->getTkrRecon(); 
-  assert(tkrRecon != 0);
-  
-  TObjArray* tracks = tkrRecon->getTrackCol();
-  int numTracks = tracks->GetEntries();
-  m_nTrackDist->Fill( numTracks );
-  
-  // select only 1 or 2 track event
-  if( numTracks > 2) return false;
-  
-  // find a track with maximum number of hits.
-  int maxHits = 0, nHits;
-  for( int tk=0; tk!=numTracks; tk++){
-#ifdef OLD_RECON
-    TkrKalFitTrack* track = dynamic_cast<TkrKalFitTrack*>(tracks->At(tk));
-#else
-    TkrTrack* track = dynamic_cast<TkrTrack*>(tracks->At(tk));
-#endif
-    if(track) {
-      nHits = track->getNumFitHits();
-      if( nHits > maxHits ){
-	maxHits = nHits;
-	m_track = track;
-	m_pos = track->getInitialPosition();
-	m_dir = track->getInitialDirection();
-      }
-    }
-  }
-  m_maxHitDist->Fill( maxHits );
-  if( maxHits < 6 ) return false;
-
-  m_trackRMS = -1.0; // reset
-  //m_trkRMS->Fill( m_track->getScatter() );
-  m_trkRMS->Fill( getTrackRMS() );
-  //std::cout << m_trackRMS << " " << m_track->getScatter()/m_trackRMS << std::endl;
-  m_dirzDist->Fill( m_dir.Z() );
-  float maxDirZ = m_maxDirZ;
-  if( m_badStrips ) maxDirZ = -0.7;
-  if( m_dir.Z() > maxDirZ ) return false;
-  if( m_trackRMS > m_maxTrackRMS ) return false;
-  
-  return true;
-}
-
-float totCalib::getTrackRMS(){
-  if( m_trackRMS >= 0.0 ) return m_trackRMS;
-
-  //
-  // register hits and perform linear fit
-  //
-  std::vector<Double_t> vx, vzx, vy, vzy;
-  TkrTrack* tkrTrack = m_track;
-  TIter trk1HitsItr(tkrTrack);
-  TkrTrackHit* pTrk1Hit = 0;
-  while( (pTrk1Hit = (TkrTrackHit*)trk1HitsItr.Next()) ) {    
-    const TkrCluster* cluster = (pTrk1Hit->getClusterPtr());
-    if(!cluster) continue;
-    layerId lid = getLayerId( cluster );
-    Double_t z = (cluster->getPosition()).Z();
-    if( lid.view == 0 ){
-      vx.push_back( (cluster->getPosition()).X() );
-      vzx.push_back( z );
-    }
-    else{
-      vy.push_back( (cluster->getPosition()).Y() );
-      vzy.push_back( z );
-    }
-  }
-  Double_t x0=-1.0, dxdz=-1.0, y0, dydz;
-  // fit xz and yz
-  leastSquareLinearFit( vx, vzx, x0, dxdz );
-  leastSquareLinearFit( vy, vzy, y0, dydz );
-
-  // reset mpos
-  Double_t z = m_pos.Z();
-  m_pos.SetXYZ( x0 + dxdz*z, y0 + dydz*z, z );
-  // reset dir
-  Double_t dirz = -1 / sqrt( dxdz*dxdz + dydz*dydz + 1.0 );
-  m_dir.SetXYZ( dxdz*dirz, dydz*dirz, dirz );
-
-  // calculare combined rms in both x and y
-  float sum=0.0, sumsq=0.0;
-  for( UInt_t i=0; i<vx.size(); i++){
-    float del = vx[i] - ( x0+dxdz*vzx[i] );
-    //std::cout << del << " = " << vx[i] << " -  " << x0+dxdz*vzx[i] << " =" 
-    //      << x0 << "+" << dxdz << "*" << vzx[i] << std::endl;
-    sum += del;
-    sumsq += del*del;
-  }
-  for( UInt_t i=0; i<vy.size(); i++){
-    float del = vy[i] - ( y0+dydz*vzy[i] );
-    sum += del;
-    sumsq += del*del;
-  }
-  int num = ( vx.size()+vy.size() );
-  float mean = sum / num;
-  float rmsq = sumsq / num - mean*mean;
-  if( rmsq > 0.0 ) m_trackRMS = sqrt( rmsq );
-  else m_trackRMS = 0.0;
-  return m_trackRMS;
-
-}
-
-Double_t totCalib::leastSquareLinearFit( std::vector<Double_t> &vy, 
-				     std::vector<Double_t> &vx, 
-				     Double_t &y0, Double_t &dydx ){
-
-  Double_t sumX=0.0, sumXX=0.0, sumXY=0.0, sumY=0.0, sumYY=0.0;
-  UInt_t num = vy.size();
-  for( UInt_t i=0; i<num; i++){
-    sumX += vx[i];
-    sumXX += vx[i]*vx[i];
-    sumXY += vx[i]*vy[i];
-    sumYY += vy[i]*vy[i];
-    sumY += vy[i];
-  }
-  dydx = ( sumXY*num - sumX*sumY ) / ( sumXX*num - sumX*sumX );
-  y0 = ( sumY - dydx*sumX ) / num;
-  Double_t rms = sumYY - 2*dydx*sumXY - 2*y0*sumY 
-    + dydx*dydx*sumXX + 2*dydx*y0*sumX + y0*y0*num;
-  if( rms > 0.0 ) rms = sqrt( rms / num );
-  else rms = 0.0;
-  //std::cout << rms << std::endl;
-  return rms;
-}
 
 void totCalib::fitTot()
 {  
@@ -1928,57 +1062,7 @@ void totCalib::fitTot()
 	Double_t *par, *error;
 	float peak, errPeak, width, errWidth;
 	  
-#ifdef FULLHIST
-	// fit uncorrected tot for each strip
-	area = m_totHist[tower][layer][view][iDiv]->Integral();
-	ave = m_totHist[tower][layer][view][iDiv]->GetMean();
-	rms = m_totHist[tower][layer][view][iDiv]->GetRMS();
-	//std::cout << area << " " << ave << " " << rms << std::endl;
-	if( area<100 || ave==0.0 || rms==0.0 ){ 
-	  std::cout << "Layer: " << cvw[view] << layer
-		    << ", FE: " << iDiv << ", Entries: " << area
-		    << ", Mean: " << ave << ", RMS: " << rms 
-		    << " skipped." << std::endl;
-	  m_log << "Layer: " << cvw[view] << layer
-		<< ", FE: " << iDiv << ", Entries: " << area
-		<< ", Mean: " << ave << ", RMS: " << rms 
-		<< " skipped." << std::endl;
-	  continue;
-	}
-	
-	ffit->SetParLimits( 0, 0.0, rms );
-	ffit->SetParLimits( 1, 0.0, ave*2 );
-	ffit->SetParLimits( 2, 0.0, area*0.4 );
-	ffit->SetParLimits( 3, 0.0, rms );
-	ffit->SetParLimits( 4, 1.0, 10.0 );
-	ffit->SetParLimits( 5, 0.0, 1.0 );
-	ffit->SetRange( ave-1.25*rms, ave+2*rms );
-	ffit->SetParameters( rms*0.2, ave*0.75, area*0.1, rms*0.4 );
-	ffit->FixParameter( 4, m_RSigma );
-	ffit->FixParameter( 5, m_GFrac );
-	//m_totHist[layer][view][iDiv]->Fit( "langau2", "RBQ" );
-	
-	//0:width(scale) 1:peak 2:total area 3:width(sigma)
-	par = ffit->GetParameters();
-	error = ffit->GetParErrors();
-	
-	float pos = float(iDiv);	  
-	float errPos = 0.;
-	
-	peak = float( *(par+1) );
-	errPeak = float( *(error+1) );
-	
-	width = float( *(par+3) );
-	errWidth = float( *(error+3) );
-	
-	m_totStrip[tower][layer][view]->SetPoint(iDiv, pos, peak);
-	m_totStrip[tower][layer][view]->SetPointError(iDiv, errPos, errPeak);
-	
-	/*m_log << "Uncorrected tot " << layer << ' ' << view << ' ' << pos
-	  << ' ' << peak << ' ' << errPeak << ' ' << width << ' '
-	  << errWidth << endl; */
-#endif	  
-	// fit charge for each strip
+	// fill charge for each FE
 	char name[] = "chargeT00X00fe0000";
 	sprintf(name,"chargeT%d%c%dfe%d", tower, cvw[view], layer, iDiv);
 	TH1F* chargeHist = new TH1F(name, name, nTotHistBin, 0, maxTot);
@@ -1987,7 +1071,9 @@ void totCalib::fitTot()
 	  chargeHist->Fill( (ibin+0.5)*binWidth, 
 			    m_towerVar[tw].tcVar[unp].chargeDist[iDiv][ibin] );
 	m_chargeHist.push_back( chargeHist );
+	if( m_histMode ) continue; // do not fit during hist mode.
 
+	// fit charge for each FE
 	area = chargeHist->Integral();
 	ave = chargeHist->GetMean();
 	rms = chargeHist->GetRMS();
@@ -2047,10 +1133,6 @@ void totCalib::fitTot()
 	float chisq = ffit->GetChisquare();
 	float ndf = ffit->GetNDF();
 	if( ndf > 0 ) m_chisqDist->Fill( chisq/ndf );
-#ifdef FULLHIST
-	m_chargeStrip[tower][layer][view]->SetPoint(iDiv, pos, peak);
-	m_chargeStrip[tower][layer][view]->SetPointError(iDiv, errPos, errPeak);
-#endif	  
 	if( peak > 0.0 ){
 	  float chargeScale =  m_peakMIP / peak;
 	  m_chargeScale->Fill( chargeScale );
@@ -2187,36 +1269,52 @@ bool totCalib::readInputHistFiles( const std::string dir,
   return true;
 }
 
+template <class HIST> void addHIST( HIST* hist, TFile* hfile, char* name  ){
+  //std::cout << name << hist << std::endl;
+  HIST* th1 =  (HIST*)hfile->FindObjectAny( name );
+  if( th1 && hist ){
+    hist->Add( th1 );
+    //std::cout << th1->GetEntries() << std::endl;
+    //std::cout << hist->GetEntries() << std::endl;
+  }
+  else{
+    std::cout << "Invalid Hitsogram: " << name << std::endl;
+    //m_log << "Invalid Hitsogram: " << name << std::endl;
+  }
+  
+};
 
 bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
-  m_nTrackDist->Add( (TH1F*)hfile->FindObjectAny( "nTrack" ) );
-  m_maxHitDist->Add( (TH1F*)hfile->FindObjectAny( "maxHit" ) );
-  m_trkRMS->Add( (TH1F*)hfile->FindObjectAny( "trkRMS" ) );
-  m_numClsDist->Add( (TH1F*)hfile->FindObjectAny( "numCls" ) );
-  m_dirzDist->Add( (TH1F*)hfile->FindObjectAny( "dirZ" ) );
-  m_armsDist->Add( (TH1F*)hfile->FindObjectAny( "arms" ) );
-  m_lrec->Add( (TH1F*)hfile->FindObjectAny( "lrec" ) );
-  m_ldigi->Add( (TH1F*)hfile->FindObjectAny( "ldigi" ) );
-  m_lcls->Add( (TH1F*)hfile->FindObjectAny( "lcls" ) );
-  histAdd( m_htwr, hfile, "htwr" );
+  addHIST( m_nTrackDist, hfile, "nTrack" );
+  addHIST( m_maxHitDist, hfile, "maxHit" );
+  addHIST( m_trkRMS, hfile, "trkRMS" );
+  addHIST( m_trkRMS1TWR, hfile, "trkRMS1TWR" );
+  addHIST( m_trkRMS2TWR, hfile, "trkRMS2TWR" );
+  addHIST( m_rmsProf1TWR, hfile, "rmsProf1TWR" );
+  addHIST( m_rmsProf2TWR, hfile, "rmsProf2TWR" );
+  addHIST( m_numClsDist, hfile, "numCls" );
+  addHIST( m_dirzDist, hfile, "dirZ" );
+  addHIST( m_armsDist, hfile, "arms" );
+  addHIST( m_lrec, hfile, "lrec" );
+  addHIST( m_ldigi, hfile, "ldigi" );
+  addHIST( m_lcls, hfile, "lcls" );
   if( m_badStrips ){
     char hname[]="brms0";
     for( int i=0; i<g_nLayer/3; i++){ 
       sprintf( hname, "brms%d", i );
-      m_brmsDist[i]->Add( (TH1F*)hfile->FindObjectAny( hname ) );
+      addHIST( m_brmsDist[i], hfile, hname );
     }
-    m_locc->Add( (TH1F*)hfile->FindObjectAny( "locc" ) );
-    m_leff->Add( (TH1F*)hfile->FindObjectAny( "leff" ) );
-    m_ltrk->Add( (TH1F*)hfile->FindObjectAny( "ltrk" ) );
-    m_dist->Add( (TH1F*)hfile->FindObjectAny( "dist" ) );
+    addHIST( m_locc, hfile, "locc" );
+    addHIST( m_ltrk, hfile, "ltrk" );
+    addHIST( m_dist, hfile, "dist" );
+    addHIST( m_aPos[0], hfile, "apos0" );
+    addHIST( m_aPos[1], hfile, "apos1" );
+    addHIST( m_aPos[2], hfile, "apos2" );
+    addHIST( m_aPos[3], hfile, "apos3" );
+    addHIST( m_aPos[4], hfile, "apos4" );
     //m_occDist->Add( (TH1F*)hfile->FindObjectAny( "occDist" ) );
     //m_poissonDist->Add( (TH1F*)hfile->FindObjectAny( "poissonDist" ) );
-    m_aPos[0]->Add( (TH1F*)hfile->FindObjectAny( "apos0" ) );
-    m_aPos[1]->Add( (TH1F*)hfile->FindObjectAny( "apos1" ) );
-    m_aPos[2]->Add( (TH1F*)hfile->FindObjectAny( "apos2" ) );
-    m_aPos[3]->Add( (TH1F*)hfile->FindObjectAny( "apos3" ) );
-    m_aPos[4]->Add( (TH1F*)hfile->FindObjectAny( "apos4" ) );
 
     for( UInt_t tw = 0; tw != m_towerVar.size(); ++tw)
       m_towerVar[tw].readHists( hfile, iRoot, nRoot );
@@ -2228,11 +1326,11 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     //m_chargeScale->Add( (TH1F*)hfile->FindObjectAny( "chargeScale" ) );
     //m_langauWidth->Add( (TH1F*)hfile->FindObjectAny( "langauWidth" ) );
     //m_langauGSigma->Add( (TH1F*)hfile->FindObjectAny( "langauSigma" ) );
-    m_dirProfile->Add( (TH1F*)hfile->FindObjectAny( "dirProfile" ) );
+    addHIST( m_dirProfile, hfile, "dirProfile" );
     for( int i=4; i!=-1; i--){
       char hname[]="chargeAll";
       if( i<4 ) sprintf( hname, "charge%d", i );
-      m_chist[i]->Add( (TH1F*)hfile->FindObjectAny( hname ) );
+      addHIST( m_chist[i], hfile, hname );
     }
     char cvw[] = "XY";
     for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
@@ -2321,12 +1419,7 @@ bool totCalib::readBadStripsXmlFile(const char* path,
   os.close();
   delete buffer;
 
-#ifdef OLD_RECON
-  //typedef xml xmlBase;
-  using namespace xml;
-#else
   using namespace xmlBase;
-#endif
 
   XmlParser* parser = new XmlParser(true);
   DOMDocument* doc = 0;
@@ -2452,12 +1545,7 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
   m_log << "TOT xml file: " << filename << std::endl;
   
 
-#ifdef OLD_RECON
-  //typedef xml xmlBase;
-  using namespace xml;
-#else
   using namespace xmlBase;
-#endif
 
   XmlParser* parser = new XmlParser(true);
   DOMDocument* doc = 0;
@@ -2604,12 +1692,8 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
 }
 
 bool totCalib::getParam(const DOMElement* totElement, layerId lid, std::vector<std::string> keywords ){  
-#ifdef OLD_RECON
-  //typdef xml xmlBase;
-  using namespace xml;
-#else
+
   using namespace xmlBase;
-#endif
 
   int tw = m_towerPtr[ lid.tower ];
   int unp = lid.uniPlane;
@@ -2810,215 +1894,10 @@ void  totCalib::openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, 
 }
   
 
-void totCalib::fillOccupancy( int tDiv ) 
-{
-#ifdef PRINT_DEBUG
-  std::cout << "fillOccupancy start" << std::endl;
-#endif
-  
-  //initialize container
-  int nHits[g_nTower][g_nLayer][g_nView][g_nWafer+1];
-  for( unsigned int tw=0; tw<m_towerVar.size(); tw++){
-    int tower = m_towerVar[tw].towerId;
-    for( int layer=0; layer<g_nLayer; layer++)
-      for( int view=0; view<g_nView; view++)
-	for( int i=0; i<g_nWafer+1; i++) nHits[tower][layer][view][i] = 0;
-  }
-  
-  //
-  // first loop to register hits and get tower offset
-  //
-  int hitLayers[g_nLayer];
-  int hitPlanes[g_nLayer][g_nView];
-  for( int layer=0; layer!=g_nLayer; layer++){
-    hitLayers[layer]=0;
-    for( int vw=0; vw!=g_nView; vw++) hitPlanes[layer][vw]=0;
-  }
-  
-  for( unsigned int cls=0; cls<m_clusters.size(); cls++){
-    Cluster* cluster = m_clusters[cls];
-    layerId lid = getLayerId( cluster );
-    int tower = lid.tower;
-    int view = lid.view;
-    int layer = lid.layer;
-    
-    for(int iStrip = cluster->getFirstStrip(); 
-	iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-      nHits[tower][layer][view][iStrip/384]++;
-      nHits[tower][layer][view][g_nWafer]++;
-    }
-    
-    hitLayers[layer]++;
-    hitPlanes[layer][view]++;
-  }
-  
-  //
-  // main loop to fill occupancy and track position
-  //
-  float pos, apos, tpos[g_nView], lpos, posz;
-  float dist, dxz, dyz, dz, delta, deltax, deltay;
-  float dirX=m_dir.X()/m_dir.Z(), dirY=m_dir.Y()/m_dir.Z(), 
-    preX=m_pos.X(), preY=m_pos.Y(), preXZ=m_pos.Z(), preYZ=m_pos.Z();
-  int aview, preLayer=g_nLayer;
-  int lastTower=-1, nTowers, towers[2], strips[g_nView];
-
-  int numCls = m_clusters.size();
-  for( int cls=0; cls<numCls; cls++){
-    Cluster* cluster = m_clusters[cls];
-    layerId lid = getLayerId( cluster );
-    int tower = lid.tower;
-    int view = lid.view;
-    int layer = lid.layer;
-    int unp = lid.uniPlane;
-    
-    // fill track positions in all layer between previous and current layer
-    // carefull for moving across towers.
-    int elyr = layer;
-    if( cls == numCls-1 ) elyr = 0;
-    for( int lyr=preLayer-1; lyr>= elyr; lyr--){ 
-      // layers where hits are expected.
-      // hit in the same layer or hits in both layers below and above.
-      if( hitLayers[lyr] != 0
-	  || ( lyr!=0 && lyr!=g_nLayer-1 
-	       && hitLayers[lyr+1]>0 && hitLayers[lyr-1]>0 ) ){
-	posz =  posZ[view][lyr];
-	dxz = posz - preXZ;
-	tpos[0] = preX + dirX*dxz;
-	dyz = posz - preYZ;
-	tpos[1] = preY + dirY*dyz;
-	
-	// check if track moves across towers.
-	if( tower != lastTower ){
-	  if( lastTower < 0 ){ 
-	    lastTower = tower;
-	    towers[0] = tower;
-	    nTowers = 1;
-	  }
-	  else{
-	    towers[0] = lastTower;
-	    towers[1] = tower;
-	    nTowers = 2;
-	    lastTower = -1;
-	  }
-	}
-	for( int tw=0; tw<nTowers; tw++){ // check both tower
-	  int twr = towers[tw];
-	  int vtw = m_towerPtr[twr];
-	  int numActive=0;
-	  for( int vw=0; vw!=g_nView; vw++){
-	    strips[vw]=-1;
-	    lpos = tpos[vw] - m_towerVar[vtw].center[vw];
-	    for( int iw=0; iw!=g_nWafer; ++iw){
-	      float stp = ( lpos-ladderGap*(iw-1.5) ) / stripPitch 
-		+ g_nStrip/2;
-	      if( stp>=iw*g_nStrip/4 && stp < (iw+1)*g_nStrip/4 ){
-		strips[vw] = int(stp);
-	      }
-	    }
-	    if( strips[vw] > 0 ) numActive++;
-	  }
-	  // check if track go thorugh active region in all views
-	  if( numActive == g_nView ){
-	    for( int vw=0; vw!=g_nView; vw++){
-	      layerId lid( lyr, vw );
-	      m_towerVar[vtw].bsVar[lid.uniPlane].tHits[strips[vw]]++;
-	      // layer with associated hits
-	      if( hitPlanes[layer][vw]>0 )
-		m_towerVar[vtw].bsVar[lid.uniPlane].eHits[strips[vw]]++;
-	      m_ltrk->Fill( lid.uniPlane );
-	    }
-	  }
-	} // tower loop
-      } // valid layer
-    } // layer loop
-    preLayer = layer;
-
-    TVector3 position = cluster->getPosition();
-    posz = position.Z();
-    if( fabs(posz-posZ[view][layer]) > 0.01 )
-      std::cout << "Incosistent z position: " << layer << " " << view << ", " 
-		<< posZ[view][layer] << " != " << posz << std::endl;
-    dyz = posz - preYZ;
-    dxz = posz - preXZ;
-    deltax = preX + dirX*dxz - position.X();
-    deltay = preY + dirY*dyz - position.Y();
-    
-    if( view == 0 ){
-      dz = dxz;
-      delta = deltax;
-    }
-    else{
-      dz = dyz;
-      delta = deltay;
-    }
-    
-    float dx = dirX*dz;
-    float dy = dirY*dz;
-    dist =sqrt( dz*dz+dx*dx+dy*dy );
-    m_dist->Fill( dist );
-    if( dist < 30 ) dist = 30;
-    delta *= (35.0/dist);
-    m_brmsDist[layer/3]->Fill( delta );
-    //if( layer==4 && view==0 ) m_brmsDist[layer/3]->Fill( delta );
-    
-    // select good clusters
-    if( fabs(delta) > m_maxDelta ) continue;
-    
-    if( view == 0 ){
-      aview = 1;
-      pos = deltax;
-      apos = deltay;
-      if( dxz > 10.0 ) dirX = ( position.X() - preX ) / dxz;
-      preX = position.X();
-      preXZ = position.Z();
-    }
-    else{
-      aview = 0;
-      pos = deltay;
-      apos = deltax;
-      if( dyz > 10.0 ) dirY = ( position.Y() - preY ) / dyz;
-      preY = position.Y();
-      preYZ = position.Z();
-    }
-    
-    //std::cout << layer << " " << view << ", " << pos << " " << apos
-    //      << std::endl;
-    
-    int twr = m_towerPtr[tower];
-    m_locc->Fill( lid.uniPlane );
-    for(int iStrip = cluster->getFirstStrip(); 
-	iStrip != int(cluster->getLastStrip()+1); ++iStrip){
-      m_towerVar[twr].bsVar[unp].lHits[iStrip]++;
-      if( nHits[tower][layer][aview][g_nWafer] > 0 ){
-	for( int iw=0; iw<g_nWafer; iw++ )
-	  if( nHits[tower][layer][aview][iw] > 0 ){
-	    m_towerVar[twr].bsVar[unp].nHits[iStrip][iw][tDiv]++;
-	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
-	  }
-      }
-      else{
-	for( int iw=0; iw<g_nWafer; iw++ )
-	  if( fabs( apos-89.5*(iw-1.5) ) < 44.4 ){
-	    m_towerVar[twr].bsVar[unp].nHits[iStrip][iw][tDiv]++;
-	    m_aPos[iw]->Fill( apos-89.5*(iw-1.5) );
-	  }
-      }
-    }
-  }
-  
-#ifdef PRINT_DEBUG
-  std::cout << "fillOccupancy end" << std::endl;
-#endif
-}
-
-
 void totCalib::findBadStrips()
 {
 
   float sumThreshold, occThreshold;
-
-  m_leff->Add( m_locc );
-  m_leff->Divide( m_ldigi );
 
   poissonFunc poisson;
   int occupancy;
@@ -3035,7 +1914,11 @@ void totCalib::findBadStrips()
       int view = lid.view;
       int unp = uniPlane;
 
-      float eff = m_leff->GetBinContent( uniPlane+1 );
+      float eff = 1.0;
+      float locc = m_locc->GetBinContent( uniPlane+1 );
+      float ldigi = m_ldigi->GetBinContent( uniPlane+1 );
+      if( locc > 0.0 && ldigi > 0.0 ) eff = locc/ldigi;
+
       char vw = 'X';
       if( view != 0 ) vw = 'Y';
       int numDeadStrips = 0;
@@ -3331,11 +2214,13 @@ void totCalib::combineBadChannels( layerId lid ){
   //
   // initialize known bad strip flag
   //
-  bool known[g_nStrip], dead[g_nStrip], hot[g_nStrip], found[g_nStrip], debug=false;
+  bool known[g_nStrip], dead[g_nStrip], hot[g_nStrip], conflict[g_nStrip],
+    found[g_nStrip], debug=false;
   for( int i=0; i!=g_nStrip; i++){
     known[i] = false;
     dead[i] = false;
     hot[i] = false;
+    conflict[i] = false;
     found[i] = false;
   }
   //
@@ -3392,8 +2277,19 @@ void totCalib::combineBadChannels( layerId lid ){
 	      << cvw[lid.view] << lid.layer << " " << ist << std::endl;
 	debug = true;
       }
-      if( iBad == 0 ) hot[ist] = true;
-      else            dead[ist] = true;
+      if( iBad == 0 ){
+	hot[ist] = true;
+	if( known[ist] ){
+	  std::cout << "Conflict strip: " << lid.tower << " " 
+		    << cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	  m_log << "Conflict strip: " << lid.tower << " " 
+		<< cvw[lid.view] << lid.layer << " " << ist << std::endl;
+	  known[ist] = false;
+	  conflict[ist] = true;
+	  m_towerVar[tw].bsVar[unp].badStrips[6].push_back( ist );
+	}
+      }
+      else dead[ist] = true;
       m_towerVar[tw].bsVar[unp].badStrips[iBad].push_back( ist );
     }
     //
@@ -3434,6 +2330,8 @@ void totCalib::combineBadChannels( layerId lid ){
     debug = false;
     for( UInt_t i=0; i<m_towerVar[tw].bsVar[unp].badStrips[iBad].size(); i++){
       ist = m_towerVar[tw].bsVar[unp].badStrips[iBad][i];
+      //std::cout << unp << " " << ist << ", " << known[ist] << found[ist] << dead[ist] << hot[ist] << std::endl;
+      //m_log << unp << " " << ist << ", " << known[ist] << found[ist] << dead[ist] << hot[ist] << std::endl;
       if( known[ist] ) continue; // leave disconnected strips found online
       if( !found[ist] ){
 	std::cout << "Inconsistent dead strip: T" << lid.tower << " " 
@@ -3443,7 +2341,7 @@ void totCalib::combineBadChannels( layerId lid ){
 	m_towerVar[tw].bsVar[unp].knownBadStrips[g_nBad-1].push_back( ist );
 	debug = true;
       }
-      if( (iBad!=g_nBad-1 && (dead[ist] || hot[ist])) ){ 
+      if( (iBad<g_nBad-2 && (dead[ist] || hot[ist])) ){ 
 	m_towerVar[tw].bsVar[unp].badStrips[iBad][i] = g_nStrip;
 	numMatch++;
       }
@@ -3610,11 +2508,12 @@ void totCalib::fillTowerBadStrips( std::ofstream &xmlFile, const int tw,
   
   //dead, disconnected, partial disconnected, intermittently disconnected, 
   //intermittently partial disconnexcted
-  int howBad[g_nBad] = {1,2,4,12,20,28,128}; 
+  int howBad[g_nBad] = {1,2,4,12,20,28,64,128}; 
   std::string cBad[g_nBad] = {"hot","dead","disconnected",
 			      "partially disconnected",
 			      "intermittently disconnected",
 			      "intermittently partially connected",
+			      "conflict",
 			      "all bad (hot/online only included)"};
   char cvw[] = "XY";
   
