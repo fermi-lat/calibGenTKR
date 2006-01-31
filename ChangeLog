@@ -1,4 +1,18 @@
 ------------------------------------------------------------
+User: htajima  Tue Jan 31 14:49:50 PST 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+reorganize totCalib to inherit from TkrHit in svac/EngineeringModelRoot.
+remove all legacy code for old recon.
+Do not fit tot nor find bad strips when hist mode is activated.
+add new class of bad strips, "conflict" where strips are categorized as "hot" and known bad (dead or disconnected) strip.
+This requires TkrHits version 1.5 or later.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v2r8, operation: add
 Package: calibGenTKR
