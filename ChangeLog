@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Feb 17 18:40:10 PST 2006
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+add requirement of svac/EngineeringModelRoot which is reqired to include TkrHits
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v3r0, operation: add
 Package: calibGenTKR
