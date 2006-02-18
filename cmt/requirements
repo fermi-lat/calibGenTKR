@@ -14,6 +14,7 @@ use calibUtil *
 use xmlBase *
 use facilities *
 use ROOT v* IExternal
+use EngineeringModelRoot v* svac
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
@@ -21,8 +22,8 @@ apply_pattern package_include
 
 include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
              ${CALIBGENTKRROOT}/src/muonCalibTot   \
-             ${CALIBGENTKRROOT}/src/xml2root
-       
+             ${CALIBGENTKRROOT}/src/xml2root \
+     	     ${ENGINEERINGMODELROOTROOT}/src  
 
 #apply_pattern package_headers
 
