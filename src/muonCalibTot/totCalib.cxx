@@ -31,7 +31,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.48 $";
+  std::string version = "$Revision: 1.49 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -1213,7 +1213,7 @@ bool totCalib::readInputHistFiles(const std::string dir,
 
   for(UInt_t i=0; i!=files.size(); ++i) {
     string path;
-    path = dir + files[i];
+    path = dir + '/' + files[i];
     m_log << "Open " << path << std::endl;
     std::cout << "Open " << path << std::endl;
     TFile* hfile = new TFile( path.c_str() );
@@ -1278,8 +1278,8 @@ template <class HIST> void addHIST( HIST* hist, TFile* hfile, char* name  ){
     //std::cout << hist->GetEntries() << std::endl;
   }
   else{
-    std::cout << "Invalid Hitsogram: " << name << std::endl;
-    //m_log << "Invalid Hitsogram: " << name << std::endl;
+    std::cout << "Invalid Histogram: " << name << std::endl;
+    //m_log << "Invalid Histogram: " << name << std::endl;
   }
   
 };
@@ -1289,16 +1289,22 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
   addHIST( m_nTrackDist, hfile, "nTrack" );
   addHIST( m_maxHitDist, hfile, "maxHit" );
   addHIST( m_trkRMS, hfile, "trkRMS" );
+  addHIST( m_rawTOT, hfile, "rawTOT" );
+  addHIST( m_numHitGTRC, hfile, "numHitGTRC" );
   addHIST( m_trkRMS1TWR, hfile, "trkRMS1TWR" );
-  addHIST( m_trkRMS2TWR, hfile, "trkRMS2TWR" );
+  addHIST( m_trkRMS2TWR, hfile, "trkRMS2TWR" ); 
   addHIST( m_rmsProf1TWR, hfile, "rmsProf1TWR" );
   addHIST( m_rmsProf2TWR, hfile, "rmsProf2TWR" );
+  addHIST( m_tresProfX, hfile, "tresProfX" );
+  addHIST( m_tresProfY, hfile, "tresProfY" );
   addHIST( m_numClsDist, hfile, "numCls" );
   addHIST( m_dirzDist, hfile, "dirZ" );
   addHIST( m_armsDist, hfile, "arms" );
   addHIST( m_lrec, hfile, "lrec" );
   addHIST( m_ldigi, hfile, "ldigi" );
   addHIST( m_lcls, hfile, "lcls" );
+  addHIST( m_largeMulGTRC, hfile, "largeMulGTRC" );
+  if( iRoot+1 == nRoot ) m_largeMulGTRC->Scale( 1.0/nRoot );
   if( m_badStrips ){
     char hname[]="brms0";
     for( int i=0; i<g_nLayer/3; i++){ 
