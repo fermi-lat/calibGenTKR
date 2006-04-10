@@ -18,9 +18,11 @@ int main(int argn, char** argc) {
   }
   if(argn > 2) {
     defJob = argc[2];
+    std::cout << "job option spesified: " << defJob << std::endl;
   }
   if(argn > 3) {
     jobXml = argc[3];
+    std::cout << "job option file spesified: " << jobXml << std::endl;
   }
   
   totCalib calib( jobXml, defJob );

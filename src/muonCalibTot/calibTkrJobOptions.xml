@@ -4,14 +4,24 @@
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
   <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
-  <output dir="/nfs/slac/work/htajima/outputs/save" dtdDir=""/>
+  <output dir="/nfs/slac/work/htajima/outputs/" dtdDir=""/>
   <totParam maxDirZ="-0.85" totAngleCF="0.729" RSigma="3.45" GFrac="0.735" />
+
+  <jobOption name="LAT-MC-badStrips" type="badStrips" >
+    <data top="/nfs/farm/g/glast/u11/InstrumentAnalysis/MC/EngineeringModel-v5r070305p4/LAT_Surface_Muons/batch"
+          digi="surface_muons_200000"
+          recon="surface_muons_200000"
+          type="mc"
+          nameType="straight"
+          runIds="0 1 2 3" 
+    />
+  </jobOption>
 
   <jobOption name="16-tower-badStrips" type="badStrips" >
     <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData" runIds="140003853 139006070 136001294 132000240 137000361 145000036 146000035 150000035 132000247 140003860 136001301 139006077 137000368 145000043 147000033 148000034"/> 
-    <hist dir="/nfs/farm/g/glast/u02/TKR/TE403/trend"
-          files="TE403_060218-102803.root TE403_060218-102839.root TE403_060218-103330.root TE403_060218-103728.root TE403_060218-103853.root TE403_060218-104129.root TE403_060218-104137.root TE403_060218-122602.root TE403_060218-123131.root TE403_060218-123136.root TE403_060218-123137.root TE403_060218-123252.root TE403_060218-123726.root TE403_060218-124100.root TE403_060218-124344.root TE403_060218-124644.root TE403_060218-124646.root"
-    />
+    <hist dir="/nfs/slac/work/htajima/outputs/trend"
+          files="TE403_060330-053845.root TE403_060330-023719.root TE403_060330-053838.root TE403_060330-062111.root TE403_060330-064807.root TE403_060330-064953.root TE403_060330-065621.root TE403_060330-075851.root TE403_060330-080525.root TE403_060330-082307.root TE403_060330-082940.root TE403_060330-083746.root TE403_060330-083812.root TE403_060330-083801.root TE403_060330-083841.root TE403_060330-083846.root TE403_060330-083912.root"
+	  />
     <data top="/nfs/farm/g/glast/u27/Integration/rootData"
           raw="/nfs/farm/g/glast/u21/Integration/rawData"
           digi="v5r0703p6/grRoot/digitization-v3r4p4"
