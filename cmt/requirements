@@ -14,7 +14,7 @@ use calibUtil *
 use xmlBase *
 use facilities *
 use ROOT v* IExternal
-use EngineeringModelRoot v* svac
+use EngineeringModelRoot * svac
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
 
