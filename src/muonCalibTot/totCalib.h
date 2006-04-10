@@ -151,6 +151,8 @@ class totCalib:public TkrHits {
   std::string m_outputDir;
   // dtd file
   std::string m_dtdDir;
+
+  std::string m_nameType;
   
   //xml related parameters
   int m_first_run, m_last_run;
@@ -167,7 +169,7 @@ class totCalib:public TkrHits {
   void calculateEfficiency();
   
   bool m_correctedTot, m_histMode;
-  float m_totAngleCF, m_RSigma, m_GFrac, m_peakMIP;
+  float m_totAngleCF, m_totThreshold, m_totGain, m_totQuad, m_RSigma, m_GFrac, m_peakMIP;
   
 };
 // Gaussian convolved Landau function

@@ -31,7 +31,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.49 $";
+  std::string version = "$Revision: 1.50 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -47,6 +47,9 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   m_peakMIP = 4.92;
   m_RSigma = 4.0;
   m_GFrac = 0.78;
+  m_totThreshold = 1.177;
+  m_totGain = 0.589;
+  m_totQuad = 0.00490;
 
   //
   // parse job options xml file
@@ -60,12 +63,18 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 	    << ", maxDirZ: " << m_maxDirZ 
 	    << ", maxTrackRMS: " << m_maxTrackRMS 
 	    << ", maxDelta: " << m_maxDelta 
+	    << ", totThreshold: " << m_totThreshold 
+	    << ", totGain: " << m_totGain
+	    << ", totQuad: " << m_totQuad 
 	    << std::endl;
   m_log << "totAngleCF: " << m_totAngleCF << ", peakMIP: " << m_peakMIP
 	<< ", RSigma: " << m_RSigma
 	<< ", GFrac: " << m_GFrac << ", maxDirZ: " << m_maxDirZ 
 	<< ", maxTrackRMS: " << m_maxTrackRMS 
 	<< ", maxDelta: " << m_maxDelta 
+	<< ", totThreshold: " << m_totThreshold 
+	<< ", totGain: " << m_totGain
+	<< ", totQuad: " << m_totQuad 
 	<< std::endl;
   
 }
@@ -146,6 +155,12 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	if( value.size() > 0 ) m_GFrac = atof( value.c_str() );
 	value = Dom::getAttribute(totElt, "maxDirZ" );
 	if( value.size() > 0 ) m_maxDirZ = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "totThreshold" );
+	if( value.size() > 0 ) m_totThreshold = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "totGain" );
+	if( value.size() > 0 ) m_totGain = atof( value.c_str() );
+	value = Dom::getAttribute(totElt, "totQuad" );
+	if( value.size() > 0 ) m_totQuad = atof( value.c_str() );
       }
       catch (DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -264,7 +279,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	m_log << "no data element found." << std::endl;
 	return false;
       }
-      std::string top, raw, digi, svac, recon, runids;
+      std::string top, raw, digi, svac, recon, runids, dtype;
       std::vector<std::string> runIds;
       for(int idata=0; idata<numData; idata++){ //each xml loop
 	DOMNode* dataElt = dataList[ idata ];
@@ -275,6 +290,8 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	  recon = Dom::getAttribute(dataElt, "recon");
 	  runids = Dom::getAttribute(dataElt, "runIds");
 	  mode = Dom::getAttribute(dataElt, "mode");
+	  dtype = Dom::getAttribute(dataElt, "type");
+	  m_nameType = Dom::getAttribute(dataElt, "nameType");
 	  svac = Dom::getAttribute(dataElt, "svac");
 	}
 	catch (DomException ex) {
@@ -290,10 +307,31 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	  if( runid < m_first_run ) m_first_run = runid;
 	  if( runid > m_last_run ) m_last_run = runid;
 	}
-
-	if( !readRcReports( raw.c_str(), runIds ) ) return false;
-	if( m_badStrips )
-	  if( !readHotStrips( raw.c_str(), runIds ) ) return false;
+	if( dtype == "mc" ){
+	  char tower_serial[] = "TkrMC16";
+	  for( int tower=0; tower!=g_nTower; tower++){
+	    m_towerPtr[ tower ] = m_towerVar.size();
+	    m_towerVar.push_back( towerVar( tower, m_badStrips ) );
+	    sprintf( tower_serial, "TkrMC%d", tower );
+	    m_towerVar.back().hwserial = tower_serial;
+	    std::cout << "Tower " << tower << ": " << m_towerPtr[ tower ] 
+		      << " " << tower_serial << std::endl;
+	    m_log << "Tower " << tower << ": " << m_towerPtr[ tower ] 
+		  << " " << tower_serial << std::endl;
+	    if( !m_badStrips )
+	      for( int unp=0; unp!=g_nUniPlane; unp++)
+		for( int stripId =0; stripId!=g_nStrip; stripId++){
+		  m_towerVar.back().tcVar[unp].totThreshold[stripId] = m_totThreshold;
+		  m_towerVar.back().tcVar[unp].totGain[stripId] = m_totGain;
+		  m_towerVar.back().tcVar[unp].totQuad[stripId] = m_totQuad;
+		}
+	  }
+	}
+	else{
+	  if( !readRcReports( raw.c_str(), runIds ) ) return false;
+	  if( m_badStrips )
+	    if( !readHotStrips( raw.c_str(), runIds ) ) return false;
+	}
 	if( mode == "dummy" ){
 	  std::cout << "dummy mode: no digi/recon file used." << std::endl;
 	  m_log << "dummy mode: no digi/recon file used." << std::endl;
@@ -336,7 +374,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       std::vector<DOMElement*> xmlList;
       Dom::getChildrenByTagName( jobElt, "xml", xmlList );
       int numXml = xmlList.size();
-      if( numXml == 0 ){
+      if( dtype != "mc" && numXml == 0 ){
 	std::cout << "no xml element found." << std::endl;
 	m_log << "no xml element found." << std::endl;
 	return false;
@@ -382,7 +420,7 @@ void totCalib::parseRunIds( std::vector<std::string>& runIds,
   int runid;
   for( UInt_t i=0; i!=runIds.size(); i++){
     runid = atoi( runIds[i].c_str() );
-    if( runid < 100000000 || runid > 999999999 ){
+    if( runid < 0 || runid > 999999999 ){
       std::cout << "Invalid run#: " << runid << std::endl;
       m_log << "Invalid run#: " << runid << std::endl;
       exit( EXIT_FAILURE );
@@ -569,8 +607,10 @@ bool totCalib::addToChain( const char* rootDir, const char* digiPrefix,
     int runid = atoi( (*run).c_str() );
 
     digiFile = rootDir;
-    sprintf(fname,"/%d/%s_%d_digi_DIGI.root",
-	    runid, digiPrefix, runid);
+    if( m_nameType == "straight" ) sprintf(fname,"/%s_%d_digi.root",
+					   digiPrefix, runid);
+    else sprintf(fname,"/%d/%s_%d_digi_DIGI.root",
+		 runid, digiPrefix, runid);
     digiFile += fname;
     if( ! checkFile( digiFile ) ){
       std::cout << "digi file does not exist: " << digiFile << std::endl;
@@ -585,11 +625,15 @@ bool totCalib::addToChain( const char* rootDir, const char* digiPrefix,
     while( true ){
       reconFile = rootDir;
       if( split == 0 )
-	sprintf(fname,"/%d/%s_%d_recon_RECON.root",
-		runid, reconPrefix, runid);
+	if( m_nameType == "straight" ) sprintf(fname,"/%s_%d_recon.root",
+					       reconPrefix, runid);
+	else sprintf(fname,"/%d/%s_%d_recon_RECON.root",
+		     runid, reconPrefix, runid);
       else
-	sprintf(fname,"/%d/%s_%d_recon_RECON_%d.root",
-		runid, reconPrefix, runid, split);
+	if( m_nameType == "straight" ) sprintf(fname,"/%s_%d_recon_%d.root",
+					       reconPrefix, runid, split);
+	else sprintf(fname,"/%d/%s_%d_recon_RECON_%d.root",
+		     runid, reconPrefix, runid, split);
       reconFile += fname;
       if( ! checkFile( reconFile ) ){
 	if( split == 0 ) {
@@ -1623,9 +1667,9 @@ bool totCalib::readTotConvXmlFile(const char* dir, const char* runid)
       int tw = m_towerPtr[ towerId ];
       for( int unp=0; unp!=g_nUniPlane; unp++)
 	for( int stripId =0; stripId!=g_nStrip; stripId++){
-	  m_towerVar[tw].tcVar[unp].totOffset[stripId] = intercept;
+	  m_towerVar[tw].tcVar[unp].totThreshold[stripId] = intercept;
 	  m_towerVar[tw].tcVar[unp].totGain[stripId] = slope;
-	  m_towerVar[tw].tcVar[unp].totQuadra[stripId] = quad;
+	  m_towerVar[tw].tcVar[unp].totQuad[stripId] = quad;
 	}
       delete doc;
       delete parser;
@@ -1741,9 +1785,9 @@ bool totCalib::getParam(const DOMElement* totElement, layerId lid, std::vector<s
       <<",gain" << gain
       <<",quad" << quad <<endl;*/
   
-  m_towerVar[tw].tcVar[unp].totOffset[stripId] = values[0];
+  m_towerVar[tw].tcVar[unp].totThreshold[stripId] = values[0];
   m_towerVar[tw].tcVar[unp].totGain[stripId] = values[1];
-  m_towerVar[tw].tcVar[unp].totQuadra[stripId] = values[2];
+  m_towerVar[tw].tcVar[unp].totQuad[stripId] = values[2];
   return true;
 }
 
@@ -1756,9 +1800,9 @@ float totCalib::calcCharge( layerId lid, int iStrip, int tot) const
   int tw = m_towerPtr[ lid.tower ];
   int unp = lid.uniPlane;
   // TOT to charge conversion
-  float charge = m_towerVar[tw].tcVar[unp].totOffset[iStrip] 
+  float charge = m_towerVar[tw].tcVar[unp].totThreshold[iStrip] 
     + time*m_towerVar[tw].tcVar[unp].totGain[iStrip]
-    + time*time*m_towerVar[tw].tcVar[unp].totQuadra[iStrip];
+    + time*time*m_towerVar[tw].tcVar[unp].totQuad[iStrip];
   
   return charge;
 }
