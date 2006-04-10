@@ -1,4 +1,16 @@
 ------------------------------------------------------------
+User: htajima  Sun Apr  9 21:53:08 PDT 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml runTotCalibChain.cxx totCalib.cxx 
+	totCalib.h 
+Log Message:
+adopt MC files analysis. (Allow simple file names. Default tot parameters.)
+name change for tot fit parameters.
+
+    *
+------------------------------------------------------------
 User: htajima  Sun Apr  9 21:49:19 PDT 2006
 calibGenTKR/cmt
 
