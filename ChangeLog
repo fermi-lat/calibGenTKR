@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sun Apr  9 21:49:19 PDT 2006
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+change requirement of svac/EngineeringRoot from "v*" to "*"
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v3r0p2, operation: add
 Package: calibGenTKR
