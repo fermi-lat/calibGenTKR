@@ -92,13 +92,16 @@ class totCalib:public TkrHits {
   std::cout << "DTD directory: " << m_dtdDir << std::endl;
   };
   
-  bool readInputXmlFiles(const std::string, 
-			 const std::vector<std::string>& runIds );  
-  bool readBadStripsXmlFile(const char* dir, const std::string runid="None" );
-  bool readTotConvXmlFile(const char* dir, const char* runid);
+  bool readInputXmlFiles( const std::string, 
+			  const std::vector<std::string>& runIds );  
+  bool readBadStripsXmlFile( const std::string dir, const std::string runid );
+  bool readBadStripsXmlFile( const std::string filename, bool hotStrips );
+  bool readTotConvXmlFile( const std::string dir, const std::string runid );
+  bool readTotConvXmlFile( const std::string filename );
+  bool readLatcTfeXmlFile( const std::string filename );
 
-  bool readInputHistFiles(const std::string, 
-			 const std::vector<std::string>& );
+  bool readInputHistFiles( const std::string, 
+			   const std::vector<std::string>& );
   bool readInputHistFiles( const std::string dir, 
 			   const std::string prefix, 
 			   const std::vector<std::string> &runIds );
@@ -163,6 +166,7 @@ class totCalib:public TkrHits {
   void openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ); 
   void fillBadStrips();
   void fillTowerBadStrips( std::ofstream &xmlFile, const int tower, 
+			   const bool saveHotStrips=false,
 			   const int nBad=g_nBad-1 );
   void combineBadChannels( layerId );
   void fixedDisp( int, bool=true );
