@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri May 19 14:19:48 PDT 2006
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+use svac/EngineeringModelRoot instead of beamTestTuple since we need to define 16 towers.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v3r2, operation: add
 Package: calibGenTKR
