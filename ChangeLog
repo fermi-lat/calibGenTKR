@@ -1,4 +1,20 @@
 ------------------------------------------------------------
+User: htajima  Fri May 19 14:20:18 PDT 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+accomodate new LICOS directory structure where analysis result is stored in analysis_TEMx directory under LICOS directory.
+use Latc default TFE file to get masked strips for LICOS runs since hot strip schema files are no longer in the rawData directory.
+create additional bad strip xml file that includes a list of hot strips in addition to the normal dead strips xml file.
+use default serial ID location for LICOS runs since such information is fixed and no longer available in rcReport.out.
+use string for run number to avoid truncation of the leading 0 in the run numbers.
+read only the first job option matching to the input. ignore the rest.
+consistently use layerId::getLayerName() to display layer names.
+
+    *
+------------------------------------------------------------
 User: htajima  Fri May 19 14:19:48 PDT 2006
 calibGenTKR/cmt
 
