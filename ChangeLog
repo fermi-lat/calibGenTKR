@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Wed May 24 16:09:30 PDT 2006
+calibGenTKR/src/muonCalibTot
+
+Added Files:
+	GeoConstants.h 
+Log Message:
+this header file is required by TkrHits.h
+
+    *
+------------------------------------------------------------
 User: htajima  Wed May 24 16:09:04 PDT 2006
 calibGenTKR/cmt
 
