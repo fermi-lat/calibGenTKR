@@ -14,8 +14,7 @@ use calibUtil *
 use xmlBase *
 use facilities *
 use ROOT v* IExternal
-use EngineeringModelRoot * svac
-#use BeamTestTuple * 
+use calibTkrUtil *
 
 
 set BADSTRIPSCALIB ${CALIBGENTKRROOT}
@@ -52,6 +51,6 @@ macro xml2rootFiles  "" WIN32 "xml2root/*.h"
 
 application doBadStripsCalib badStripsCalib/*.cxx $(badStripsFiles)
 
-application doMuonCalibTot   muonCalibTot/*.cxx   $(muonCalibFiles)
+application doMuonCalibTot   muonCalibTot/*.cxx $(calibTkrUtil_srcs)  $(muonCalibFiles)
 
 application doXml2root       xml2root/*.cxx       $(xml2rootFiles)

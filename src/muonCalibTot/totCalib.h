@@ -27,7 +27,7 @@
 #include <vector>
 #include <algorithm>
 
-#include "TkrHits.h"
+#include "calibTkrUtil/TkrHits.h"
 
 using XERCES_CPP_NAMESPACE_QUALIFIER DOMElement;
 
