@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: cohen  Wed May 24 09:39:51 PDT 2006
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+switch to use of calibTkrUtil, plus remove useless line that caused compil error on windows
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v3r3, operation: add
 Package: calibGenTKR
