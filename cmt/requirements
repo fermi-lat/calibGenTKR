@@ -23,9 +23,9 @@ apply_pattern package_include
 
 include_dirs ${CALIBGENTKRROOT}/src/badStripsCalib \
              ${CALIBGENTKRROOT}/src/muonCalibTot   \
-             ${CALIBGENTKRROOT}/src/xml2root \
-     	     ${ENGINEERINGMODELROOTROOT}/src 
-#${BEAMTESTTUPLEROOT}/src  
+             ${CALIBGENTKRROOT}/src/xml2root
+#     	     ${ENGINEERINGMODELROOTROOT}/src 
+#            ${BEAMTESTTUPLEROOT}/src  
 
 #apply_pattern package_headers
 
