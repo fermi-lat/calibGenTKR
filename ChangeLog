@@ -1,14 +1,4 @@
 ------------------------------------------------------------
-User: htajima  Wed May 24 16:09:04 PDT 2006
-calibGenTKR/cmt
-
-Modified Files:
-	requirements 
-Log Message:
-removed ENGINEERINGROOT from include directories
-
-    *
-------------------------------------------------------------
 User: cohen  Wed May 24 09:39:51 PDT 2006
 calibGenTKR/src/muonCalibTot
 
