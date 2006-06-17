@@ -79,7 +79,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.52 $";
+  std::string version = "$Revision: 1.53 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -254,7 +254,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 
       // analysis type
       
-if( type == "badStrips" ){
+      if( type == "badStrips" ){
 	m_badStrips = true;
 	std::cout << type << ", bad strip analysis" << std::endl;
       }
@@ -451,6 +451,31 @@ if( type == "badStrips" ){
 	runIds.clear();
 	parseRunIds( runIds, runids );
 	if( !readInputXmlFiles( dir, runIds ) ) return false;
+      }
+      //
+      // loop text tag
+      //
+      std::string names;
+      std::vector<DOMElement*> txtList;
+      Dom::getChildrenByTagName( jobElt, "text", txtList );
+      int numTxt = txtList.size();
+      for(int itxt=0; itxt<numTxt; itxt++){ //each text loop
+	DOMNode* txtElt = txtList[ itxt ];
+	try{
+	  atype = Dom::getAttribute(txtElt, "type");
+	  dir = Dom::getAttribute(txtElt, "dir");
+	  names = Dom::getAttribute(txtElt, "names");
+	}
+	catch (DomException ex) {
+	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	  return false;
+	}
+	if( atype != "knownBadStrips" ){
+	  std::cout << " igonore inconsistent txt type: " << atype << "<>" << type << std::endl;
+	  m_log << "ignore inconsistent txt type: " << atype << "<>" << type << std::endl;
+	  continue;
+	}
+	if( !readBadStripsTxtFiles( dir, names ) ) return false;
       }
       break; // stop after reading the first matching job option file
     }
@@ -1473,6 +1498,114 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
   return true;
 }
+
+
+bool totCalib::readBadStripsTxtFiles(const std::string dir, 
+				    const std::string names ){  
+  std::vector<std::string> fnames;
+  splitWords( fnames, names );
+  for(std::vector<std::string>::const_iterator fname = fnames.begin();
+      fname != fnames.end(); ++fname) {
+    if( !readBadStripsTxtFile( dir+'/'+(*fname) ) ) return false;
+  }
+  return true;
+}  
+
+bool totCalib::readBadStripsTxtFile( const std::string filename ){
+
+  if( ! checkFile( filename ) ){
+    std::cout << "Invalid text file path: " << filename << std::endl;
+    m_log << "Invalid text file path: " << filename << std::endl;
+    return false;
+  }
+
+  std::cout << "Open bad strips text file: " << filename << std::endl;
+  m_log << "Bas strips text file: " << filename << std::endl;
+
+  std::string line, column, word;
+  std::vector<std::string> words;
+  std::vector<int> towerPtr;
+  ifstream is( filename.c_str() );
+  getline( is, line );
+  UInt_t nl = 0;
+  while( is ){
+    std::string::size_type pos=0, i=0;
+    UInt_t nc = 0;
+    int unp = -1;
+    while( i != string::npos ){
+      i = line.find('\t', pos);
+      if(i != string::npos) column = line.substr(pos, i-pos);
+      else column = line.substr(pos); // end of line
+      pos = i + 1;
+      //
+      // first line includes module information
+      // search for matching module
+      //
+      if( nl == 0 ){
+	std::string serial = "TkrFM" + column;
+	int pointer = -1;
+	for( UInt_t twr=0; twr<m_towerVar.size(); twr++)
+	  if( serial == m_towerVar[twr].hwserial ){ 
+	    pointer = twr;
+	    std::cout << serial << " " << nc << ";";
+	  }
+	towerPtr.push_back( pointer );
+	continue;
+      }
+      int twr = -1;
+      if( nc < towerPtr.size() ) twr = towerPtr[ nc ];
+      if( twr >= 0 ) std::cout << " T" << m_towerVar[twr].towerId;
+      //
+      // check layer name
+      // 
+      if( nc == 0 ){
+	if( column[0]=='X' or column[0]=='Y' ){
+	  std::cout << std::endl << column;
+	  int view = 0;
+	  if( column[0] == 'Y' ) view = 1;
+	  int layer = atoi( column.erase(0,1).c_str() );
+	  layerId lid(  layer, view );
+	  unp = lid.uniPlane;
+	  std::cout  << " u" << unp;
+	}
+	else unp = -1;
+      }
+      nc++;
+      if( twr < 0 or unp < 0 ) {
+	//std::cout << column << ": " << unp << " " << twr << " " << nc << " " << nl;
+	//std::cout << std::endl;
+	continue;
+      }
+
+      //
+      // register bad strips
+      //
+      if( column[0] == '"' ) column.erase(0,1);
+      if( column[column.size()-1] == '"' ) column.erase(column.size()-1,1);
+      words.clear();
+      splitWords( words, column );
+      int nst = 0;
+      for( UInt_t j=0; j<words.size(); j++){
+	word = words[j];
+	if( word.size() > 0 ){
+	  if( word[word.size()-1] == ',' ) word.erase( word.size()-1,1);
+	  int strip = atoi( word.c_str() );
+	  m_towerVar[twr].bsVar[unp].knownBadStrips[2].push_back( strip );
+	  nst++;
+	}
+      }
+      std::cout << " " << nst;
+    }
+    nl++;
+    getline( is, line );
+  }
+  is.close();
+  
+  std::cout << std::endl;
+  return true;
+
+}
+
 
 bool totCalib::readInputXmlFiles(const std::string dir, 
 				 const std::vector<std::string>& runIds ){

@@ -84,6 +84,16 @@
 	  recon="v6r070305p9/calib-v1r0/grRoot/recon-v3r5p5"
           runIds="077002485 077002486 077002487 077002488 077002489 077002490 077002491 077002492 077002493 077002494 077002495 077002496"/>
   </jobOption>
+
+  <jobOption name="pisa-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/slac/g/glast/users/glground/bregeon/TkrRecon" runIds="330000620"/>
+    <data top="/nfs/slac/g/glast/users/glground/bregeon/TkrRecon"
+          raw="/nfs/slac/g/glast/users/glground/bregeon/TkrRecon"
+	  digi="data"
+	  recon="data"
+          runIds="330000645"/>
+  </jobOption>
+
   <jobOption name="licos-badStrips-1" type="badStrips" mode="hist">
     <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002636"/>
     <data top="/nfs/farm/g/glast/u25/Integration/rootData"
@@ -918,6 +928,7 @@
 
   <jobOption name="TkrFMB-badStrips" type="badStrips" >
     <xml type="badStrips" dir="/nfs/farm/g/glast/u12/EM2/rawData" runIds="132000066"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
     <data top="/nfs/farm/g/glast/u14/Integration/rootData" 
           raw="/nfs/farm/g/glast/u12/EM2/rawData" 
 	  digi="v4r060302p8/grRoot/digitization-v3r1p3" 
