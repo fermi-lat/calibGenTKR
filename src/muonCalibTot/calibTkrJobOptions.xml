@@ -1,12 +1,30 @@
 <jobOptions default="test">
-  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
+  <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603/check" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
   <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
-  <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
+  <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
   <totParam maxDirZ="-0.85" totAngleCF="0.729" RSigma="3.45" GFrac="0.735" />
 
+  <jobOption name="emi-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002923"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p17/digi/digitization-licos-v3r6p5"
+	  recon="v6r070329p17/recon/recon-v3r6p5"
+          runIds="077006531 077006532 077006533 077006534 077006535 077006536 077006537 077006538 077006539 077006540 077006541 077006542"/>
+  <!-- 077006543 077006544 077006545 077006546"/ -->
+  </jobOption>
+  <jobOption name="emi-badStrips" type="badStrips">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u34/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  svac="v6r070329p17/svacTuple/v2r2/svacTuple-v3r6p3"
+	  mode="svac"
+          runIds="077006046 077006050 077006065 077006066 077006077 077006078 077006079 077006080 077006081 077006083 077006084 077006085 077006086 077006087 077006098 077006099 077006100 077006101 077006102 077006103 077006104 077006106 077006107 077006110 077006111 077006112 077006113 077006114 077006116 077006117 077006130 077006131 077006132 077006133 077006134 077006135 077006136 077006143 077006144 077006156 077006157 077006178 077006179 077006180 077006181 077006182 077006199 077006201 077006202 077006244 077006305 077006306 077006317 077006328 077006339 077006356 077006357 077006367 077006377 077006397 077006419"/>
+  </jobOption>
   <jobOption name="LAT-MC-badStrips" type="badStrips" >
     <data top="/nfs/farm/g/glast/u11/InstrumentAnalysis/MC/EngineeringModel-v5r070305p4/LAT_Surface_Muons/batch"
           digi="surface_muons_200000"
@@ -70,6 +88,7 @@
   </jobOption>
   <jobOption name="psr-badStrips" type="badStrips">
     <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
     <data top="/nfs/farm/g/glast/u29/Integration/rootData"
           raw="/nfs/farm/g/glast/u25/Integration/rawData"
 	  svac="v6r070305p9/calib-v1r0/svacTuple/emRootv0r0/svacTuple-v3r5p8"

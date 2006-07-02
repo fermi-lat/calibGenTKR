@@ -79,7 +79,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.53 $";
+  std::string version = "$Revision: 1.54 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -916,6 +916,8 @@ bool totCalib::parseRcReport( const char* reportFile )
       pos = serials.find( "," );
       towerId.assign( serials, 0, pos );
       pos = serials.find( "tkr" );
+      unsigned int pos2 = serials.find( "GTEM" );
+      if( pos2 != string::npos && pos2 < pos ) continue;
       serials.assign( serials, pos+5, serials.size() );
       pos = serials.find( "'" );
       serials.assign( serials, pos+1, serials.size() );
