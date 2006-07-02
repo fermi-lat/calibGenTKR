@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sat Jul  1 18:22:35 PDT 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+fixed a bug where it is confused by an rcReport GTEM entry without tkr serial.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v4r1, operation: add
 Package: calibGenTKR
