@@ -1,4 +1,40 @@
 ------------------------------------------------------------
+TAG
+Tag name: v4r3, operation: add
+Package: calibGenTKR
+User: htajima  Sat Aug 19 00:46:20 2006
+Files:
+  calibGenTKR/.cvsignore  1.2
+  calibGenTKR/ChangeLog  1.1.1.205
+  calibGenTKR/cmt/.cvsignore  1.1
+  calibGenTKR/cmt/requirements  1.32
+  calibGenTKR/doc/release.notes  1.19
+  calibGenTKR/output/example_hotStrips.xml  1.1.1.1
+  calibGenTKR/output/example_deadStrips.xml  1.1.1.1
+  calibGenTKR/output/example_hist.root  1.1.1.1
+  calibGenTKR/pl/job.dat  1.1
+  calibGenTKR/pl/RunCalibGenTKR.pl  1.2
+  calibGenTKR/src/mainpage.h  1.10
+  calibGenTKR/src/badStripsCalib/badStripsCalib.cxx  1.18
+  calibGenTKR/src/badStripsCalib/badStrips.dtd  1.1
+  calibGenTKR/src/badStripsCalib/options.xml  1.2
+  calibGenTKR/src/badStripsCalib/generateBadStrips.cxx  1.2
+  calibGenTKR/src/badStripsCalib/badStripsCalib.h  1.17
+  calibGenTKR/src/muonCalibTot/TkrCalibration.dtd  1.1
+  calibGenTKR/src/muonCalibTot/calibTkrJobOptions.xml  1.20
+  calibGenTKR/src/muonCalibTot/GeoConstants.h  1.1
+  calibGenTKR/src/muonCalibTot/totCalib.h  1.34
+  calibGenTKR/src/muonCalibTot/runTotCalibChain.cxx  1.15
+  calibGenTKR/src/muonCalibTot/totCalibChain_option.dat  1.16
+  calibGenTKR/src/muonCalibTot/totCalib.cxx  1.56
+  calibGenTKR/src/xml2root/xmltoroot.cxx  1.2
+  calibGenTKR/src/xml2root/XmltorootHandler.cxx  1.4
+  calibGenTKR/src/xml2root/XmltorootHandler.h  1.2
+  calibGenTKR/xml/ifile.dtd  1.1
+  calibGenTKR/xml/badStrips.dtd  1.1.1.1
+
+    *
+------------------------------------------------------------
 User: htajima  Sat Aug 19 00:44:53 PDT 2006
 calibGenTKR/src/muonCalibTot
 
