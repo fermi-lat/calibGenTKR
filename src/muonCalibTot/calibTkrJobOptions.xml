@@ -1,11 +1,105 @@
 <jobOptions default="test">
-  <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
+  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603/check" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
-  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
+  <!--  <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
   <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
-  <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
+  <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
   <totParam maxDirZ="-0.85" totAngleCF="0.729" RSigma="3.45" GFrac="0.735" />
+
+  <jobOption name="pre-TVAC-badStrips" type="badStrips">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077007573"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  svac="v6r070329p21/svacTuple/v3r0/svacTuple-v3r6p9"
+	  mode="svac"
+          runIds="077007006 077007084 077007085 077007133 077007134 077007135 077007137 077007138 077007139 077007141 077007142 077007143 077007145 077007146 077007147 077007149 077007150 077007177 077007179 077007180 077007251 077007262 077007281 077007299 077007335 077007336 077007337 077007338 077007356 077007357 077007358 077007382 077007432 077007433 077007434 077007435 077007458 077007459 077007460 077007461 077007543 077007544 077007545 077007546 077007593 077007613 077007631 077007670 077007671 077007672 077007673 077007707"/>
+  </jobOption>
+
+  <jobOption name="TVAC-hot1-badStrips" type="badStrips">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077008171"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  svac="v6r070329p27/svacTuple/v3r0/svacTuple-v3r7p0"
+	  mode="svac"
+          runIds="077008024 077008025 077008026 077008041 077008058 077008076 077008139 077008140 077008141 077008143 077008208 077008209 077008210 077008211 077008212 077008213 077008214 077008215 077008216 077008217 077008218 077008219 077008220 077008221 077008222 077008223"/>
+  </jobOption>
+
+  <jobOption name="TVAC-hotcold1-badStrips" type="badStrips">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077008171 077008388"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  svac="v6r070329p27/svacTuple/v3r0/svacTuple-v3r7p0"
+	  mode="svac"
+          runIds="077008244 077008245 077008246 077008248 077008249 077008250 077008253 077008254 077008257 077008258 077008259 077008261 077008262 077008263 077008265 077008266 077008267 077008269 077008270 077008271 077008273 077008274 077008275 077008277 077008278 077008279 077008281 077008282 077008283 077008285 077008286 077008287 077008289 077008290 077008291 077008293 077008294 077008295 077008297 077008298 077008299 077008301 077008302 077008303 077008305 077008306 077008307 077008309"/>
+  </jobOption>
+
+  <jobOption name="TVAC-cold1-badStrips" type="badStrips">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077008388"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  svac="v6r070329p28/svacTuple/v3r0/svacTuple-v3r7p1"
+	  mode="svac"
+          runIds="077008356 077008358 077008359 077008360 077008438 077008453 077008472 077008490 077008526 077008527 077008528 077008529 077008584 077008585 077008586 077008587 077008588 077008589 077008590 077008591 077008592 077008593 077008594 077008595 077008596 077008597 077008598 077008599"/>
+  </jobOption>
+
+
+  <jobOption name="Pre-TVAC-v-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077006756"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p17/digi/digitization-licos-v3r6p5"
+	  recon="v6r070329p17/recon/recon-v3r6p5"
+          runIds="077006531 077006532 077006533 077006534 077006535 077006536 077006537 077006538 077006539 077006540"/>
+  </jobOption>
+  <jobOption name="Pre-TVAC-h-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077006756"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p21/digi/digitization-licos-v3r6p9"
+	  recon="v6r070329p21/recon/recon-v3r6p9"
+          runIds="077007458 077007459 077007460 077007461 077007543 077007544 077007545 077007546 077007593 077007613 077007631 077007670 077007671 077007672 077007673 077007707"/>
+  </jobOption>
+
+  <jobOption name="TVAC-hot1-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077006756"/>
+    <data top="/nfs/farm/g/glast/u36/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p27/digi/digitization-licos-v3r7p0"
+	  recon="v6r070329p27/recon/recon-v3r7p0"
+          runIds="077008208 077008209 077008210 077008211 077008212 077008213 077008214 077008215 077008216 077008217 077008218 077008219 077008220 077008221 077008222 077008223"/>
+  </jobOption>
+
+  <jobOption name="PSR-LAT70x-1-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002923"/>
+    <data top="/nfs/farm/g/glast/u34/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p16/grRoot/digitization-licos-v3r6p2"
+	  recon="v6r070329p16/calib-v1r0/grRoot/recon-v3r6p2"
+          runIds="077003051 077003052 077003053 077003054 077003055 077003056 077003057 077003058"/>
+  </jobOption>
+
+  <jobOption name="PSR-LAT70x-2-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002923"/>
+    <data top="/nfs/farm/g/glast/u34/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p16/grRoot/digitization-licos-v3r6p2"
+	  recon="v6r070329p16/calib-v1r0/grRoot/recon-v3r6p2"
+          runIds="077003553 077003554 077003555 077003556 077003557 077003559 077003570 077003571"/>
+  </jobOption>
+
+  <jobOption name="PSR-LAT70x-3-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002923"/>
+    <data top="/nfs/farm/g/glast/u34/Integration/rootData"
+          raw="/nfs/farm/g/glast/u25/Integration/rawData"
+	  digi="v6r070329p16/grRoot/digitization-licos-v3r6p2"
+	  recon="v6r070329p16/calib-v1r0/grRoot/recon-v3r6p2"
+          runIds="077004472 077004473 077004474 077004475 077004476 077004477 077004478 077004479"/>
+  </jobOption>
 
   <jobOption name="emi-tot" type="MIP calibration" >
     <xml type="MIP calibration" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077002923"/>
@@ -13,8 +107,8 @@
           raw="/nfs/farm/g/glast/u25/Integration/rawData"
 	  digi="v6r070329p17/digi/digitization-licos-v3r6p5"
 	  recon="v6r070329p17/recon/recon-v3r6p5"
-          runIds="077006531 077006532 077006533 077006534 077006535 077006536 077006537 077006538 077006539 077006540 077006541 077006542"/>
-  <!-- 077006543 077006544 077006545 077006546"/ -->
+          runIds="077006531 077006532 077006533 077006534 077006535 077006536 077006537 077006538 077006539 077006540"/>
+  <!-- 077006541 077006542 077006543 077006544 077006545 077006546"/ -->
   </jobOption>
   <jobOption name="emi-badStrips" type="badStrips">
     <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285"/>

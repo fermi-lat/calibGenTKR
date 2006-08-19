@@ -17,6 +17,25 @@ XERCES_CPP_NAMESPACE_USE
 
 //#define PRINT_DEBUG 1
 
+float getTrunctedMean( std::vector<float> array, float fraction=0.9 ){
+
+  if( array.size() == 0 ) return 0.0;
+
+  sort( array.begin(), array.end() );
+  int ib = array.size() * (1-fraction) * 0.5 + 0.5;
+  int ie = array.size() - ib;
+
+  if( ib>= ie ){
+    ib = 0;
+    ie = array.size();
+  }
+
+  float sum = 0;
+  for( int index=ib; index<ie; index++) sum += array[index];
+  return sum/(ie-ib);
+
+}
+
 ULong64_t axtoi(const char *hexStg) {
   int n = 0;         // position in string
   int m = 0;         // position in digit[] to shift
@@ -79,7 +98,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.54 $";
+  std::string version = "$Revision: 1.55 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -707,7 +726,7 @@ bool totCalib::addToChain( const char* rootDir, const char* digiPrefix,
 		     (*run).c_str(), reconPrefix, (*run).c_str());
       else
 	if( m_nameType == "straight" ) 
-	  sprintf(fname,"/%s_%d_recon_%d.root",
+	  sprintf(fname,"/%s_%s_recon_%d.root",
 		  reconPrefix, (*run).c_str(), split);
 	else sprintf(fname,"/%s/%s_%s_recon_RECON_%d.root",
 		     (*run).c_str(), reconPrefix, (*run).c_str(), split);
@@ -2292,14 +2311,6 @@ void totCalib::findBadStrips()
       int unp = uniPlane;
       std::string lname = lid.getLayerName();
 
-      float eff = 1.0;
-      float locc = m_locc->GetBinContent( uniPlane+1 );
-      float ldigi = m_ldigi->GetBinContent( uniPlane+1 );
-      if( locc > 0.0 && ldigi > 0.0 ) eff = locc/ldigi;
-
-      int numDeadStrips = 0;
-      float meanRatio = 0.0;
-
       //
       // initialize known bad strip flag
       //
@@ -2320,28 +2331,26 @@ void totCalib::findBadStrips()
       //
       // determine rate fudge factor for this layer
       //
-      int numGood = 0;
+      std::vector<float> vratio;
       float ratio;
       for( int strip=0; strip!=g_nStrip; strip++){
 	if( m_towerVar[tw].bsVar[uniPlane].lHits[strip] == 0 ) continue;
 	if( m_towerVar[tw].bsVar[uniPlane].tHits[strip] == 0 ) continue;
-	ratio = m_towerVar[tw].bsVar[uniPlane].lHits[strip] 
-	  / (m_towerVar[tw].bsVar[uniPlane].tHits[strip]*eff) ;
-	if( fabs(ratio-1.6) > 0.4 ) continue;
-	numGood++;
-	meanRatio += ratio;
+	ratio = (float)m_towerVar[tw].bsVar[uniPlane].lHits[strip] 
+	  / (m_towerVar[tw].bsVar[uniPlane].tHits[strip]) ;
+	vratio.push_back( ratio );
       }
-      meanRatio /= numGood;
-      eff *= meanRatio;
-      m_log << "T" << tower << " " << lname << ": " << eff << " " << meanRatio;
+      float eff = getTrunctedMean( vratio, 0.9 );
+      m_log << "T" << tower << " " << lname << ": " << eff;
       if( eff < minEff ) m_log << "*****";
       m_log << std::endl;
 	
       //
       // main bad strips finder
       //
-      numGood = 0;
-      meanRatio = 0.0;
+      int numDeadStrips = 0;
+      float meanRatio = 0.0;
+      int numGood = 0;
       for( int strip=0; strip!=g_nStrip; strip++){
 
 	//if( m_lHits[uniPlane][strip] == 0 ){ // dead strips
