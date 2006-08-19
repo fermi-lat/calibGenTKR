@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Sat Aug 19 00:44:53 PDT 2006
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+overall recon cluster efficiency is screwed up when noisy strips are not masked in findBadStrips function. Use truncated mean method to avoid the effect of a few noisy strips.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v4r2, operation: add
 Package: calibGenTKR
