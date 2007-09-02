@@ -1,14 +1,4 @@
 ------------------------------------------------------------
-User: cohen  Sun Sep  2 08:30:17 PDT 2007
-calibGenTKR/src/badStripsCalib
-
-Modified Files:
-	badStripsCalib.cxx 
-Log Message:
-fix null pointer for gcc34
-
-    *
-------------------------------------------------------------
 TAG
 Tag name: v4r3, operation: add
 Package: calibGenTKR
