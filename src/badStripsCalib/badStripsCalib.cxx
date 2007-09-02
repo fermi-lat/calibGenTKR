@@ -67,7 +67,7 @@ void BadStripsCalib::DigiHistDefine() {
     int nTowers = m_towerNums.size();
     int nHists = nTowers*m_nPlanes;
 
-    m_tkrHists.assign(nHists,0);
+    m_tkrHists.assign(nHists, static_cast<TH1F*>(NULL));
 
     for (j = 0; j<nTowers; ++j) {
         int tower = m_towerNums[j];
