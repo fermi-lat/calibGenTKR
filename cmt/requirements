@@ -1,5 +1,5 @@
 package calibGenTKR
-version v4r3p1
+version v4r3p2
 author Leon Rochester <lsrea@slac.stanford.edu>
 
 # This package contains the tracker bad strips calibration code
