@@ -19,6 +19,7 @@
 #include "TTree.h"
 #include "TChain.h"
 #include "TMath.h"
+#include "THashList.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TF1.h"
