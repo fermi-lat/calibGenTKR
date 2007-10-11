@@ -1,4 +1,31 @@
 ------------------------------------------------------------
+User: heather  Thu Oct 11 13:19:36 PDT 2007
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.h 
+Log Message:
+include THashList
+    *
+------------------------------------------------------------
+User: heather  Thu Oct 11 13:19:36 PDT 2007
+calibGenTKR/doc
+
+Modified Files:
+	release.notes 
+Log Message:
+include THashList
+    *
+------------------------------------------------------------
+User: heather  Thu Oct 11 13:19:36 PDT 2007
+calibGenTKR/cmt
+
+Modified Files:
+	requirements 
+Log Message:
+include THashList
+    *
+------------------------------------------------------------
 TAG
 Tag name: v4r3p1, operation: add
 Package: calibGenTKR
