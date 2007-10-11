@@ -1,5 +1,14 @@
 ------------------------------------------------------------
 User: heather  Thu Oct 11 13:19:36 PDT 2007
+calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.h 
+Log Message:
+include THashList
+    *
+------------------------------------------------------------
+User: heather  Thu Oct 11 13:19:36 PDT 2007
 calibGenTKR/doc
 
 Modified Files:
