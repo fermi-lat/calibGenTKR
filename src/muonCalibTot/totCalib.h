@@ -37,11 +37,6 @@ const float maxProbT = -5.0;
 static const float maxProb = -3.5, maxProbW = -3.5, maxContSum = -8.0, maxProbSum = -10.0;
 static const float probThreshold = -5.0;
 
-const float maxChisq = 1.75;
-const float maxFracErr = 0.015;
-const float minFracErr = 0.005;
-
-const float maxTot = 20.0;
 
 //
 // class poisson
@@ -71,7 +66,6 @@ class totCalib:public TkrHits {
   
   void getTimeStamp();
   void initHists();
-  void initTotHists();
   
   bool readJobOptions( const std::string, const std::string );
   void parseRunIds(std::vector<std::string>&, const std::string& );
@@ -128,9 +122,8 @@ class totCalib:public TkrHits {
   
   void analyzeEvents();
   
-  void fillTot();   
   void getTot();
-  void fitTot();
+  float calcCharge( layerId lid, int iStrip, int tot) const;
   
   void fillXml();//takuya
   void fillTowerChargeScales( std::ofstream &xmlFile, const int tower );
@@ -141,9 +134,6 @@ class totCalib:public TkrHits {
   bool getParam(const DOMElement* totElement, layerId lid, std::vector<std::string> keywords );
   bool checkFile( const std::string );
   
-  float calcCharge( layerId lid, int iStrip, int tot) const;
-  
-  std::vector<TH1F*> m_chargeHist;
 
   TFile* m_reconFile;
   TTree* m_reconTree;
@@ -175,8 +165,7 @@ class totCalib:public TkrHits {
   void fixedDisp( int, bool=true );
   void calculateEfficiency();
   
-  bool m_correctedTot, m_histMode;
-  float m_totAngleCF, m_totThreshold, m_totGain, m_totQuad, m_RSigma, m_GFrac, m_peakMIP;
+  float m_totThreshold, m_totGain, m_totQuad;
   
 };
 // Gaussian convolved Landau function
