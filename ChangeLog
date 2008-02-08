@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+User: htajima  Thu Feb  7 22:20:33 PST 2008
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+* add TOT monitoring capability
+* ignore the case in which there is no bad strip xml in raw data directory
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: v4r3p2, operation: add
 Package: calibGenTKR
