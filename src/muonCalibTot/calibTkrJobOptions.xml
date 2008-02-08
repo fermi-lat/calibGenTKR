@@ -7,6 +7,77 @@
   <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
   <totParam maxDirZ="-0.85" totAngleCF="0.729" RSigma="3.45" GFrac="0.735" />
 
+<!--077016031-->
+
+  <jobOption name="test-16031" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077007573"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u40/Integration/rawData"
+          digi="v13r6p1/digi/digitization-v4r0p1"
+          recon="v13r6p1/recon/recon-v4r0p1"
+          runIds="077016031" />
+  </jobOption>
+  <jobOption name="test-14364" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077007573"/>
+    <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
+    <data top="/nfs/farm/g/glast/u40/Integration/rootData"
+          raw="/nfs/farm/g/glast/u41/Integration/rawData"
+          digi="v13r6p1/digi/digitization-v4r0p0"
+          recon="v13r6p1/recon/recon-v4r0p0"
+          runIds="077014364" />
+  </jobOption>
+
+  <jobOption name="TkrFM8-DAC26-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002619" />
+  </jobOption>
+  <jobOption name="TkrFM8-DAC28-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002620" />
+  </jobOption>
+  <jobOption name="TkrFM8-DAC30-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002614 399002615 399002616 399002617" />
+  </jobOption>
+  <jobOption name="TkrFM8-DAC34-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002621" />
+  </jobOption>
+  <jobOption name="TkrFM8-DAC38-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002622" />
+  </jobOption>
+  <jobOption name="TkrFM8-DAC40-eff" type="badStrips" mode="hist">
+    <xml type="badStrips" dir="/nfs/farm/g/glast/u21/Integration/rawData/" runIds="399002589"/>
+    <data top="/nfs/farm/g/glast/u21/Integration/rootData"
+          raw="/nfs/farm/g/glast/u21/Integration/rawData"
+          digi="v5r0608p6/grRoot/digitization-v3r3p1"
+          recon="v5r0608p6/calib-v1r0/grRoot/recon-v3r3p1"
+          runIds="399002623" />
+  </jobOption>
+
+
   <jobOption name="pre-TVAC-badStrips" type="badStrips">
     <xml type="badStrips" dir="/nfs/farm/g/glast/u25/Integration/rawData" runIds="077003223 077003673 077003825 077004109 077004285 077007573"/>
     <text type="knownBadStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403" names="knownBadStrips.txt"/>
