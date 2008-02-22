@@ -98,7 +98,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.56 $";
+  std::string version = "$Revision: 1.57 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -449,31 +449,38 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	m_log << "no xml element found." << std::endl;
 	return false;
       }
-      std::string atype, dir;
+      std::string atype, dir, names;
       for(int ixml=0; ixml<numXml; ixml++){ //each xml loop
 	DOMNode* xmlElt = xmlList[ ixml ];
 	try{
 	  atype = Dom::getAttribute(xmlElt, "type");
 	  dir = Dom::getAttribute(xmlElt, "dir");
-	  runids = Dom::getAttribute(xmlElt, "runIds");
+	  if( atype == type )
+	    runids = Dom::getAttribute(xmlElt, "runIds");
+	  if( atype == "maskedStrips" )
+	    names = Dom::getAttribute(xmlElt, "names");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
 	  return false;
 	}
-	if( atype != type ){
-	  std::cout << " igonore inconsistent xml type: " << atype << "<>" << type << std::endl;
+	if( atype == "maskedStrips" ){
+	  if( !readMaskedStripsXmlFiles( dir, names ) ) return false;
+	}
+	else if( atype == type ){
+	  runIds.clear();
+	  parseRunIds( runIds, runids );
+	  if( !readInputXmlFiles( dir, runIds ) ) return false;
+	}
+	else{
+	  std::cout << "igonore inconsistent xml type: " << atype << "<>" << type << std::endl;
 	  m_log << "ignore inconsistent xml type: " << atype << "<>" << type << std::endl;
 	  continue;
 	}
-	runIds.clear();
-	parseRunIds( runIds, runids );
-	if( !readInputXmlFiles( dir, runIds ) ) return false;
       }
       //
       // loop text tag
       //
-      std::string names;
       std::vector<DOMElement*> txtList;
       Dom::getChildrenByTagName( jobElt, "text", txtList );
       int numTxt = txtList.size();
@@ -1277,6 +1284,19 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
   return true;
 }
+
+
+bool totCalib::readMaskedStripsXmlFiles(const std::string dir, 
+				  const std::string names ){  
+  std::vector<std::string> fnames;
+  splitWords( fnames, names );
+  for(std::vector<std::string>::const_iterator fname = fnames.begin();
+      fname != fnames.end(); ++fname) {
+    if( !readBadStripsXmlFile( dir+'/'+(*fname), true ) ) return false;
+  }
+  return true;
+}  
+
 
 
 bool totCalib::readBadStripsTxtFiles(const std::string dir, 
