@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Feb 22 02:52:32 PST 2008
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx totCalib.h 
+Log Message:
+add new job option to read merged hot strip xml file using maskedStrips type keyword.
+
+    *
+------------------------------------------------------------
 User: htajima  Thu Feb  7 22:20:33 PST 2008
 calibGenTKR/src/muonCalibTot
 
