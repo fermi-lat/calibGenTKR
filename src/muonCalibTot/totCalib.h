@@ -94,6 +94,8 @@ class totCalib:public TkrHits {
   bool readTotConvXmlFile( const std::string filename );
   bool readLatcTfeXmlFile( const std::string filename );
 
+  bool readMaskedStripsXmlFiles( const std::string dir, const std::string names);
+
   bool readBadStripsTxtFiles( const std::string dir, const std::string names);
   bool readBadStripsTxtFile( const std::string filename );
 
