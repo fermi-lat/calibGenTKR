@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Jul 11 17:48:56 PDT 2008
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml 
+Log Message:
+new job options for TOT calibration before and after the launch
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: calibGenTKR-04-04-00, operation: add
 Package: calibGenTKR
