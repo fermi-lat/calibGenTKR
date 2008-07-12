@@ -70,7 +70,9 @@ class totCalib:public TkrHits {
   bool readJobOptions( const std::string, const std::string );
   void parseRunIds(std::vector<std::string>&, const std::string& );
   void splitWords(std::vector<std::string>&, const std::string& );
+  void setupSerials();
 
+  int setInputRootFiles( const std::string, const std::string );
   int setInputRootFiles( const char* digi, const char* recon );
   int setInputRootFiles( const char* rootDir, const char* digiPrefix,
 			 const char* reconPrefix,  
@@ -90,8 +92,12 @@ class totCalib:public TkrHits {
 			  const std::vector<std::string>& runIds );  
   bool readBadStripsXmlFile( const std::string dir, const std::string runid );
   bool readBadStripsXmlFile( const std::string filename, bool hotStrips );
-  bool readTotConvXmlFile( const std::string dir, const std::string runid );
+  bool readTotConvFile( const std::string dir, const std::string runid );
+  bool readTotConvTntFile( const std::string path, const std::string runid );
+  bool readTotConvTntFile( const std::string filename, layerId );
   bool readTotConvXmlFile( const std::string filename );
+  bool readTotConvRootFile( const std::string filename );
+  bool readTotConvRootFiles( const std::string dir, const std::string names);
   bool readLatcTfeXmlFile( const std::string filename );
 
   bool readMaskedStripsXmlFiles( const std::string dir, const std::string names);
@@ -105,6 +111,7 @@ class totCalib:public TkrHits {
 			   const std::string prefix, 
 			   const std::vector<std::string> &runIds );
   bool readHists( TFile*, UInt_t, UInt_t );
+  void readTrees( TFile* );
   inline void histAdd( TH1F* hist, TFile* hfile, const char* name ){
     TH1F* h1f = (TH1F*)hfile->FindObjectAny( name );
     if( h1f ) hist->Add( h1f );
@@ -154,7 +161,7 @@ class totCalib:public TkrHits {
   
   //xml related parameters
   int m_first_run, m_last_run;
-  std::string m_startTime, m_stopTime, m_dateStamp, m_timeStamp;;
+  std::string m_startTimeS, m_stopTime, m_dateStamp, m_timeStamp;;
   
   // bad strips analysis related stuff
   void findBadStrips();
