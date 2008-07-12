@@ -6,6 +6,8 @@
 #include "totCalib.h"
 #include "facilities/Util.h"
 #include "commonRootData/idents/TowerId.h"
+#include "calibRootData/Tkr/TkrTower.h"
+#include "calibRootData/Tkr/Tot.h"
 
 #include "calibTkrUtil/TkrHits.h"
 
@@ -22,7 +24,7 @@ float getTrunctedMean( std::vector<float> array, float fraction=0.9 ){
   if( array.size() == 0 ) return 0.0;
 
   sort( array.begin(), array.end() );
-  int ib = array.size() * (1-fraction) * 0.5 + 0.5;
+  int ib = int( array.size() * (1-fraction) * 0.5 + 0.5);
   int ie = array.size() - ib;
 
   if( ib>= ie ){
@@ -98,7 +100,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.57 $";
+  std::string version = "$Revision: 1.58 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -108,7 +110,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
 
   m_first_run = 999999999;
   m_last_run = 0;
-  m_startTime="01/20 2005, 22:52 GMT";
+  m_startTimeS="01/20 2005, 22:52 GMT";
   m_stopTime="01/20 2005, 22:52 GMT";
   m_totThreshold = 1.177;
   m_totGain = 0.589;
@@ -303,23 +305,25 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       if( m_badStrips ) initOccHists();
       initTotHists();
 
+      std::vector<DOMElement*> elmList;
+      DOMNode* node;
+      int numElm;
+
       // output
       std::string outDir;
-      std::vector<DOMElement*> outList;
-      Dom::getChildrenByTagName( jobElt, "output", outList );
-      DOMNode* outElt;
-      if( outList.size() > 0 )
-	outElt = outList.back();
+      Dom::getChildrenByTagName( jobElt, "output", elmList );
+      if( elmList.size() > 0 )
+	node = elmList.back();
       else if( defOutList.size() > 0 )
-	outElt = defOutList.back();
+	node = defOutList.back();
       else{
 	std::cout << "no output directory specified." << std::endl;
 	return false;
       }
 
       try{
-	outDir = Dom::getAttribute(outElt, "dir");
-	m_dtdDir = Dom::getAttribute(outElt, "dtdDir");
+	outDir = Dom::getAttribute(node, "dir");
+	m_dtdDir = Dom::getAttribute(node, "dtdDir");
       }
       catch (DomException ex) {
 	std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -341,92 +345,86 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       // 
       TChain* digiChain = new TChain("Digi");
       TChain* reconChain = new TChain("Recon");
-      std::vector<DOMElement*> dataList;
-      Dom::getChildrenByTagName( jobElt, "data", dataList );
-      int numData = (int) dataList.size();
-      if( numData == 0 ){
+      Dom::getChildrenByTagName( jobElt, "data", elmList );
+      numElm = (int) elmList.size();
+      if( numElm == 0 ){
 	std::cout << "no data element found." << std::endl;
 	m_log << "no data element found." << std::endl;
 	return false;
       }
       std::string top, raw, digi, svac, recon, runids, dtype;
       std::vector<std::string> runIds;
-      for(int idata=0; idata<numData; idata++){ //each xml loop
-	DOMNode* dataElt = dataList[ idata ];
+      for(int idata=0; idata<numElm; idata++){ //each xml loop
+	node = elmList[ idata ];
 	try{
-	  top = Dom::getAttribute(dataElt, "top");
-	  raw = Dom::getAttribute(dataElt, "raw");
-	  digi = Dom::getAttribute(dataElt, "digi");
-	  recon = Dom::getAttribute(dataElt, "recon");
-	  runids = Dom::getAttribute(dataElt, "runIds");
-	  mode = Dom::getAttribute(dataElt, "mode");
-	  dtype = Dom::getAttribute(dataElt, "type");
-	  m_nameType = Dom::getAttribute(dataElt, "nameType");
-	  svac = Dom::getAttribute(dataElt, "svac");
+	  top = Dom::getAttribute(node, "top");
+	  raw = Dom::getAttribute(node, "raw");
+	  digi = Dom::getAttribute(node, "digi");
+	  recon = Dom::getAttribute(node, "recon");
+	  runids = Dom::getAttribute(node, "runIds");
+	  mode = Dom::getAttribute(node, "mode");
+	  dtype = Dom::getAttribute(node, "type");
+	  m_nameType = Dom::getAttribute(node, "nameType");
+	  svac = Dom::getAttribute(node, "svac");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
 	  return false;
 	}
-	runIds.clear();
-	parseRunIds( runIds, runids );
-	for(std::vector<std::string>::const_iterator run = runIds.begin();
-	    run != runIds.end(); ++run) {
-
-	  int runid = atoi( (*run).c_str() );
-	  if( runid < m_first_run ) m_first_run = runid;
-	  if( runid > m_last_run ) m_last_run = runid;
-	}
-	if( dtype == "mc" ){
-	  char tower_serial[] = "TkrMC16";
-	  for( int tower=0; tower!=g_nTower; tower++){
-	    m_towerPtr[ tower ] = m_towerVar.size();
-	    m_towerVar.push_back( towerVar( tower, m_badStrips ) );
-	    sprintf( tower_serial, "TkrMC%d", tower );
-	    m_towerVar.back().hwserial = tower_serial;
-	    std::cout << "Tower " << tower << ": " << m_towerPtr[ tower ] 
-		      << " " << tower_serial << std::endl;
-	    m_log << "Tower " << tower << ": " << m_towerPtr[ tower ] 
-		  << " " << tower_serial << std::endl;
-	    if( !m_badStrips )
-	      for( int unp=0; unp!=g_nUniPlane; unp++)
-		for( int stripId =0; stripId!=g_nStrip; stripId++){
-		  m_towerVar.back().tcVar[unp].totThreshold[stripId] = m_totThreshold;
-		  m_towerVar.back().tcVar[unp].totGain[stripId] = m_totGain;
-		  m_towerVar.back().tcVar[unp].totQuad[stripId] = m_totQuad;
-		}
-	  }
-	}
+	if( dtype == "xrootd" )
+	  m_nEvents =  setInputRootFiles( digi, recon );
 	else{
-	  if( !readRcReports( raw.c_str(), runIds ) ) return false;
-	  if( m_badStrips )
-	    if( !readHotStrips( raw.c_str(), runIds ) ) return false;
-	}
-	if( mode == "dummy" ){
-	  std::cout << "dummy mode: no digi/recon file used." << std::endl;
-	  m_log << "dummy mode: no digi/recon file used." << std::endl;
-	}
-	else if( mode == "svac" ){ // read TKR histograms from svac root files.
-	  if( !readInputHistFiles( top, svac, runIds ) ) return false;
-	}
-	else if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
-			 runIds, digiChain, reconChain ) ) return false;
-      }  
-      m_nEvents =  setInputRootFiles( digiChain, reconChain );
+	  runIds.clear();
+	  if( runids != "" ) parseRunIds( runIds, runids );
+	  for(std::vector<std::string>::const_iterator run = runIds.begin();
+	      run != runIds.end(); ++run) {
+	    int runid = atoi( (*run).c_str() );
+	    if( runid < m_first_run ) m_first_run = runid;
+	    if( runid > m_last_run ) m_last_run = runid;
+	  }
+	  if( dtype == "mc" ){
+	    setupSerials();
+	    for( int tower=0; tower!=g_nTower; tower++){
+	      if( !m_badStrips )
+		for( int unp=0; unp!=g_nUniPlane; unp++)
+		  for( int stripId =0; stripId!=g_nStrip; stripId++){
+		    m_towerVar[tower].tcVar[unp].totThreshold[stripId] = m_totThreshold;
+		    m_towerVar[tower].tcVar[unp].totGain[stripId] = m_totGain;
+		    m_towerVar[tower].tcVar[unp].totQuad[stripId] = m_totQuad;
+		  }
+	    }
+	  }
+	  else{
+	    if( !readRcReports( raw.c_str(), runIds ) ) return false;
+	    if( m_badStrips )
+	      if( !readHotStrips( raw.c_str(), runIds ) ) return false;
+	  }
+	  if( mode == "dummy" ){
+	    std::cout << "dummy mode: no digi/recon file used." << std::endl;
+	    m_log << "dummy mode: no digi/recon file used." << std::endl;
+	  }
+	  else if( mode == "svac" ){ // read TKR histograms from svac root files.
+	    if( !readInputHistFiles( top, svac, runIds ) ) return false;
+	  }
+	  else if( !addToChain( top.c_str(), digi.c_str(), recon.c_str(), 
+				runIds, digiChain, reconChain ) ) return false;
+	  m_nEvents =  setInputRootFiles( digiChain, reconChain );
+	}  
+      }
+      if( m_towerVar.size() == 0 ) setupSerials();
       if( m_nEvents < 0 ) return false;
-
+      
       //
       // loop hist tag
       //
-      std::vector<DOMElement*> histList;
-      Dom::getChildrenByTagName( jobElt, "hist", histList );
-      int numHist = histList.size();
-      for(int ihist=0; ihist<numHist; ihist++){ //each hist loop
+      Dom::getChildrenByTagName( jobElt, "hist", elmList );
+      numElm = elmList.size();
+      for(int ihist=0; ihist<numElm; ihist++){ //each hist loop
 	std::string dir, files;
-	DOMNode* histElt = histList[ ihist ];
+	node = elmList[ ihist ];
 	try{
-	  dir = Dom::getAttribute(histElt, "dir");
-	  files = Dom::getAttribute(histElt, "files");
+	  dir = Dom::getAttribute(node, "dir");
+	  files = Dom::getAttribute(node, "files");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -434,31 +432,30 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	}
 	std::vector<std::string> hfiles;
 	splitWords( hfiles, files );
-
+	
 	if( !readInputHistFiles( dir, hfiles ) ) return false;
       }
       
       //
       // loop xml tag
       //
-      std::vector<DOMElement*> xmlList;
-      Dom::getChildrenByTagName( jobElt, "xml", xmlList );
-      int numXml = xmlList.size();
-      if( dtype != "mc" && numXml == 0 ){
+      Dom::getChildrenByTagName( jobElt, "xml", elmList );
+      numElm = elmList.size();
+      if( dtype != "mc" && numElm == 0 ){
 	std::cout << "no xml element found." << std::endl;
 	m_log << "no xml element found." << std::endl;
-	return false;
+	//return false;
       }
       std::string atype, dir, names;
-      for(int ixml=0; ixml<numXml; ixml++){ //each xml loop
-	DOMNode* xmlElt = xmlList[ ixml ];
+      for(int ielm=0; ielm<numElm; ielm++){ //each xml loop
+	node = elmList[ ielm ];
 	try{
-	  atype = Dom::getAttribute(xmlElt, "type");
-	  dir = Dom::getAttribute(xmlElt, "dir");
+	  atype = Dom::getAttribute(node, "type");
+	  dir = Dom::getAttribute(node, "dir");
 	  if( atype == type )
-	    runids = Dom::getAttribute(xmlElt, "runIds");
+	    runids = Dom::getAttribute(node, "runIds");
 	  if( atype == "maskedStrips" )
-	    names = Dom::getAttribute(xmlElt, "names");
+	    names = Dom::getAttribute(node, "names");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -481,15 +478,14 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
       //
       // loop text tag
       //
-      std::vector<DOMElement*> txtList;
-      Dom::getChildrenByTagName( jobElt, "text", txtList );
-      int numTxt = txtList.size();
-      for(int itxt=0; itxt<numTxt; itxt++){ //each text loop
-	DOMNode* txtElt = txtList[ itxt ];
+      Dom::getChildrenByTagName( jobElt, "text", elmList );
+      numElm = elmList.size();
+      for(int ielm=0; ielm<numElm; ielm++){ //each text loop
+	node = elmList[ ielm ];
 	try{
-	  atype = Dom::getAttribute(txtElt, "type");
-	  dir = Dom::getAttribute(txtElt, "dir");
-	  names = Dom::getAttribute(txtElt, "names");
+	  atype = Dom::getAttribute(node, "type");
+	  dir = Dom::getAttribute(node, "dir");
+	  names = Dom::getAttribute(node, "names");
 	}
 	catch (DomException ex) {
 	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
@@ -502,8 +498,34 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	}
 	if( !readBadStripsTxtFiles( dir, names ) ) return false;
       }
+      
+      //
+      // loop root tag
+      //
+      Dom::getChildrenByTagName( jobElt, "root", elmList );
+      numElm = elmList.size();
+      for(int ielm=0; ielm<numElm; ielm++){ //each root loop
+	node = elmList[ ielm ];
+	try{
+	  atype = Dom::getAttribute(node, "type");
+	  dir = Dom::getAttribute(node, "dir");
+	  names = Dom::getAttribute(node, "names");
+	}
+	catch (DomException ex) {
+	  std::cout << "DomException:  " << ex.getMsg() << std::endl;
+	  return false;
+	}
+	if( atype != type ){
+	  std::cout << " igonore inconsistent root type: " << atype << "<>" << type << std::endl;
+	  m_log << "ignore inconsistent root type: " << atype << "<>" << type << std::endl;
+	  continue;
+	}
+	if( !readTotConvRootFiles( dir, names ) ) return false;
+      }
+
       break; // stop after reading the first matching job option file
     }
+
     if( !jobFound ){
       std::cout << "Invalid jobOption specified: " << jobOption << std::endl;
       return false;
@@ -531,6 +553,7 @@ void totCalib::parseRunIds( std::vector<std::string>& runIds,
   }
 }
 
+
 void totCalib::splitWords(  std::vector<std::string>& words, 
 		    const std::string& line ) {
 
@@ -550,6 +573,26 @@ void totCalib::splitWords(  std::vector<std::string>& words,
 }
 
 
+void totCalib::setupSerials( ) {
+  char tower_serial[] = "TkrFM16";
+  std::string serial = "A 2 14 15 B 1 12 13 5 3 7 9 6 4 10 11";
+  std::vector<std::string> serials;
+  splitWords( serials, serial );
+  for(std::vector<std::string>::const_iterator id = serials.begin();
+      id != serials.end(); ++id) {
+    sprintf( tower_serial, "TkrFM%s", (*id).c_str() );
+    UInt_t tower = m_towerVar.size();
+    m_towerPtr[ tower ] = m_towerVar.size();
+    m_towerVar.push_back( towerVar( tower, m_badStrips ) );
+    m_towerVar.back().hwserial = tower_serial;
+    std::cout << "Tower " << tower << ": " << m_towerPtr[ tower ] 
+	      << " " << tower_serial << std::endl;
+    m_log << "Tower " << tower << ": " << m_towerPtr[ tower ] 
+	  << " " << tower_serial << std::endl;
+  }
+}
+  
+  
 totCalib::~totCalib() 
 {
   if(m_rootFile == 0) return;
@@ -648,6 +691,46 @@ int totCalib::setInputRootFiles(const char* digi, const char* recon)
 
   return nEvents;
 }
+
+
+int totCalib::setInputRootFiles( const std::string digi, 
+				 const std::string recon ){  
+
+  TChain* digiChain = new TChain("Digi");
+  TChain* reconChain = new TChain("Recon");
+  std::vector<std::string> fnames;
+
+  splitWords( fnames, digi );
+  for(std::vector<std::string>::const_iterator fname = fnames.begin();
+      fname != fnames.end(); ++fname) {
+    TFile *rf = TFile::Open( (*fname).c_str() );
+    if( rf->IsZombie() ){
+      std::cout << "Invalid digi xroot file path: " << *fname << std::endl;
+      m_log << "Invalid digi xroot file path: " << *fname << std::endl;
+      return -1;
+    }
+    delete rf;
+    std::cout << "Add " << (*fname) << std::endl;
+    digiChain->Add( (*fname).c_str() );
+  }
+  fnames.clear();
+  splitWords( fnames, recon );
+  for(std::vector<std::string>::const_iterator fname = fnames.begin();
+      fname != fnames.end(); ++fname) {
+    TFile *rf = TFile::Open( (*fname).c_str() );
+    if( rf->IsZombie() ){
+      std::cout << "Invalid recon xroot file path: " << *fname << std::endl;
+      m_log << "Invalid recon xroot file path: " << *fname << std::endl;
+      return -1;
+    }
+    delete rf;
+    std::cout << "Add " << (*fname) << std::endl;
+    reconChain->Add( (*fname).c_str() );
+  }
+
+  return setInputRootFiles( digiChain, reconChain );
+}
+
 
 
 int totCalib::setInputRootFiles( const char* rootDir, const char* digiPrefix,
@@ -956,10 +1039,10 @@ bool totCalib::parseRcReport( const char* reportFile )
       return true;
     }
     if( runid == m_first_run ){ 
-      getDate( values[1].c_str(), m_startTime );
-      std::cout << "start time: " << m_startTime 
+      getDate( values[1].c_str(), m_startTimeS );
+      std::cout << "start time: " << m_startTimeS 
 		<< ", run id: " << runid << std::endl;
-      m_log << "start time: " << m_startTime 
+      m_log << "start time: " << m_startTimeS 
 	    << ", run id: " << runid << std::endl;
     }
     if( runid == m_last_run ){
@@ -1025,6 +1108,17 @@ void totCalib::analyze( int nEvents )
     m_log << "no events to analyze, skip root analysis." << std::endl;
   }
 
+  if( m_last_run <= 0 ){
+    m_first_run = m_firstRunId;
+    m_last_run = m_lastRunId;
+    char ts[] = "1234567890";
+    sprintf( ts, "%d", (int)m_startTime);
+    m_startTimeS = ts;
+    sprintf( ts, "%d", (int)m_endTime);
+    m_stopTime = ts;
+    std::cout << "updated run info: " << m_startTimeS << " " << m_stopTime 
+	      << " " << m_first_run << std::endl;
+  } 
   fitTot();
   if( m_badStrips ){
     if( ! m_histMode ){ 
@@ -1069,6 +1163,7 @@ void totCalib::analyzeEvents()
     assert(m_reconEvent != 0);
     assert(m_digiEvent != 0);
 
+    MIPfilter();
     monitorTKR();
 
     if(! passCut()) continue;
@@ -1149,6 +1244,10 @@ bool totCalib::readInputHistFiles(const std::string dir,
     }
 
     //
+    // read timestamp if it exists
+    //
+    readTrees( hfile );
+    //
     // read histograms
     //
     if( !readHists( hfile, i, files.size() ) ) return false;
@@ -1180,7 +1279,11 @@ bool totCalib::readInputHistFiles( const std::string dir,
       m_log << "File open failure: " << path << std::endl;
       return false;
     }
-    hfile->cd( "TkrCalib" );
+    //hfile->cd( "TkrCalib" );
+    //
+    // read timestamp if it exists
+    //
+    readTrees( hfile );
     //
     // read histograms
     //
@@ -1208,6 +1311,39 @@ template <class HIST> void addHIST( HIST* hist, TFile* hfile, char* name  ){
   
 };
 
+
+void totCalib::readTrees( TFile* hfile ){
+  TTree *tree = (TTree*) hfile->FindObjectAny( "timeStamps" );
+  if( tree ){
+    Double_t startTime, endTime;
+    UInt_t firstRunId, lastRunId;
+    tree->SetBranchAddress( "startTime", &startTime );
+    tree->SetBranchAddress( "endTime", &endTime );
+    tree->SetBranchAddress( "firstRunId", &firstRunId );
+    tree->SetBranchAddress( "lastRunId", &lastRunId );
+    for( int ientry=0; ientry<tree->GetEntries(); ientry++){
+      tree->GetEntry( ientry );
+      if( firstRunId < 260000000 ){
+	firstRunId = (int)startTime;
+	lastRunId = (int)endTime;
+      }  
+      if( m_startTime < 0 ){
+	m_startTime = startTime;
+	m_endTime = endTime;
+	m_firstRunId = firstRunId;
+	m_lastRunId = lastRunId;
+      }
+      if( startTime < m_startTime ) m_startTime = startTime;
+      if( endTime < m_endTime ) m_endTime = endTime;
+      if( firstRunId < m_firstRunId ) m_firstRunId = firstRunId;
+      if( lastRunId > m_lastRunId ) m_lastRunId = lastRunId;
+      std::cout << "run info: " << startTime << " " << endTime << ", " 
+		<< firstRunId << " " << lastRunId << std::endl;
+    }
+  } 
+}
+
+
 bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
 
   addHIST( m_nTrackDist, hfile, "nTrack" );
@@ -1228,6 +1364,12 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
   addHIST( m_ldigi, hfile, "ldigi" );
   addHIST( m_lcls, hfile, "lcls" );
   addHIST( m_largeMulGTRC, hfile, "largeMulGTRC" );
+  addHIST( m_hitCut, hfile, "hitCut" );
+  addHIST( m_trackCut, hfile, "trackCut" );
+  addHIST( m_sixInARowCut, hfile, "sixInARowCut" );
+  addHIST( m_sixInARowWithTrigCut, hfile, "sixInARowWithTrigCut" );
+  addHIST( m_sixInARowMIP, hfile, "sixInARowMIP" );
+  addHIST( m_sixInARowWithTrigMIP, hfile, "sixInARowWithTrigMIP" );
   if( iRoot+1 == nRoot ) m_largeMulGTRC->Scale( 1.0/nRoot );
   if( m_badStrips ){
     char hname[]="brms0";
@@ -1257,11 +1399,13 @@ bool totCalib::readHists( TFile* hfile, UInt_t iRoot, UInt_t nRoot ){
     //m_langauWidth->Add( (TH1F*)hfile->FindObjectAny( "langauWidth" ) );
     //m_langauGSigma->Add( (TH1F*)hfile->FindObjectAny( "langauSigma" ) );
     addHIST( m_dirProfile, hfile, "dirProfile" );
-    for( int i=4; i!=-1; i--){
-      char hname[]="chargeAll";
-      if( i<4 ) sprintf( hname, "charge%d", i );
+    char hname[] = "chargeAllCorrected";
+    for( int i=0; i!=4; i++){
+      sprintf( hname, "charge%d", i );
       addHIST( m_chist[i], hfile, hname );
     }
+    addHIST( m_chist[4], hfile, "chargeAllMIP" );
+    addHIST( m_chist[5], hfile, "chargeAll" );
     for( unsigned int tw=0; tw<m_towerVar.size(); tw++ ){
       int tower = m_towerVar[ tw ].towerId;
       for(int unp = 0; unp != g_nUniPlane; ++unp) {
@@ -1415,7 +1559,7 @@ bool totCalib::readInputXmlFiles(const std::string dir,
       if( !readBadStripsXmlFile( dir, (*run) ) )
 	return false;
     }
-    else if( !readTotConvXmlFile( dir, (*run) ) )
+    else if( !readTotConvFile( dir, (*run) ) )
       return false;
   }
   return true;
@@ -1684,10 +1828,11 @@ bool totCalib::readBadStripsXmlFile(const std::string filename, bool hotStrips )
 }
 
 
-bool totCalib::readTotConvXmlFile( const std::string path, 
+bool totCalib::readTotConvFile( const std::string path, 
 				   const std::string runid ){
   std::string filename;
   char fname[] = "/398000364/LICOS/analysis_TEM12/TkrTotGain_398000364.xml";
+  bool AOK = true;
 
   if( atoi(runid.c_str()) < 100000000 ){  // LICOS
     for( int tem=0; tem<g_nTower; tem++){
@@ -1700,16 +1845,171 @@ bool totCalib::readTotConvXmlFile( const std::string path,
 	filename = path + fname;
       }
       //std::cout << filename << std::endl;
-      if( ! readTotConvXmlFile( filename ) ) return false;
+      AOK = readTotConvXmlFile( filename );
     }
   }
   else{
     sprintf(fname,"/%s/TkrTotGain_%s.xml", runid.c_str(), runid.c_str() );
     filename = path + fname;
     //std::cout << filename << std::endl;
-    return readTotConvXmlFile( filename );
+    AOK = readTotConvXmlFile( filename );
+  }
+  if( ! AOK ) AOK = readTotConvTntFile( path, runid );
+  return AOK;
+}
+
+
+bool totCalib::readTotConvRootFiles(const std::string dir, 
+			  const std::string names ){  
+
+  std::vector<std::string> fnames;
+  splitWords( fnames, names );
+  for(std::vector<std::string>::const_iterator fname = fnames.begin();
+      fname != fnames.end(); ++fname) {
+    if( !readTotConvRootFile( dir+'/'+(*fname) ) ) return false;
   }
   return true;
+}
+
+
+bool totCalib::readTotConvRootFile( const std::string filename ){
+
+  TFile rf( filename.c_str() );
+  if( rf.IsZombie() ){
+    std::cout << "Invalid TOT root file path: " << filename << std::endl;
+    m_log << "Invalid TOT root file path: " << filename << std::endl;
+    return false;
+  }
+  std::cout << "Open " << filename << std::endl;
+
+  char tname[] = "Tower00";
+  calibRootData::TkrTower *towerData = new calibRootData::TkrTower();
+  calibRootData::TotUnilayer *unpData = new calibRootData::TotUnilayer();
+  for( int tower=0; tower<g_nTower; tower++){
+    TowerId twrId(tower); 
+    UInt_t row = twrId.iy();
+    UInt_t col = twrId.ix();
+    int tw = m_towerPtr[ tower ];
+    sprintf( tname, "Tower%d%d", row, col );
+    //std::cout << tower << " " << tname << std::endl;
+    TTree *tree = (TTree*) rf.Get( tname );
+    //std::cout << "tree" << std::endl;
+    TBranch *twrBranch = tree->GetBranch("calibRootData::TkrTower");
+    //std::cout << "TBranch" << std::endl;
+    twrBranch->SetAddress( &towerData );
+    //std::cout << "towerData" << std::endl;
+    //tree->GetEntry( 0 );
+    //std::cout << "GetEntry: " << twrBranch->GetEntries() << std::endl;
+    twrBranch->GetEvent(0);
+    //tree->GetEntry(0);
+    std::cout << tower << " " << towerData->getSerial() << " " 
+	      << towerData->getRow() << " " << towerData->getCol() 
+	      << std::endl;
+    if( row != towerData->getRow() || col != towerData->getCol() ){
+      std::cout << "Wrong tower ID: (" << row << ", " << col << ") <-> ("
+		<< towerData->getRow() << ", " << towerData->getCol() 
+		<< ")" << std::endl;
+      return false;
+    }
+
+    TBranch *unpBranch = tree->GetBranch("calibRootData::TotUnilayer");
+    unpBranch->SetAddress( &unpData );
+    std::cout << "GetEntry: " << unpBranch->GetEntries() << std::endl;
+    for( int ip=0; ip<g_nUniPlane; ip++){
+      unpBranch->GetEvent(ip);
+      commonRootData::TkrId tkrId = unpData->getId();
+      Int_t unp = tkrId.getTray()*2 + tkrId.getBotTop() -1;
+      if( unp < 0 || unp >= g_nUniPlane ){
+	std::cout << "Invalid plane #: " << unp << std::endl;
+	return false;
+      }
+      std::cout << tkrId.getTowerX() << " " << tkrId.getTowerY() << " " 
+		<< unp << " " 
+		<< tkrId.getTray() << " " << tkrId.getBotTop() 
+		<< " " << "# of strips: " << unpData->getNStrips() 
+		<< std::endl;
+      if( unpData->getNStrips() != g_nStrip ){
+	std::cout << "Invalid # of strips: " << unpData->getNStrips() 
+		  << std::endl;
+	return false;
+      }
+      //std::cout << tower << " " << tw << " " << unp << std::endl;
+      for( int st=0; st<unpData->getNStrips(); st++){
+	calibRootData::TotStrip *strip = unpData->getStrip(st);
+	if( strip != 0 ){
+	  UInt_t id = strip->getStripId();
+	  m_towerVar[tw].tcVar[unp].totThreshold[id] = strip->getIntercept();
+	  m_towerVar[tw].tcVar[unp].totGain[id] = strip->getSlope();
+	  m_towerVar[tw].tcVar[unp].totQuad[id] = strip->getQuad();
+	}
+	else{
+	  std::cout << "strip read error: " << tower << " " << unp << " " << st << std::endl;
+	}
+	//std::cout << st << " " << strip->getStripId() << " " 
+	//	  << strip->getIntercept() << " " 
+	//	  << strip->getSlope() << " " << strip->getQuad() << " "
+	//	  << strip->getChi2() << " " << strip->getDf() << std::endl;
+      }
+    }
+  }
+  return true;
+}
+
+
+bool totCalib::readTotConvTntFile( const std::string path, 
+				   const std::string runid){
+  std::string filename;
+  layerId lid;
+  char fname[] = "/077016872/LICOS/Analysis/TkrTotGainNt_TEM16_LayerX10_077016872.tnt";
+  for( int tem=0; tem<g_nTower; tem++)
+    for( int unp=0; unp<g_nUniPlane; unp++){
+      lid.setUniPlane( unp, tem );
+      std::string lname = lid.getLayerName();
+      sprintf(fname,"/%s/LICOS/Analysis/TkrTotGainNt_TEM%d_Layer%s_%s.tnt", 
+	      runid.c_str(), tem, lname.c_str(), runid.c_str() );
+      filename = path + fname;
+      if( ! checkFile( filename ) ){
+	std::cout << "Invalid TOT tnt file path: " << filename << std::endl;
+	m_log << "Invalid TOT tnt file path: " << filename << std::endl;
+	return false;
+      }
+      if( unp == 0 ){
+	std::cout << "Open TOT tnt file: " << filename << std::endl;
+	m_log << "TOT tnt file: " << filename << std::endl;
+      }
+      if( ! readTotConvTntFile( filename, lid ) ) return false;
+    }
+  std::cout << "Reading TOT tnt file complete: " << path << " " << runid << std::endl;
+  m_log << "Reading TOT tnt file complete: " << path << " " << runid << std::endl;
+  return true;
+}
+
+
+bool totCalib::readTotConvTntFile( const std::string filename, layerId lid ){
+
+  int tw = m_towerPtr[ lid.tower ];
+  int unp = lid.uniPlane;
+  std::string lname = lid.getLayerName();
+
+  ifstream tnt( filename.c_str() );
+  std::string line;
+  getline( tnt, line );
+  getline( tnt, line );
+  int stripId, feId;
+  float p0, p1, p2, chisq;
+  for(int strip=0; strip<g_nStrip; strip++){
+    tnt >> stripId >> feId >> p0 >> p1 >> p2 >> chisq;
+    if( stripId != strip ){
+      std::cout << "strip id mismatch: " << strip << "/" << stripId 
+		<< " in " << filename << std::endl;
+      return false;
+    }
+    m_towerVar[tw].tcVar[unp].totThreshold[stripId] = p0;
+    m_towerVar[tw].tcVar[unp].totGain[stripId] = p1;
+    m_towerVar[tw].tcVar[unp].totQuad[stripId] = p2;
+  }
+  return true;
+
 }
 
 
@@ -1920,22 +2220,6 @@ bool totCalib::getParam(const DOMElement* totElement, layerId lid, std::vector<s
 }
 
 
-float totCalib::calcCharge( layerId lid, int iStrip, int tot) const
-{
-  // convert TOT raw count to micro second
-  float time = (tot << 2) * 0.05;
-
-  int tw = m_towerPtr[ lid.tower ];
-  int unp = lid.uniPlane;
-  // TOT to charge conversion
-  float charge = m_towerVar[tw].tcVar[unp].totThreshold[iStrip] 
-    + time*m_towerVar[tw].tcVar[unp].totGain[iStrip]
-    + time*time*m_towerVar[tw].tcVar[unp].totQuad[iStrip];
-  
-  return charge;
-}
-
-
 void totCalib::fillXml()//takuya
 {
 
@@ -2061,7 +2345,7 @@ void  totCalib::openChargeScaleXml( std::ofstream &xmlFile, std::ifstream &dtd, 
 	  << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << tot_runid 
 	  << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
 	  << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
-	  << m_startTime << "\" stopTime=\"" << m_stopTime 
+	  << m_startTimeS << "\" stopTime=\"" << m_stopTime 
 	  << "\" triggers=\"TKR\">" << std::endl
 	  << " Cosmic ray muon data for charge scale calibration " << std::endl
 	  << "    </inputSample>" << std::endl
@@ -2684,7 +2968,7 @@ void totCalib::openBadStripsXml( std::ofstream &xmlFile, std::ifstream &dtd ){
 	  << "\" fmtVersion=\"NA\" instrument=\"TWR\" runId=\"" << runs
 	  << "\" timestamp=\"" << m_dateStamp << m_timeStamp << "\">" << std::endl
 	  << "    <inputSample mode=\"NA\" source=\"CosmicMuon\" startTime=\"" 
-	  << m_startTime << "\" stopTime=\"" << m_stopTime 
+	  << m_startTimeS << "\" stopTime=\"" << m_stopTime 
 	  << "\" triggers=\"TKR\">" << std::endl
 	  << " Cosmic ray muon data for occupancy analysis " << std::endl
 	  << "    </inputSample>" << std::endl
