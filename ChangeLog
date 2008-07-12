@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Fri Jul 11 17:57:54 PDT 2008
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx totCalib.h 
+Log Message:
+add xrootd suport for the data, get run# and start/stop time from digi or root file instead of rcReport. ability to read root/tnt files for TOT gain.
+
+    *
+------------------------------------------------------------
 User: htajima  Fri Jul 11 17:48:56 PDT 2008
 calibGenTKR/src/muonCalibTot
 
