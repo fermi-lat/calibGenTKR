@@ -1,13 +1,144 @@
 <jobOptions default="test">
-  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/> -->
+  <output dir="/nfs/farm/g/glast/u02/TKR/TE603" dtdDir=""/>
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603/check" dtdDir=""/> -->
   <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403" dtdDir=""/> -->
-  <!--  <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
+  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE403/trend" dtdDir=""/> -->
   <!-- <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/> -->
-  <output dir="/nfs/slac/work/htajima/outputs" dtdDir=""/>
   <totParam maxDirZ="-0.85" totAngleCF="0.729" RSigma="3.45" GFrac="0.735" />
 
-<!--077016031-->
+
+  <jobOption name="OBS-TVAC-tot-final" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <hist dir="/nfs/farm/g/glast/u02/TKR/TE603"
+          files="TE603_080710-045858.root TE603_080711-012800.root"/>
+    <data mode="dummy"/>
+  </jobOption>
+
+  <jobOption name="calibOps-tot-final" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <hist dir="/nfs/farm/g/glast/u02/TKR/TE603"
+          files="TE603_080710-050912.root TE603_080710-051431.root TE603_080710-050142.root TE603_080710-051136.root TE603_080710-050225.root TE603_080710-051235.root"/>
+    <data mode="dummy"/>
+  </jobOption>
+
+  <jobOption name="calibOps1-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236323982_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236335441_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236323982_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236335441_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps2-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236329711_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236339577_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236345681_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236329711_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236339577_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236345681_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps3-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236351742_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236357728_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236363676_v001_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236351742_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236357728_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236363676_v001_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps4-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236369617_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236375554_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236381491_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236369617_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236375554_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236381491_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps5-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236387337_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236392671_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236387337_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236392671_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps6-tot" type="MIP calibration" mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236467480_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236473218_v001_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236467480_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236473218_v000_recon.root"/>
+  </jobOption>
+
+
+  <jobOption name="calibOps-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236323982_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236329711_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236335441_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236339577_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236345681_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236351742_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236357728_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236363676_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236369617_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236375554_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236381491_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236387337_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236392671_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236323982_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236329711_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236335441_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236339577_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236345681_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236351742_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236357728_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236363676_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236369617_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236375554_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236381491_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236387337_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236392671_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps-tot-root" type="MIP calibration" >
+    <root type="MIP calibration" dir="/nfs/farm/g/glast/u02/TKR/TE602" names="TkrTotGain_077016872.root"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236323982_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236329711_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236335441_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236339577_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236345681_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236351742_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236357728_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236363676_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236369617_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236375554_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236381491_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236387337_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236392671_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236323982_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236329711_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236335441_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236339577_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236345681_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236351742_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236357728_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236363676_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236369617_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236375554_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236381491_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236387337_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236392671_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="calibOps-tot-root-new" type="MIP calibration" >
+    <root type="MIP calibration" dir="/nfs/farm/g/glast/u02/TKR/TE602" names="TkrTotGain_077016629_077016872.root"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236323982_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236329711_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236335441_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236339577_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236345681_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236351742_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236357728_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236363676_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236369617_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236375554_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236381491_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236387337_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/digi/r0236392671_v000_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236323982_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236329711_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236335441_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236339577_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236345681_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236351742_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236357728_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236363676_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236369617_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236375554_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236381491_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236387337_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.57/recon/r0236392671_v000_recon.root"/>
+  </jobOption>
+
+  <jobOption name="nomSciOps1-tot-root" type="MIP calibration" >
+    <root type="MIP calibration" dir="/nfs/farm/g/glast/u02/TKR/TE602" names="TkrTotGain_077016872.root"/>
+    <data type="xrootd"
+	  digi="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236511638_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236517724_v001_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236523746_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236529712_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236535656_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236541595_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236547532_v002_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236553469_v000_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236559077_v003_digi.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/digi/r0236564613_v003_digi.root"
+          recon="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236511638_v003_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236517724_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236523746_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236529712_v003_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236535656_v001_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236541595_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236547532_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236553469_v000_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236559077_v002_recon.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.58/recon/r0236564613_v002_recon.root"/>
+  </jobOption>
+
+
+  <jobOption name="OBS-TVAC-tot-root-new" type="MIP calibration" >
+    <root type="MIP calibration" dir="/nfs/farm/g/glast/u02/TKR/TE602" names="TkrTotGain_077016629_077016872.root"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u52/Integration/rawData"
+	  digi="v13r6p1/digi/digitization-v4r0p2"
+	  recon="v13r6p1/recon/recon-v4r0p2"
+          runIds="077016882 077016883 077016884 077016885 077016886 077016887 077016888 077016889 077016890 077016891 077016892 077016893 077016894 077016895 077016896 077016897 077016898 077016899"/>
+  </jobOption>
+  <jobOption name="OBS-TVAC-tot-root" type="MIP calibration" >
+    <root type="MIP calibration" dir="/nfs/farm/g/glast/u02/TKR/TE602" names="TkrTotGain_077016872.root"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u52/Integration/rawData"
+	  digi="v13r6p1/digi/digitization-v4r0p2"
+	  recon="v13r6p1/recon/recon-v4r0p2"
+          runIds="077016882 077016883 077016884 077016885 077016886 077016887 077016888 077016889 077016890 077016891 077016892 077016893 077016894 077016895 077016896 077016897 077016898 077016899"/>
+  </jobOption>
+
+
+  <jobOption name="OBS-TVAC1-tot" type="MIP calibration"  mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u52/Integration/rawData"
+	  digi="v13r6p1/digi/digitization-v4r0p2"
+	  recon="v13r6p1/recon/recon-v4r0p2"
+          runIds="077016882 077016883 077016884 077016885 077016886 077016887 077016888 077016889 077016890 077016891 077016892 077016893 077016894 077016895 077016896 077016897 077016898 077016899"/>
+  </jobOption>
+
+  <jobOption name="OBS-TVAC2-tot" type="MIP calibration"  mode="hist" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u52/Integration/rawData"
+	  digi="v13r6p1/digi/digitization-v4r0p2"
+	  recon="v13r6p1/recon/recon-v4r0p2"
+          runIds="077016900 077016901 077016902 077016903 077016904 077016905 077016914 077016915 077016916 077016917 077016918 077016919 077016920 077016921 077016922 077016923 077017195 077017421"/>
+  </jobOption>
+
+
+  <jobOption name="OBS-vertical-tot" type="MIP calibration" >
+    <xml type="MIP calibration" dir="/nfs/farm/g/glast/u52/Integration/rawData" runIds="077016872"/>
+    <data top="/nfs/farm/g/glast/u52/Integration/rootData"
+          raw="/nfs/farm/g/glast/u52/Integration/rawData"
+	  digi="v13r6p3/digi/digitization-v4r0p3"
+	  recon="v13r6p3/recon/recon-v4r0p3"
+          runIds="077017799 077017809 077017880 077018178 077018199 077018211 077018222"/>
+  </jobOption>
+
 
   <jobOption name="OBS-TVAC-badStrips" type="badStrips">
     <xml type="maskedStrips" dir="/nfs/farm/g/glast/u02/TKR/TE403/071220/" names="071220_HotStrips_TKR.xml"/>
@@ -20,10 +151,6 @@
 	  mode="svac"
           runIds="077016651 077016652 077016653 077016654 077016655 077016656 077016657 077016658 077016659 077016660 077016661 077016662 077016663 077016664 077016665 077016666 077016667 077016677 077016679 077016681 077016683 077016685 077016687 077016689 077016691 077016882 077016883 077016884 077016885 077016886 077016887 077016888 077016889 077016890 077016891 077016892 077016893 077016894 077016895 077016896 077016897 077016898 077016899 077016900 077016901 077016902 077016903 077016904 077016905 077016914 077016915 077016916 077016917 077016918 077016919 077016920 077016921 077016922 077016923"/>
   </jobOption>
-
-<!-- 
-          runIds="077016651"/>
--->
 
 
   <jobOption name="test-16031" type="badStrips" mode="hist">
