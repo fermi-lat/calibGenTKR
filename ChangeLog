@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: glastrm  Mon Jul 21 08:17:36 PDT 2008
+GlastRelease-scons/calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx options.xml 
+Log Message:
+Removed dependency on CMT env variables
+    *
+------------------------------------------------------------
 TAG
 Tag name: calibGenTKR-04-05-00, operation: add
 Package: calibGenTKR
