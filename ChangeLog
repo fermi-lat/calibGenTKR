@@ -1,5 +1,14 @@
 ------------------------------------------------------------
 User: glastrm  Mon Jul 21 08:17:36 PDT 2008
+GlastRelease-scons/calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	totCalib.cxx 
+Log Message:
+Removed dependency on CMT env variables
+    *
+------------------------------------------------------------
+User: glastrm  Mon Jul 21 08:17:36 PDT 2008
 GlastRelease-scons/calibGenTKR/src/badStripsCalib
 
 Modified Files:
