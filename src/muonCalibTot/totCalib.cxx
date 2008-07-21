@@ -100,7 +100,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.58 $";
+  std::string version = "$Revision: 1.59 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -330,7 +330,7 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	return false;
       }
       if( m_dtdDir.size() < 5 ) // dtd directory is not specified. use default.
-	m_dtdDir = "$(CALIBUTILROOT)/xml/";
+	m_dtdDir = "$(CALIBUTILXMLPATH)/xml/";
       int status = facilities::Util::expandEnvVar(&m_dtdDir);
       if(status==-1){
 	std::cout << m_dtdDir << " not found!" << std::endl;

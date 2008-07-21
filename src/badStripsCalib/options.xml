@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <!-- unix test version -->
 
-<!DOCTYPE ifile SYSTEM "$(CALIBGENTKRROOT)/xml/ifile.dtd" >
+<!DOCTYPE ifile SYSTEM "$(CALIBGENTKRXMLPATH)/ifile.dtd" >
 
-<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/badStripsCalib/options.xml,v 1.1 2005/02/14 05:40:34 lsrea Exp $"
-       cvs_Revision="$Revision: 1.1 $" >
+<ifile cvs_Header="$Header: /nfs/slac/g/glast/ground/cvs/GlastRelease-scons/calibGenTKR/src/badStripsCalib/options.xml,v 1.2 2005/02/14 05:47:31 lsrea Exp $"
+       cvs_Revision="$Revision: 1.2 $" >
   <section name="parameters"> input parameters for TKR bad strips calibration
 
     <!--

@@ -412,8 +412,9 @@ void BadStripsCalib::Finish()
         std::string buffer;
         std::ifstream infile;
 
-        std::string path = ::getenv("CALIBGENTKRROOT");
-	    std::string dtdPath = path+"/xml/badStrips.dtd";
+        //std::string path = ::getenv("CALIBGENTKRROOT");
+	std::string dtdPath = facilitiles::commonUtilities::joinPath(facilities::commonUtilities::getXmlpath("CalibGenTKR"), "badStrips.dtd");
+	//std::string dtdPath = path+"/xml/badStrips.dtd";
 
         infile.open(dtdPath.c_str(), std::ios::in | std::ios::binary);
         if (!infile.is_open()) { std::cout << "dtd file not found!" << std::endl;
