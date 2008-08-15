@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: ecephas  Fri Aug 15 14:22:45 PDT 2008
+GlastRelease-scons/calibGenTKR
+
+Added Files:
+	SConscript 
+Log Message:
+Added SConscript files for packages
+    *
+------------------------------------------------------------
 User: glastrm  Mon Jul 21 08:17:36 PDT 2008
 GlastRelease-scons/calibGenTKR/src/muonCalibTot
 
