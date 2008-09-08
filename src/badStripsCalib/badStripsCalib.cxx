@@ -5,7 +5,7 @@
 #include "badStripsCalib.h"
 #include <string>
 #include <algorithm>
-
+#include "facilities/commonUtilities.h"
 UInt_t digiEventId, reconEventId, mcEventId;
 UInt_t digiRunNum,  reconRunNum,  mcRunNum;
 
@@ -413,7 +413,7 @@ void BadStripsCalib::Finish()
         std::ifstream infile;
 
         //std::string path = ::getenv("CALIBGENTKRROOT");
-	std::string dtdPath = facilitiles::commonUtilities::joinPath(facilities::commonUtilities::getXmlpath("CalibGenTKR"), "badStrips.dtd");
+	std::string dtdPath = facilities::commonUtilities::joinPath(facilities::commonUtilities::getXmlPath("CalibGenTKR"), "badStrips.dtd");
 	//std::string dtdPath = path+"/xml/badStrips.dtd";
 
         infile.open(dtdPath.c_str(), std::ios::in | std::ios::binary);
