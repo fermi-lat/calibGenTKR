@@ -1,4 +1,22 @@
 ------------------------------------------------------------
+User: ecephas  Mon Sep  8 15:27:08 PDT 2008
+GlastRelease-scons/calibGenTKR/src/badStripsCalib
+
+Modified Files:
+	badStripsCalib.cxx 
+Log Message:
+Made some spelling changes ("facilitiles" to "facilities"), etc..
+
+Changed
+
+       std::string dtdPath = facilitiles::commonUtilities::joinPath(facilities::commonUtilities::getXmlpath("CalibGenTKR"), "badStrips.dtd");
+TO
+       std::string dtdPath = facilities::commonUtilities::joinPath(facilities::commonUtilities::getXmlPath("CalibGenTKR"), "badStrips.dtd");
+
+Added #include facilities/commonUtilities.h
+
+    *
+------------------------------------------------------------
 User: ecephas  Fri Aug 15 14:42:38 PDT 2008
 GlastRelease-scons/calibGenTKR
 
