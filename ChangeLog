@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: ecephas  Mon Nov  3 08:05:22 PST 2008
+GlastRelease-scons/calibGenTKR
+
+Removed Files:
+	calibGenTKRLib.py 
+Log Message:
+removed file.  calibGenTKR does not create a library so file not needed
+    *
+------------------------------------------------------------
 User: ecephas  Mon Sep  8 15:27:08 PDT 2008
 GlastRelease-scons/calibGenTKR/src/badStripsCalib
 
