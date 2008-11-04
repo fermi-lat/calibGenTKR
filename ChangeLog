@@ -1,4 +1,30 @@
 ------------------------------------------------------------
+User: ecephas  Tue Nov  4 06:54:33 PST 2008
+GlastRelease-scons/calibGenTKR
+
+Modified Files:
+	SConscript 
+Log Message:
+Added the following:
+
+ progEnv.Tool('addLibrary', library = baseEnv['rootGuiLibs'])
+ progEnv.Tool('addLibrary', library = baseEnv['rootLibs'])
+ progEnv.Tool('facilitiesLib')
+ progEnv.Tool('commonRootDataLib')
+ progEnv.Tool('xmlBaseLib')
+ progEnv.Tool('calibUtilLib')
+ progEnv.Tool('calibRootDataLib')
+ progEnv.Tool('TkrUtilLib')
+ progEnv.Tool('digiRootDataLib')
+ progEnv.Tool('reconRootDataLib')
+ progEnv.Tool('calibTkrUtilLib')
+
+Removed:
+	libEnv.Tool('calibGenTKRLib', depsOnly = 1)
+	progEnv.Tool('calibGenTKRLib')
+
+    *
+------------------------------------------------------------
 User: ecephas  Mon Nov  3 08:05:22 PST 2008
 GlastRelease-scons/calibGenTKR
 
