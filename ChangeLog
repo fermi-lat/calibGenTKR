@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+TAG
+Tag name: calibGenTKR-04-03-02, operation: add
+Package: calibGenTKR
+User: ecephas  Mon Dec  8 13:40:23 2008
+Files:
+  calibGenTKR/SConscript  1.3
+  calibGenTKR/SConscript  1.3
+
+    *
+------------------------------------------------------------
 User: ecephas  Mon Dec  8 13:40:17 PST 2008
 GlastRelease-scons/calibGenTKR
 
