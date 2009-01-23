@@ -1,7 +1,7 @@
 # -*- python -*-
 # $Header: /nfs/slac/g/glast/ground/cvs/GlastRelease-scons/calibGenTKR/SConscript,v 1.2 2008/11/04 14:54:33 ecephas Exp $
 # Authors: Leon Rochester <lsrea@slac.stanford.edu>
-# Version: calibGenTKR-04-03-02
+# Version: calibGenTKR-04-05-00
 Import('baseEnv')
 Import('listFiles')
 Import('packages')
@@ -26,6 +26,7 @@ doMuonCalibTot = progEnv.Program('doMuonCalibTot',listFiles(['src/muonCalibTot/*
 doXml2root = progEnv.Program('doXml2root',listFiles(['src/xml2root/*.cxx']))
 
 progEnv.Tool('registerObjects', package = 'calibGenTKR', binaries = [doMuonCalibTot,doXml2root,doBadStripsCalib])
+
 
 
 
