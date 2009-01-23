@@ -1,4 +1,15 @@
 ------------------------------------------------------------
+TAG
+Tag name: calibGenTKR-04-05-00, operation: mov
+Package: calibGenTKR
+User: glastrm  Thu Jan 22 16:31:42 2009
+Files:
+  calibGenTKR/SConscript  1.4
+  calibGenTKR/SConscript  1.4
+  calibGenTKR/SConscript  1.4
+
+    *
+------------------------------------------------------------
 User: ecephas  Thu Jan 22 16:07:26 PST 2009
 GlastRelease-scons/calibGenTKR
 
