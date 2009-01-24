@@ -2,6 +2,18 @@
 TAG
 Tag name: GlastRelease-15-49-00, operation: mov
 Package: calibGenTKR
+User: glastrm  Sat Jan 24 13:07:02 2009
+Files:
+  calibGenTKR/ChangeLog  1.1.1.220
+  calibGenTKR/src/badStripsCalib/badStripsCalib.cxx  1.19
+  calibGenTKR/src/badStripsCalib/options.xml  1.2
+  calibGenTKR/src/muonCalibTot/totCalib.cxx  1.59
+
+    *
+------------------------------------------------------------
+TAG
+Tag name: GlastRelease-15-49-00, operation: mov
+Package: calibGenTKR
 User: glastrm  Sat Jan 24 12:40:46 2009
 Files:
   calibGenTKR/ChangeLog  1.1.1.241
