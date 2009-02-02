@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: glastrm  Mon Feb  2 12:00:56 PST 2009
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	runTotCalibChain.cxx 
+Log Message:
+setup environmnet variables prior to executing code
+    *
+------------------------------------------------------------
 TAG
 Tag name: v4r3p2, operation: del
 Package: calibGenTKR
