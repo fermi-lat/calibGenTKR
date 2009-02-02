@@ -3,9 +3,11 @@
 #include <string>
 #include "totCalib.h"
 
+#include "facilities/commonUtilities.h"
 
 int main(int argn, char** argc) {
-  
+  facilities::commonUtilities::setupEnvironment();
+
   int maxEvents = -1;
   std::string jobXml = "../src/muonCalibTot/calibTkrJobOptions.xml";
   std::string defJob = "None";
