@@ -100,7 +100,7 @@ totCalib::totCalib( const std::string jobXml, const std::string defJob ):
   tag.assign( tag, 0, i ) ;
   m_tag += ":" + tag;
 
-  std::string version = "$Revision: 1.59 $";
+  std::string version = "$Revision: 1.60 $";
   i = version.find( " " );
   version.assign( version, i+1, version.size() );
   i = version.find( " " );
@@ -330,7 +330,8 @@ bool totCalib::readJobOptions( const std::string jobXml, const std::string defJo
 	return false;
       }
       if( m_dtdDir.size() < 5 ) // dtd directory is not specified. use default.
-	m_dtdDir = "$(CALIBUTILXMLPATH)/xml/";
+	//m_dtdDir = "$(CALIBUTILROOT)/xml/";
+	m_dtdDir = "$(CALIBUTILXMLPATH)/";
       int status = facilities::Util::expandEnvVar(&m_dtdDir);
       if(status==-1){
 	std::cout << m_dtdDir << " not found!" << std::endl;
@@ -1334,7 +1335,7 @@ void totCalib::readTrees( TFile* hfile ){
 	m_lastRunId = lastRunId;
       }
       if( startTime < m_startTime ) m_startTime = startTime;
-      if( endTime < m_endTime ) m_endTime = endTime;
+      if( endTime > m_endTime ) m_endTime = endTime;
       if( firstRunId < m_firstRunId ) m_firstRunId = firstRunId;
       if( lastRunId > m_lastRunId ) m_lastRunId = lastRunId;
       std::cout << "run info: " << startTime << " " << endTime << ", " 
@@ -1886,7 +1887,7 @@ bool totCalib::readTotConvRootFile( const std::string filename ){
   calibRootData::TkrTower *towerData = new calibRootData::TkrTower();
   calibRootData::TotUnilayer *unpData = new calibRootData::TotUnilayer();
   for( int tower=0; tower<g_nTower; tower++){
-    TowerId twrId(tower); 
+    TowerId twrId(tower);
     UInt_t row = twrId.iy();
     UInt_t col = twrId.ix();
     int tw = m_towerPtr[ tower ];
@@ -1902,8 +1903,8 @@ bool totCalib::readTotConvRootFile( const std::string filename ){
     //std::cout << "GetEntry: " << twrBranch->GetEntries() << std::endl;
     twrBranch->GetEvent(0);
     //tree->GetEntry(0);
-    std::cout << tower << " " << towerData->getSerial() << " " 
-	      << towerData->getRow() << " " << towerData->getCol() 
+    std::cout << tower << " " << towerData->getSerial() << " row: " 
+	      << towerData->getRow() << " col: " << towerData->getCol() 
 	      << std::endl;
     if( row != towerData->getRow() || col != towerData->getCol() ){
       std::cout << "Wrong tower ID: (" << row << ", " << col << ") <-> ("
@@ -1941,6 +1942,10 @@ bool totCalib::readTotConvRootFile( const std::string filename ){
 	  m_towerVar[tw].tcVar[unp].totThreshold[id] = strip->getIntercept();
 	  m_towerVar[tw].tcVar[unp].totGain[id] = strip->getSlope();
 	  m_towerVar[tw].tcVar[unp].totQuad[id] = strip->getQuad();
+	  if( unp == 0 && id==3 )
+	    std::cout << tw << " " << strip->getIntercept() << " "
+		      << strip->getSlope() << " " << strip->getQuad()
+		      << std::endl;
 	}
 	else{
 	  std::cout << "strip read error: " << tower << " " << unp << " " << st << std::endl;
@@ -2007,6 +2012,10 @@ bool totCalib::readTotConvTntFile( const std::string filename, layerId lid ){
     m_towerVar[tw].tcVar[unp].totThreshold[stripId] = p0;
     m_towerVar[tw].tcVar[unp].totGain[stripId] = p1;
     m_towerVar[tw].tcVar[unp].totQuad[stripId] = p2;
+    if( unp == 0 && stripId==3 )
+      std::cout << tw << " " << p0 << " "
+		<< p1 << " " << p2
+		<< std::endl;
   }
   return true;
 
@@ -2099,6 +2108,10 @@ bool totCalib::readTotConvXmlFile( const std::string filename ){
 	  m_towerVar[tw].tcVar[unp].totThreshold[stripId] = intercept;
 	  m_towerVar[tw].tcVar[unp].totGain[stripId] = slope;
 	  m_towerVar[tw].tcVar[unp].totQuad[stripId] = quad;
+	  if( unp == 0 && stripId==3 )
+	    std::cout << tw << " " << intercept << " "
+		      << slope << " " << quad
+		      << std::endl;
 	}
       delete doc;
       delete parser;
@@ -2216,6 +2229,10 @@ bool totCalib::getParam(const DOMElement* totElement, layerId lid, std::vector<s
   m_towerVar[tw].tcVar[unp].totThreshold[stripId] = values[0];
   m_towerVar[tw].tcVar[unp].totGain[stripId] = values[1];
   m_towerVar[tw].tcVar[unp].totQuad[stripId] = values[2];
+  if( unp == 0 && stripId==3 )
+    std::cout << tw << " " << values[0] << " "
+	      << values[1] << " " << values[2]
+	      << std::endl;
   return true;
 }
 
