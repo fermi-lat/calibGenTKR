@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb  3 08:22:59 PST 2009
+calibGenTKR/python
+
+Modified Files:
+	calibMIP.py 
+Log Message:
+modification to save tag information in the log
+
+    *
+------------------------------------------------------------
 User: htajima  Tue Feb  3 07:59:47 PST 2009
 calibGenTKR/src/muonCalibTot
 
