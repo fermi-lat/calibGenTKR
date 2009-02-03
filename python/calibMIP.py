@@ -13,7 +13,7 @@ ROOT.gStyle.SetPalette(1)
 
 # get tag and version numbers
 __tag__  = "$Name:  $"
-__version__  = "$Revision: 1.0 $"
+__version__  = "$Revision: 1.2 $"
 tagv = "%s:%s" % (__tag__.split()[1], __version__.split()[1])
 
 minEntries = 200
@@ -264,9 +264,6 @@ class calibMIP:
       GSigma = func.GetParameter(3)
     except:
       self.logMessage( "error in fit function access for chargeAll" )
-      func.Delete()
-      hist.Reset()
-      hist.Delete()
       rf.Close()
       return      
     self.hists["LWidth"].Fill( LWidth )
