@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb  3 11:32:01 PST 2009
+calibGenTKR/python
+
+Modified Files:
+	calibMIP.py 
+Log Message:
+better handling of the case when histograms are inaccessible.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: calibGenTKR-04-06-00, operation: add
 Package: calibGenTKR
