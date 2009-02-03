@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb  3 07:59:47 PST 2009
+calibGenTKR/src/muonCalibTot
+
+Modified Files:
+	calibTkrJobOptions.xml totCalib.cxx 
+Log Message:
+correctly setup CALIBUTILXMLPATH variable. 
+
+    *
+------------------------------------------------------------
 User: htajima  Tue Feb  3 07:58:43 PST 2009
 calibGenTKR/python
 
