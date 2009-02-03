@@ -11,6 +11,11 @@ ROOT.gSystem.Load("tkrPyRoot")
 ROOT.gStyle.SetPalette(1)
 #ROOT.gStyle.SetOptStat(0)
 
+# get tag and version numbers
+__tag__  = "$Name:  $"
+__version__  = "$Revision: 1.0 $"
+tagv = "%s:%s" % (__tag__.split()[1], __version__.split()[1])
+
 minEntries = 200
 minFracBadTot = 0.1
 peakMIP = 4.92
@@ -77,6 +82,8 @@ class calibMIP:
       lname = os.path.join( self.outdir, fname )
       print "log file:", lname
       self.logfile = open( lname, 'w' )
+      self.logMessage( "calibMIP.py tag: %s" % tagv )
+      self.logMessage( "tkrUtil.py tag: %s" % tkrUtils.tagv )
 
       elms = job.getElementsByTagName("totParam")
       self.totFiles = { "root":[], "xml":[] }
