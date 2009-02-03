@@ -1,4 +1,14 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb  3 07:58:43 PST 2009
+calibGenTKR/python
+
+Added Files:
+	calibMIP.py jobOptions.xml 
+Log Message:
+add new calibration script to read tree information on charge deposit of individual strips and perform MIP calibration on each GTFE
+
+    *
+------------------------------------------------------------
 User: htajima  Mon Feb  2 23:26:39 PST 2009
 calibGenTKR/python
 
