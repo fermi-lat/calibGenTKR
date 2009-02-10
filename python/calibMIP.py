@@ -13,11 +13,11 @@ ROOT.gStyle.SetPalette(1)
 
 # get tag and version numbers
 __tag__  = "$Name:  $"
-__version__  = "$Revision: 1.2 $"
+__version__  = "$Revision: 1.3 $"
 tagv = "%s:%s" % (__tag__.split()[1], __version__.split()[1])
 
 minEntries = 200
-minFracBadTot = 0.1
+minFracBadTot = 0.08
 peakMIP = 4.92
 minGSigma = 0.6
 maxGSigma = 1.4
@@ -27,7 +27,8 @@ minFitGSigma = 0.4
 maxFitGSigma = 1.4
 minFitLWidth = 0.2
 maxFitLWidth = 0.7
-
+vRSigma = 4.0
+vGFrac = 0.78
 
 def getDirName( fpath ):
   paths = fpath.split( '/' )
@@ -159,7 +160,7 @@ class calibMIP:
     ic = 1
     for key in ["rcharge","ccharge","charge"]:
       self.hists[key].SetLineWidth( 2 )
-      self.hists[key].SetLineWidth( ic )
+      self.hists[key].SetLineColor( ic )
       ic *= 2
     
     self.logMessage( "minEntries: %d" %  minEntries )
@@ -171,6 +172,7 @@ class calibMIP:
                      % (minFitGSigma, maxFitGSigma) )
     self.logMessage( "fitLWidth range: %.2f - %.2f" \
                      % (minFitLWidth, maxFitLWidth) )
+    self.logMessage( "RSigma, GFrac: %.2f, %.2f" % (vRSigma, vGFrac) )
 
 
   def readTotParam(self):
@@ -226,6 +228,7 @@ class calibMIP:
       else: self.logMessage( "invalid data file path:", rname )
     self.logMessage( "total# of %s files: %d" \
                      % (type, len(self.rnames[type])) )
+    
 
   def analyze(self, maxEntries=0 ):
     self.maxEntries = maxEntries
@@ -238,6 +241,7 @@ class calibMIP:
         self.rcharge[tower][unp]= [0]*tkrUtils.g_nFE
         for fe in range(tkrUtils.g_nFE):
           self.rcharge[tower][unp][fe] = []
+          self.rcharge[tower][unp][fe].append( [] )
 
     t0 = time.time()
     for rname in self.rnames["tree"]:
@@ -251,10 +255,14 @@ class calibMIP:
       if self.maxEntries>0 and self.entries>=self.maxEntries: break
     if self.entries < 1E6: self.jMode = "hist"
     
+    
 
   def analyzeTreeFile(self, rname ):
     self.logMessage( "analyze Tree root file: %s" % rname )
     rf = ROOT.TFile.Open( rname )
+    if rf == None or not rf.IsOpen():
+      self.logMessage( "root file access error, skip this file" )
+      return
 
     # check fit parameter of chargeAll
     try:
@@ -264,38 +272,24 @@ class calibMIP:
       GSigma = func.GetParameter(3)
     except:
       self.logMessage( "error in fit function access for chargeAll" )
-      rf.Close()
       return      
     self.hists["LWidth"].Fill( LWidth )
     self.hists["GSigma"].Fill( GSigma )
     if LWidth < minLWidth or LWidth > maxLWidth:
       self.logMessage( "LWidth %.2f is out of range: %.2f - %.2f" \
                        % (LWidth, minLWidth, maxLWidth) )
-      func.Delete()
-      hist.Reset()
-      hist.Delete()
-      rf.Close()
       return
     if GSigma < minGSigma or GSigma > maxGSigma:
       self.logMessage( "GSigma %.2f is out of range: %.2f - %.2f" \
                        % (GSigma, minGSigma, maxGSigma) )
-      func.Delete()
-      hist.Reset()
-      hist.Delete()
-      rf.Close()
       return
     MPV = func.GetParameter(1)
     self.hists["MPV"].Fill( MPV )
-    func.Delete()
-    hist.Reset()
-    hist.Delete()
 
     tree = rf.FindObjectAny( "totInfo" )
     try: tree.GetEntries()
     except:
       self.logMessage( "no totInfo in this file" )
-      tree.Reset()
-      tree.Delete()
       return
 
     # get start time and end time
@@ -343,24 +337,25 @@ class calibMIP:
 
       (p0, p1, p2, chisq) = self.totParams[tower][unp][strip]
       charge = cfac * ( p0 + (p1 + p2*tot) * tot  )
-      self.rcharge[tower][unp][fe].append( charge )
+      if len( self.rcharge[tower][unp][fe][-1] ) == 100:
+        self.rcharge[tower][unp][fe][-1] = array.array( 'f', self.rcharge[tower][unp][fe][-1] )
+        self.rcharge[tower][unp][fe].append( [] )
+      self.rcharge[tower][unp][fe][-1].append( charge )
 
       self.entries += 1
       if self.maxEntries>0 and self.entries>=self.maxEntries: break
-    tree.Reset()
-    tree.Delete()
     rf.Close()
 
-
   def fit(self):
-    if not self.jMode == "fit":
+    print self.jMode
+    if self.jMode != "fit":
       self.saveHists()
       return
 
+    self.logMessage( "start fit" )
     self.ffit = ROOT.defLangau( "langau", 0, 30 )
     self.ffit.SetParNames( "LWidth", "MP", "Area", "GSigma" )
 
-    print "start fit"
     self.nerr = 0
     self.nwarn = 0
     self.hcharge = []
@@ -379,8 +374,8 @@ class calibMIP:
           name = "chargeT%02dL%02dFE%02d" % (tower, unp, fe)
           title = "charge T%02d %s FE%02d" % (tower, lname, fe )
           hist = ROOT.TH1F( name, title, 200, 0, 20 )
-          for ic in range(len(self.rcharge[tower][unp][fe])):
-            hist.Fill( self.rcharge[tower][unp][fe][ic] ) 
+          for ar in self.rcharge[tower][unp][fe]:
+            for ic in range(len(ar)): hist.Fill( ar[ic] ) 
           self.hcharge[tower][unp].append( hist )
           (peak, peakErr, chisq, ndf) = self.fitTOT( tower, unp, fe )
           if peak <= 0.0:
@@ -394,15 +389,63 @@ class calibMIP:
           name = "cchargeT%02dL%02dFE%02d" % (tower, unp, fe)
           title = "corrected charge T%02d %s FE%02d" % (tower, lname, fe )
           hist = ROOT.TH1F( name, title, 200, 0, 20 )
-          for ic in range(len(self.rcharge[tower][unp][fe])):
-            charge =  self.rcharge[tower][unp][fe][ic]
-            hist.Fill( chargeScale * charge )
-            self.hists["rcharge"].Fill( charge )
-            self.hists["ccharge"].Fill( chargeScale * charge )
+          for ar in self.rcharge[tower][unp][fe]:
+            for ic in range(len(ar)):
+              #charge =  self.rcharge[tower][unp][fe][ic]
+              charge =  ar[ic]
+              hist.Fill( chargeScale * charge )
+              self.hists["rcharge"].Fill( charge )
+              self.hists["ccharge"].Fill( chargeScale * charge )
           self.hccharge[tower][unp].append( hist )
+          self.rcharge[tower][unp][fe] = None
+
+    mean = self.hists["chargeScale"].GetMean()
+    rms = self.hists["chargeScale"].GetRMS()
+    uplim = mean + 3*rms
+    lowlim = mean - 3*rms
+    for tower in range(tkrUtils.g_nTowers):
+      for unp in range(tkrUtils.g_nUniPlanes):
+        lname = tkrUtils.g_layerNames[unp] 
+        for fe in range(tkrUtils.g_nFE):
+          (chargeScale,error,chisq,ndf) = self.chargeScale[tower][unp][fe]
+          if chargeScale > uplim:
+            self.nwarn +=1
+            fename = "T%02d %s FE:%02d" % (tower, lname, fe)
+            self.logMessage( "%s: chargeScale %.2f is greater than %.2f" \
+                             % (fename,chargeScale,uplim) )
+            self.chargeScale[tower][unp][fe] = (uplim,error,-chisq,-ndf)
+          if chargeScale < lowlim:
+            self.nwarn +=1
+            fename = "T%02d %s FE:%02d" % (tower, lname, fe)
+            self.logMessage( "%s: chargeScale %.2f is less than %.2f" \
+                             % (fename,chargeScale,lowlim) )
+            self.chargeScale[tower][unp][fe] = (lowlim,error,-chisq,-ndf)
           
     self.logMessage( "# of error: %d, # of warning: %d" \
                      % (self.nerr,self.nwarn) )
+
+    func = ROOT.defLangau2( "langau2", 0, 30 )
+    func.SetParNames( "LWidth", "MP", "Area", "GSigma", "RSigma", "GFrac" )
+    keys = ["rcharge","charge","ccharge"]
+    for key in keys:
+      hist = self.hists[ key ]
+      area = hist.Integral()
+      mean = hist.GetMean()
+      rms = hist.GetRMS()
+      func.SetParLimits( 0, 0.0, rms )
+      func.SetParLimits( 1, 0.0, mean*2 )
+      func.SetParLimits( 2, 0.0, area*0.4 )
+      func.SetParLimits( 3, 0.0, rms )
+      func.SetRange( mean-1.25*rms, mean+2*rms )
+      func.SetParameters(rms*0.5, mean*0.75, area*0.1, rms*0.4, vRSigma, vGFrac)
+      hist.Fit( "langau2", "RBQ" )
+      self.logMessage( "*** %s fit results ***" % key )
+      self.logMessage( "MPV: %.2f" % func.GetParameter(1) )
+      self.logMessage( "LWidth: %.2f" % func.GetParameter(0) )
+      self.logMessage( "GSigma: %.2f" % func.GetParameter(3) )
+      self.logMessage( "RSigma: %.2f" % func.GetParameter(4) )
+      self.logMessage( "GFrac: %.2f" % func.GetParameter(5) )
+    
     self.saveHists()
     
 
