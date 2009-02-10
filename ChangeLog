@@ -1,4 +1,17 @@
 ------------------------------------------------------------
+User: htajima  Tue Feb 10 09:25:18 PST 2009
+calibGenTKR/python
+
+Modified Files:
+	calibMIP.py jobOptions.xml 
+Log Message:
+better handling of bad input root files.
+save charge as a list of array instead of a list to save memory.
+put upper and lower on the charge scale based on the distribution.
+get  fit results on uncorrected and corrected charge distribution.
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: calibGenTKR-04-06-01, operation: add
 Package: calibGenTKR
