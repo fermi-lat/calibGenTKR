@@ -13,22 +13,16 @@ ROOT.gStyle.SetPalette(1)
 
 # get tag and version numbers
 __tag__  = "$Name:  $"
-__version__  = "$Revision: 1.3 $"
+__version__  = "$Revision: 1.4 $"
 tagv = "%s:%s" % (__tag__.split()[1], __version__.split()[1])
 
-minEntries = 200
-minFracBadTot = 0.08
-peakMIP = 4.92
-minGSigma = 0.6
-maxGSigma = 1.4
-minLWidth = 0.43
-maxLWidth = 0.52
-minFitGSigma = 0.4
-maxFitGSigma = 1.4
-minFitLWidth = 0.2
-maxFitLWidth = 0.7
-vRSigma = 4.0
-vGFrac = 0.78
+params = { "minEntries":200.0, "minFracBadTot":0.08, "peakMIP":4.92, \
+           "minGSigma":0.6, "maxGSigma":1.4, \
+           "minLWidth":0.43, "maxLWidth":0.52, \
+           "minFitGSigma":0.4, "maxFitGSigma":1.4, \
+           "minFitLWidth":0.2, "maxFitLWidth":0.7, \
+           "vRSigma":4.0, "vGFrac":0.78 }
+
 
 def getDirName( fpath ):
   paths = fpath.split( '/' )
@@ -85,6 +79,8 @@ class calibMIP:
       self.logfile = open( lname, 'w' )
       self.logMessage( "calibMIP.py tag: %s" % tagv )
       self.logMessage( "tkrUtil.py tag: %s" % tkrUtils.tagv )
+      self.getParams( topElm )
+      self.getParams( job )
 
       elms = job.getElementsByTagName("totParam")
       self.totFiles = { "root":[], "xml":[] }
@@ -117,8 +113,33 @@ class calibMIP:
       print "finished data elements"
 
     print "jobOption done"
+    
+    self.logMessage( "minEntries: %.0f" %  params["minEntries"] )
+    self.logMessage( "minFracBadTot: %.2f" %  params["minFracBadTot"] )
+    self.logMessage( "peakMIP: %.2f" %  params["peakMIP"] )
+    names = [ "GSigma", "LWidth", "FitGSigma", "FitLWidth" ]
+    for name in names:
+      self.logMessage( "%s: %.2f - %.2f" \
+                       % (name,params["min"+name],params["max"+name]) )
+    self.logMessage( "RSigma, GFrac: %.2f, %.2f" \
+                     % (params["vRSigma"], params["vGFrac"]) )
+    
     return True
 
+
+  def getParams(self, topElm):
+    
+    elms = topElm.getElementsByTagName("parameters")
+    for elm in elms:
+      for name in params.keys():
+        if elm.hasAttribute(name):
+          fval = float( elm.getAttribute(name) )
+          if fval != params[name]:
+            params[name] = fval
+            self.logMessage( "new value for %s: %.2f" % (name,params[name]) )
+
+
+    
   def logMessage(self, message ):
     print message
     self.logfile.write( message + "\n" )
@@ -163,17 +184,6 @@ class calibMIP:
       self.hists[key].SetLineColor( ic )
       ic *= 2
     
-    self.logMessage( "minEntries: %d" %  minEntries )
-    self.logMessage( "minFracBadTot: %.2f" %  minFracBadTot )
-    self.logMessage( "peakMIP: %.2f" %  peakMIP )
-    self.logMessage( "GSigma range: %.2f - %.2f" % (minGSigma, maxGSigma) )
-    self.logMessage( "LWidth range: %.2f - %.2f" % (minLWidth, maxLWidth) )
-    self.logMessage( "fitGSigma range: %.2f - %.2f" \
-                     % (minFitGSigma, maxFitGSigma) )
-    self.logMessage( "fitLWidth range: %.2f - %.2f" \
-                     % (minFitLWidth, maxFitLWidth) )
-    self.logMessage( "RSigma, GFrac: %.2f, %.2f" % (vRSigma, vGFrac) )
-
 
   def readTotParam(self):
     self.totParams = [0]*tkrUtils.g_nTowers
@@ -275,13 +285,13 @@ class calibMIP:
       return      
     self.hists["LWidth"].Fill( LWidth )
     self.hists["GSigma"].Fill( GSigma )
-    if LWidth < minLWidth or LWidth > maxLWidth:
+    if LWidth < params["minLWidth"] or LWidth > params["maxLWidth"]:
       self.logMessage( "LWidth %.2f is out of range: %.2f - %.2f" \
-                       % (LWidth, minLWidth, maxLWidth) )
+                       % (LWidth, params["minLWidth"], params["maxLWidth"]) )
       return
-    if GSigma < minGSigma or GSigma > maxGSigma:
+    if GSigma < params["minGSigma"] or GSigma > params["maxGSigma"]:
       self.logMessage( "GSigma %.2f is out of range: %.2f - %.2f" \
-                       % (GSigma, minGSigma, maxGSigma) )
+                       % (GSigma, params["minGSigma"], params["maxGSigma"]) )
       return
     MPV = func.GetParameter(1)
     self.hists["MPV"].Fill( MPV )
@@ -382,7 +392,7 @@ class calibMIP:
             self.hccharge[tower][unp].append( None )
             self.chargeScale[tower][unp][fe] = (1.0,1.0,100.0,1)
             continue
-          chargeScale = peakMIP / peak
+          chargeScale = params["peakMIP"] / peak
           error = peakErr/peak * chargeScale
           self.chargeScale[tower][unp][fe] = (chargeScale,error,chisq,ndf)
           self.hists["chargeScale"].Fill( chargeScale )
@@ -407,7 +417,13 @@ class calibMIP:
       for unp in range(tkrUtils.g_nUniPlanes):
         lname = tkrUtils.g_layerNames[unp] 
         for fe in range(tkrUtils.g_nFE):
-          (chargeScale,error,chisq,ndf) = self.chargeScale[tower][unp][fe]
+          try:
+            (chargeScale,error,chisq,ndf) = self.chargeScale[tower][unp][fe]
+          except:
+            print tower, unp, fe
+            print len(self.chargeScale)
+            print len(self.chargeScale[tower])
+            print self.chargeScale[tower][unp]
           if chargeScale > uplim:
             self.nwarn +=1
             fename = "T%02d %s FE:%02d" % (tower, lname, fe)
@@ -437,7 +453,8 @@ class calibMIP:
       func.SetParLimits( 2, 0.0, area*0.4 )
       func.SetParLimits( 3, 0.0, rms )
       func.SetRange( mean-1.25*rms, mean+2*rms )
-      func.SetParameters(rms*0.5, mean*0.75, area*0.1, rms*0.4, vRSigma, vGFrac)
+      func.SetParameters(rms*0.5, mean*0.75, area*0.1, rms*0.4, \
+                         params["vRSigma"], params["vGFrac"] )
       hist.Fit( "langau2", "RBQ" )
       self.logMessage( "*** %s fit results ***" % key )
       self.logMessage( "MPV: %.2f" % func.GetParameter(1) )
@@ -460,7 +477,7 @@ class calibMIP:
     lname = tkrUtils.g_layerNames[unp]
     fename = "T%02d %s FE:%02d" % (tower, lname, fe)
 
-    if entries<minEntries or mean==0.0 or rms==0.0:
+    if entries<params["minEntries"] or mean==0.0 or rms==0.0:
       alert = "%s, Entries %.0f, Mean: %.1f, RMS: %.1f skipped" \
               % (fename, entries, mean, rms)                
       self.logMessage( alert )
@@ -473,10 +490,10 @@ class calibMIP:
     self.hists["fracBadTot"].Fill( fracBadTot )
 
     lowLim = mean - 1.4 * rms
-    if fracBadTot > minFracBadTot and lowLim < mean*0.5:
+    if fracBadTot > params["minFracBadTot"] and lowLim < mean*0.5:
       lowLim = mean*0.5
       alert = "%s, large bad TOT fraction: %.3f > %.3f" \
-              % (fename, fracBadTot, minFracBadTot)
+              % (fename, fracBadTot, params["minFracBadTot"])
       self.logMessage( alert )
       nwarn += 1
 
@@ -503,14 +520,14 @@ class calibMIP:
     self.hists["fitChisqNdf"].Fill( chisq/ndf )
     #self.towerHists[tower]["totPeak"].SetBinContent(unp+1,par[1])
     #self.towerHists[tower]["totPeak"].SetBinError(unp+1,error[1])
-    if par[0] < minFitLWidth or par[0] > maxFitLWidth:
+    if par[0] < params["minFitLWidth"] or par[0] > params["maxFitLWidth"]:
       alert = "%s, LWidth: %.2f is out of range %.2f - %.2f" \
-              % (fename, par[0], minFitLWidth, maxFitLWidth)
+              % (fename, par[0],params["minFitLWidth"],params["maxFitLWidth"])
       self.logMessage( alert )
       nwarn += 1
-    if par[3] < minFitGSigma or par[3] > maxFitGSigma:
+    if par[3] < params["minFitGSigma"] or par[3] > params["maxFitGSigma"]:
       alert = "%s, GSigma: %.2f is out of range %.2f - %.2f" \
-              % (fename, par[3], minFitGSigma, maxFitGSigma)
+              % (fename, par[3],params["minFitGSigma"],params["maxFitGSigma"])
       self.logMessage( alert )
       nwarn += 1
 
@@ -541,7 +558,7 @@ class calibMIP:
     #rlist.Write()
 
     # save time stampes into a tree
-    endTime = array.array( 'd', [1] )
+    endTime = array.array( 'f', [1] )
     firstRunId = array.array( 'L', [0] )
     lastRunId = array.array( 'L', [0] )
     tree = ROOT.TTree( "timeStamps", "timeStamps" )

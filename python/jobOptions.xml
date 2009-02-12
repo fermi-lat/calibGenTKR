@@ -1,88 +1,93 @@
 <jobOptions default="test">
   <output dir="/nfs/slac/work/htajima/outputs" />
+  <!-- <output dir="/nfs/farm/g/glast/u02/TKR/TE603" /> -->
+
+  <parameters minEntries="200" minFracBadTot="0.08" peakMIP="4.92" minGSigma="0.6" maxGSigma="1.4" minLWidth="0.43" maxLWidth="0.52" minFitGSigma="0.4" maxFitGSigma="1.4" minFitLWidth="0.2" maxFitLWidth="0.7" vRSigma="5.0" vGFrac="0.8"/>
+
   <jobOption name="test" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
     <data type="tree" files="root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.70/tkrAnalysis/r0254680394_v000_tkrAnalysis.root root://glast-rdr.slac.stanford.edu//glast/Data/Flight/Level1/LPA/prod/1.69/tkrAnalysis/r0249225929_v000_tkrAnalysis.root"/>
+    <parameters vRSigma="5.5" vGFrac="0.85"/>
   </jobOption>
 
   <jobOption name="0801" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0801.txt chargeScale-0802.txt"/>
+    <data type="tree" files="chargeScale-0801.txt"/>
   </jobOption>
 
   <jobOption name="0802" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0802.txt chargeScale-0803.txt"/>
+    <data type="tree" files="chargeScale-0802.txt"/>
   </jobOption>
 
   <jobOption name="0803" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0803.txt chargeScale-0804.txt"/>
+    <data type="tree" files="chargeScale-0803.txt"/>
   </jobOption>
 
   <jobOption name="0804" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0804.txt chargeScale-0805.txt"/>
+    <data type="tree" files="chargeScale-0804.txt"/>
   </jobOption>
 
   <jobOption name="0805" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0805.txt chargeScale-0806.txt"/>
+    <data type="tree" files="chargeScale-0805.txt"/>
   </jobOption>
 
   <jobOption name="0806" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0806.txt chargeScale-0807.txt"/>
+    <data type="tree" files="chargeScale-0806.txt"/>
   </jobOption>
 
   <jobOption name="0807" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0807.txt chargeScale-0808.txt"/>
+    <data type="tree" files="chargeScale-0807.txt"/>
   </jobOption>
 
   <jobOption name="0808" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0808.txt chargeScale-0809.txt"/>
+    <data type="tree" files="chargeScale-0808.txt"/>
   </jobOption>
 
   <jobOption name="0809" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0809.txt chargeScale-0810.txt"/>
+    <data type="tree" files="chargeScale-0809.txt"/>
   </jobOption>
 
   <jobOption name="0810" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0810.txt chargeScale-0811.txt"/>
+    <data type="tree" files="chargeScale-0810.txt"/>
   </jobOption>
 
   <jobOption name="0811" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0811.txt chargeScale-0901.txt"/>
+    <data type="tree" files="chargeScale-0811.txt"/>
   </jobOption>
 
   <jobOption name="0901" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0901.txt chargeScale-0902.txt"/>
+    <data type="tree" files="chargeScale-0901.txt"/>
   </jobOption>
 
   <jobOption name="0902" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0902.txt chargeScale-0903.txt"/>
+    <data type="tree" files="chargeScale-0902.txt"/>
   </jobOption>
 
   <jobOption name="0903" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0903.txt chargeScale-0904.txt"/>
+    <data type="tree" files="chargeScale-0903.txt"/>
   </jobOption>
 
   <jobOption name="0904" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0904.txt chargeScale-0905.txt"/>
+    <data type="tree" files="chargeScale-0904.txt"/>
   </jobOption>
 
   <jobOption name="0905" type="MIP calibration" mode="fit">
     <totParam type="root" files="/nfs/farm/g/glast/u02/TKR/TE602/TkrTotGain_0238459760_077016872.root"/>
-    <data type="tree" files="chargeScale-0905.txt chargeScale-0906.txt"/>
+    <data type="tree" files="chargeScale-0905.txt"/>
   </jobOption>
 
   <jobOption name="dummy" type="MIP calibration" mode="fit">
