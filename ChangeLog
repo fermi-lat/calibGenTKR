@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: jrb  Thu Dec 10 17:09:48 PST 2009
+GlastRelease-scons/calibGenTKR
+
+Modified Files:
+	.cvsignore SConscript 
+Log Message:
+
+    *
+------------------------------------------------------------
 TAG
 Tag name: calibGenTKR-04-08-00, operation: add
 Package: calibGenTKR
