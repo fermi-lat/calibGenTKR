@@ -1,7 +1,7 @@
 # -*- python -*-
-# $Header: /nfs/slac/g/glast/ground/cvs/GlastRelease-scons/calibGenTKR/SConscript,v 1.8 2009/02/12 20:30:24 glastrm Exp $
+# $Header: /nfs/slac/g/glast/ground/cvs/GlastRelease-scons/calibGenTKR/SConscript,v 1.9 2009/12/11 01:09:48 jrb Exp $
 # Authors: Leon Rochester <lsrea@slac.stanford.edu>
-# Version: calibGenTKR-04-08-00
+# Version: calibGenTKR-04-08-01
 Import('baseEnv')
 Import('listFiles')
 Import('packages')
