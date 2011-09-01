@@ -2,6 +2,15 @@
 TAG
 Tag name: GlastRelease-19-03-06, operation: add
 Package: calibGenTKR
+User: heather  Thu Sep  1 11:55:18 2011
+Files:
+  calibGenTKR/doc/release.notes  1.22
+
+    *
+------------------------------------------------------------
+TAG
+Tag name: GlastRelease-19-03-06, operation: add
+Package: calibGenTKR
 User: heather  Thu Sep  1 11:55:13 2011
 Files:
   calibGenTKR/.cvsignore  1.3
