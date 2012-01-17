@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: cohen  Tue Jan 17 08:52:02 PST 2012
+GlastRelease-scons/calibGenTKR/src/xml2root
+
+Modified Files:
+	XmltorootHandler.cxx 
+Log Message:
+fix C library includes for gcc4.4 compilation
+    *
+------------------------------------------------------------
 TAG
 Tag name: GlastRelease-17-35-24-gr17, operation: add
 Package: calibGenTKR
