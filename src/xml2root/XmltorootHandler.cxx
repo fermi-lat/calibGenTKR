@@ -1,10 +1,11 @@
-//   $Header: /nfs/slac/g/glast/ground/cvs/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.3 2005/06/06 19:40:41 jrb Exp $
+//   $Header: /nfs/slac/g/glast/ground/cvs/GlastRelease-scons/calibGenTKR/src/xml2root/XmltorootHandler.cxx,v 1.4 2005/10/20 23:22:42 jrb Exp $
 /**
    @file XmltorootHandler.cxx
 
    Implementation of callbacks for Xerces SAX parser
 */
 
+#include <cstdio>
 #include <iostream>
 #include <cstdlib>                // for system(...)
 #include "TROOT.h"
