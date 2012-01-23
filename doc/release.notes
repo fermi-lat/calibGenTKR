@@ -5,6 +5,7 @@
  @verbatim
                         EOH
 
+ calibGenTKR-04-08-02 23-Jan-2012    jrb Johann's patches for gcc41
  calibGenTKR-04-08-01 10-Dec-2009    jrb Updates for SCons builds
  v4r3p2   11-Oct-2007 HMK  patch for ROOT v5.16 to explicitly include THashList
  v4r3p1   02-Sep-2007 JCT  fix compilation on gcc34, preparing for GR-based release
