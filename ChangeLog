@@ -1,4 +1,13 @@
 ------------------------------------------------------------
+User: jrb  Wed May  9 12:07:45 PDT 2012
+GlastRelease-scons/calibGenTKR
+
+Modified Files:
+	SConscript 
+Log Message:
+No building on Windows
+    *
+------------------------------------------------------------
 TAG
 Tag name: GlastRelease-17-35-24-gr31, operation: add
 Package: calibGenTKR
