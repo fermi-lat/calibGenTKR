@@ -1,5 +1,44 @@
 ------------------------------------------------------------
 TAG
+Tag name: GlastRelease-20-06-02, operation: add
+Package: calibGenTKR
+User: heather  Wed Oct 10 03:57:43 2012
+Files:
+  calibGenTKR/.cvsignore  1.3
+  calibGenTKR/ChangeLog  1.1.1.362
+  calibGenTKR/SConscript  1.13
+  calibGenTKR/cmt/.cvsignore  1.1
+  calibGenTKR/cmt/requirements  1.37
+  calibGenTKR/doc/release.notes  1.24
+  calibGenTKR/output/example_hotStrips.xml  1.1.1.1
+  calibGenTKR/output/example_deadStrips.xml  1.1.1.1
+  calibGenTKR/output/example_hist.root  1.1.1.1
+  calibGenTKR/pl/job.dat  1.1
+  calibGenTKR/pl/RunCalibGenTKR.pl  1.2
+  calibGenTKR/python/jobOptions.xml  1.3
+  calibGenTKR/python/calibMIP.py  1.5
+  calibGenTKR/src/mainpage.h  1.10
+  calibGenTKR/src/badStripsCalib/badStripsCalib.cxx  1.21
+  calibGenTKR/src/badStripsCalib/badStrips.dtd  1.1
+  calibGenTKR/src/badStripsCalib/options.xml  1.3
+  calibGenTKR/src/badStripsCalib/generateBadStrips.cxx  1.2
+  calibGenTKR/src/badStripsCalib/badStripsCalib.h  1.18
+  calibGenTKR/src/muonCalibTot/TkrCalibration.dtd  1.1
+  calibGenTKR/src/muonCalibTot/calibTkrJobOptions.xml  1.24
+  calibGenTKR/src/muonCalibTot/GeoConstants.h  1.1
+  calibGenTKR/src/muonCalibTot/totCalib.h  1.37
+  calibGenTKR/src/muonCalibTot/runTotCalibChain.cxx  1.16
+  calibGenTKR/src/muonCalibTot/totCalibChain_option.dat  1.16
+  calibGenTKR/src/muonCalibTot/totCalib.cxx  1.61
+  calibGenTKR/src/xml2root/xmltoroot.cxx  1.2
+  calibGenTKR/src/xml2root/XmltorootHandler.cxx  1.5
+  calibGenTKR/src/xml2root/XmltorootHandler.h  1.2
+  calibGenTKR/xml/ifile.dtd  1.1
+  calibGenTKR/xml/badStrips.dtd  1.1.1.1
+
+    *
+------------------------------------------------------------
+TAG
 Tag name: GlastRelease-20-06-01, operation: add
 Package: calibGenTKR
 User: heather  Mon Oct  8 11:21:36 2012
